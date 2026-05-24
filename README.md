@@ -1,103 +1,120 @@
 # livepaper
 
-`livepaper` คือ CLI สำหรับ Windows ที่รวมภาพหลายใบเป็น wallpaper ผืนเดียวแบบ `Span` แล้วตั้งเป็นพื้นหลังเดสก์ท็อปอัตโนมัติ เหมาะกับเครื่องที่มีหลายจอและต้องการกำหนดภาพคนละใบต่อจอจาก command line
+**Set per-monitor wallpapers — including live video — from the command line on Windows.**
 
-## ความสามารถ
+`livepaper` detects every monitor's real position and resolution, composites your images into a single span wallpaper, and applies it instantly. Drop in a video file instead and it loops as a live wallpaper behind your desktop icons.
 
-- ตรวจจับจำนวนจอ, ความละเอียด, และตำแหน่งของแต่ละจอจาก Windows อัตโนมัติ
-- รวมภาพหลายใบเป็น wallpaper ผืนเดียวตาม layout จริงของ desktop
-- กำหนดภาพแยกต่อจอได้ตามลำดับ หรือระบุจอเป้าหมายด้วย `-m/--monitor`
-- ย่อและครอปภาพแบบ fill เพื่อให้เต็มแต่ละจอโดยรักษาสัดส่วนภาพ
-- อ่านค่า EXIF orientation และหมุนภาพให้ถูกทิศก่อนนำไปใช้
-- รองรับไฟล์ `jpg`, `jpeg`, และ `png`
-- สร้างไฟล์ wallpaper ชั่วคราวเป็น JPEG ใน `%TEMP%\livepaper`
-- ล้างไฟล์ชั่วคราวทั้งหมดได้ด้วย `--clean`
+---
 
-## ข้อกำหนด
+## Install
 
-- Windows
-- Go ตามเวอร์ชันที่ระบุใน [go.mod](/e:/.dvgamerr/go-livepaper/go.mod)
-
-โปรแกรมนี้ใช้ Windows API และ registry โดยตรง จึงไม่รองรับ Linux หรือ macOS
-
-## Build
-
-```nu
-^go build -o livepaper.exe ./cmd/livepaper
+```sh
+go install github.com/dvgamerr/go-livepaper/cmd/livepaper@latest
 ```
 
-ถ้าต้องการฝังเวอร์ชันจากไฟล์ `VERSION`:
+> **Requirements**
+> - Windows 10 / 11
+> - Go 1.21+
+> - [ffmpeg](https://ffmpeg.org/download.html) in `PATH` — only needed for video wallpapers
 
-```nu
-let version = (open VERSION | str trim)
-^go build -ldflags $"-X main.VERSION=($version)" -o livepaper.exe ./cmd/livepaper
+---
+
+## Quick start
+
+```sh
+# Single monitor — set one image
+livepaper "C:\Wallpapers\mountain.jpg"
+
+# Dual monitor — one image per monitor (matched in detection order)
+livepaper "C:\Wallpapers\left.jpg" "C:\Wallpapers\right.png"
+
+# Target specific monitors by number
+livepaper -m 2 -m 3 "C:\Wallpapers\portrait.jpg" "C:\Wallpapers\stats.png"
+
+# Live video wallpaper on the primary monitor
+livepaper "C:\Wallpapers\rain.mp4"
+
+# Mix: static on monitor 1, video on monitor 2
+livepaper -m 1 -m 2 "C:\Wallpapers\left.jpg" "C:\Wallpapers\loop.mp4"
+
+# Clean up temp files
+livepaper --clean
 ```
 
-## วิธีใช้
+---
+
+## Features
+
+| Feature | Details |
+|---|---|
+| Multi-monitor | Reads real screen layout from Windows — no manual config |
+| Per-monitor images | One image per monitor; fill-crop keeps aspect ratio |
+| EXIF-aware | Rotates photos to correct orientation before applying |
+| Live video | Loops any video file as a live wallpaper via ffmpeg |
+| Mixed mode | Static images and video on different monitors simultaneously |
+| Formats | Images: `jpg` `jpeg` `png` · Video: `mp4` `mkv` `avi` `mov` `webm` `m4v` `flv` |
+| Zero config | No settings file — everything via CLI flags |
+
+---
+
+## Usage
 
 ```text
-livepaper.exe [--monitor MONITOR] [--clean] [WALLPAPER [WALLPAPER ...]]
+livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 ```
 
-ตัวเลือก:
+| Flag | Short | Description |
+|---|---|---|
+| `--monitor N` | `-m N` | Target monitor by number (1-based). Repeat for each monitor. |
+| `--clean` | `-c` | Delete all temp wallpaper files from `%TEMP%\livepaper` |
+| `--version` | | Print version |
+| `--help` | `-h` | Print help |
 
-- `-m`, `--monitor` ระบุหมายเลขจอแบบ 1-based ตามลำดับภาพที่ส่งเข้าไป เช่น `-m 2 -m 1`
-- `-c`, `--clean` ล้างไฟล์ชั่วคราวใน `%TEMP%\livepaper`
-- `--version` แสดงเวอร์ชัน
-- `-h`, `--help` แสดง help
+**Monitor matching rules**
 
-กติกาการจับคู่ภาพกับจอ:
+- Omit `-m` → images are assigned to monitors in the order Windows enumerates them (primary monitor is usually monitor 1).
+- Use `-m` → the count of `-m` flags must equal the count of wallpaper paths. Each path maps to its corresponding `-m` value.
+- Monitor numbers start at `1`. Run `livepaper --help` to see how many monitors are detected.
 
-- ถ้าไม่ระบุ `-m` โปรแกรมจะจับคู่ภาพตามลำดับจอที่ Windows enumerate ได้
-- ถ้าระบุ `-m` จำนวนจอต้องเท่ากับจำนวนภาพ และภาพแต่ละใบจะถูกส่งไปยังจอที่ระบุไว้ตามลำดับ
-- หมายเลขจอเริ่มที่ `1`
+---
 
-## ตัวอย่าง
+## How it works
 
-ตั้ง wallpaper 1 ภาพสำหรับเครื่องจอเดียว:
+1. Queries `EnumDisplayMonitors` to get every monitor's position and resolution.
+2. Creates a black canvas sized to the full virtual desktop.
+3. For each image: loads it, applies EXIF rotation, fill-crops it to the monitor size, and draws it onto the canvas at the correct position.
+4. Saves the canvas as a temporary JPEG in `%TEMP%\livepaper`.
+5. Writes `WallpaperStyle=22` (Span) to the registry and calls `SystemParametersInfoW` to apply it.
+6. For each video: embeds an ffmpeg-backed GDI window behind the desktop icon layer and loops it at 30 fps.
 
-```nu
-.\livepaper.exe 'C:\Wallpapers\main.jpg'
+---
+
+## Build from source
+
+```sh
+git clone https://github.com/dvgamerr/go-livepaper.git
+cd go-livepaper
+go build -o livepaper.exe ./cmd/livepaper
 ```
 
-ตั้ง 2 ภาพตามลำดับจอที่ตรวจพบ:
+With version embedded:
 
-```nu
-.\livepaper.exe 'C:\Wallpapers\left.jpg' 'C:\Wallpapers\right.png'
+```sh
+go build -ldflags "-X main.VERSION=$(cat VERSION)" -o livepaper.exe ./cmd/livepaper
 ```
 
-ตั้งภาพให้เฉพาะจอ 2 และจอ 3:
+---
 
-```nu
-.\livepaper.exe -m 2 -m 3 'C:\Wallpapers\portrait.jpg' 'C:\Wallpapers\stats.png'
-```
+## Limitations
 
-ล้างไฟล์ wallpaper ชั่วคราว:
+- Windows only — uses `user32.dll`, `gdi32.dll`, and the Windows registry directly.
+- The final wallpaper is always a single composited JPEG (Span mode). Windows per-monitor wallpaper APIs are not used.
+- Monitors without an assigned wallpaper appear black.
+- Video live wallpaper currently targets one monitor per video instance; the video loops indefinitely until the process is killed.
+- JPEG output has minor quality loss compared to a PNG source (`quality=90`).
 
-```nu
-.\livepaper.exe --clean
-```
+---
 
-## พฤติกรรมการทำงาน
+## License
 
-1. โปรแกรมอ่าน layout ของทุกจอจากระบบ
-2. สร้าง canvas สีดำขนาดรวมของ desktop ทั้งหมด
-3. โหลดภาพ, หมุนตาม EXIF, แล้วย่อแบบ fill ให้พอดีกับแต่ละจอ
-4. วางภาพลงบน canvas ตามตำแหน่งจริงของจอ
-5. บันทึกเป็น JPEG ชั่วคราว
-6. ตั้งค่า wallpaper style เป็น `Span` และสั่งให้ Windows reload wallpaper
-
-## ข้อจำกัดที่ควรรู้
-
-- โปรแกรมสร้าง wallpaper เป็นภาพผืนเดียวเสมอ ไม่ได้ใช้ per-monitor wallpaper ของ Windows
-- ถ้าระบุ `-m` เฉพาะบางจอ จอที่ไม่ได้ระบุจะเป็นพื้นสีดำในภาพสุดท้าย
-- ถ้าส่งภาพมากกว่าจำนวนจอโดยไม่ระบุ `-m` ภาพส่วนเกินจะถูกข้าม
-- output สุดท้ายถูกบันทึกเป็น JPEG ดังนั้นอาจมีการสูญเสียคุณภาพเล็กน้อยเมื่อเทียบกับ PNG ต้นฉบับ
-
-## โครงสร้างไฟล์หลัก
-
-- [cmd/livepaper/main.go](/e:/.dvgamerr/go-livepaper/cmd/livepaper/main.go) จัดการ CLI และ flow หลัก
-- [cmd/livepaper/monitor.go](/e:/.dvgamerr/go-livepaper/cmd/livepaper/monitor.go) ตรวจจับจอและ layout
-- [cmd/livepaper/wallpaper.go](/e:/.dvgamerr/go-livepaper/cmd/livepaper/wallpaper.go) resize, compose, และจัดการไฟล์ชั่วคราว
-- [cmd/livepaper/orientation.go](/e:/.dvgamerr/go-livepaper/cmd/livepaper/orientation.go) อ่าน EXIF orientation
-- [cmd/livepaper/win64_sys.go](/e:/.dvgamerr/go-livepaper/cmd/livepaper/win64_sys.go) ตั้งค่า wallpaper ผ่าน Windows API
+MIT
