@@ -13,6 +13,7 @@ import (
 var videoExts = map[string]bool{
 	".mp4": true, ".mkv": true, ".avi": true,
 	".mov": true, ".webm": true, ".m4v": true, ".flv": true,
+	".gif": true,
 }
 
 func isVideoFile(path string) bool {

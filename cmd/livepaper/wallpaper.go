@@ -13,33 +13,6 @@ import (
 	"github.com/nfnt/resize"
 )
 
-func resizeImageToFill(img image.Image, orientation int, width, height uint) (image.Image, image.Point) {
-	img = applyOrientation(img, orientation)
-
-	bounds := img.Bounds()
-	origWidth := uint(bounds.Dx())
-	origHeight := uint(bounds.Dy())
-
-	origRatio := float64(origWidth) / float64(origHeight)
-	targetRatio := float64(width) / float64(height)
-
-	var newWidth, newHeight uint
-	if origRatio > targetRatio {
-		newHeight = height
-		newWidth = uint(float64(height) * origRatio)
-	} else {
-		newWidth = width
-		newHeight = uint(float64(width) / origRatio)
-	}
-
-	resized := resize.Resize(newWidth, newHeight, img, resize.Lanczos3)
-
-	offsetX := (int(newWidth) - int(width)) / 2
-	offsetY := (int(newHeight) - int(height)) / 2
-
-	return resized, image.Point{X: offsetX, Y: offsetY}
-}
-
 func loadAndResizeImage(path string, width, height uint) (image.Image, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -55,10 +28,31 @@ func loadAndResizeImage(path string, width, height uint) (image.Image, error) {
 		return nil, fmt.Errorf("failed to seek file: %w", err)
 	}
 
-	orientation := getOrientation(file)
-	resized, offset := resizeImageToFill(img, orientation, width, height)
+	img = applyOrientation(img, getOrientation(file))
+
+	bounds := img.Bounds()
+	origW := float64(bounds.Dx())
+	origH := float64(bounds.Dy())
+
+	// contain: scale to fit within target, preserve aspect ratio
+	scaleW := float64(width) / origW
+	scaleH := float64(height) / origH
+	scale := scaleW
+	if scaleH < scaleW {
+		scale = scaleH
+	}
+	newW := uint(origW * scale)
+	newH := uint(origH * scale)
+
+	resized := resize.Resize(newW, newH, img, resize.Lanczos3)
+
 	result := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
-	draw.Draw(result, result.Bounds(), resized, offset, draw.Src)
+	draw.Draw(result, result.Bounds(), &image.Uniform{C: image.Black}, image.Point{}, draw.Src)
+
+	dstX := (int(width) - int(newW)) / 2
+	dstY := (int(height) - int(newH)) / 2
+	dstRect := image.Rect(dstX, dstY, dstX+int(newW), dstY+int(newH))
+	draw.Draw(result, dstRect, resized, image.Point{}, draw.Over)
 
 	return result, nil
 }

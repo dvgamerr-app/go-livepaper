@@ -127,8 +127,6 @@ func findBgWorkerW(minW, minH int) uintptr {
 					iconWW, bgWW, r.right-r.left, r.bottom-r.top)
 				return bgWW
 			}
-			log.Printf("WorkerW bg=0x%X too small (%dx%d), skip\n",
-				bgWW, r.right-r.left, r.bottom-r.top)
 		}
 	}
 
@@ -143,7 +141,6 @@ func findBgWorkerW(minW, minH int) uintptr {
 				ww, r.right-r.left, r.bottom-r.top)
 			return ww
 		}
-		log.Printf("WorkerW 0x%X too small (%dx%d), skip\n", ww, r.right-r.left, r.bottom-r.top)
 		ww, _, _ = findWindowExW.Call(0, ww, uintptr(unsafe.Pointer(workerWClass)), 0)
 	}
 
