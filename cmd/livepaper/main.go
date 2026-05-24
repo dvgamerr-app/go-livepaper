@@ -77,9 +77,10 @@ func main() {
 		log.Fatalf("Invalid arguments: monitors (%d) must match of wallpapers (%d)", len(args.Monitor), len(args.Wallpaper))
 	}
 
-	canvasWidth, canvasHeight, monitors := getMonitors()
+	canvasWidth, canvasHeight, monitors, vdMinX, vdMinY := getMonitors()
 	log.Printf("  Monitor: %d\n", len(monitors))
 	log.Printf("Wallpaper: %dx%dpx", canvasWidth, canvasHeight)
+	log.Printf("VD origin: (%d,%d)\n", vdMinX, vdMinY)
 
 	for _, monitor := range monitors {
 		primaryStatus := " "
@@ -87,6 +88,30 @@ func main() {
 			primaryStatus = "*"
 		}
 		log.Printf("Monitor %d%s: %+v\n", monitor.index+1, primaryStatus, monitor.resolution)
+	}
+
+	if isVideoFile(args.Wallpaper[0]) {
+		target := monitors[0]
+		for _, m := range monitors {
+			if m.primary {
+				target = m
+				break
+			}
+		}
+		// Convert normalised coords back to real Windows screen coords.
+		// Primary monitor is always at (0,0) on Windows; other monitors may be negative.
+		rawX := int(target.resolution.x) + int(vdMinX)
+		rawY := int(target.resolution.y) + int(vdMinY)
+		log.Printf("Video target: Monitor %d raw=(%d,%d) size=(%dx%d)\n",
+			target.index+1, rawX, rawY,
+			target.resolution.width, target.resolution.height)
+		if err := runVideoWallpaper(args.Wallpaper[0],
+			rawX, rawY,
+			int(target.resolution.width), int(target.resolution.height),
+		); err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 
 	targets, err := selectMonitors(monitors, args.Monitor)

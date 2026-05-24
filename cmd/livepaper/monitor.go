@@ -80,9 +80,13 @@ func getMonitorInfo(hMonitor windows.Handle, index int) (MonitorInfo, error) {
 	return info, nil
 }
 
-func getCanvas(monitors []MonitorInfo) (int, int) {
-	minX := monitors[0].resolution.x
-	minY := monitors[0].resolution.y
+// getCanvas normalises monitor coordinates to a (0,0)-origin bounding box and
+// returns the canvas dimensions together with the raw virtual-desktop origin
+// (minX, minY in actual Windows screen coordinates) so callers can convert
+// normalised positions back to real screen coords when needed.
+func getCanvas(monitors []MonitorInfo) (totalWidth, totalHeight int, minX, minY int32) {
+	minX = monitors[0].resolution.x
+	minY = monitors[0].resolution.y
 	maxX := monitors[0].resolution.x + monitors[0].resolution.width
 	maxY := monitors[0].resolution.y + monitors[0].resolution.height
 
@@ -102,25 +106,23 @@ func getCanvas(monitors []MonitorInfo) (int, int) {
 		}
 	}
 
-	totalWidth := int(maxX - minX)
-	totalHeight := int(maxY - minY)
+	totalWidth = int(maxX - minX)
+	totalHeight = int(maxY - minY)
 
 	for i := range monitors {
 		monitors[i].resolution.x -= minX
 		monitors[i].resolution.y -= minY
 	}
-
-	return totalWidth, totalHeight
+	return
 }
 
-func getMonitors() (int, int, []MonitorInfo) {
-	var monitors []MonitorInfo
+func getMonitors() (canvasW, canvasH int, monitors []MonitorInfo, vdMinX, vdMinY int32) {
 	enumDisplayMonitors.Call(
 		0,
 		0,
 		windows.NewCallback(monitorEnumProc),
 		uintptr(unsafe.Pointer(&monitors)),
 	)
-	totalWidth, totalHeight := getCanvas(monitors)
-	return totalWidth, totalHeight, monitors
+	canvasW, canvasH, vdMinX, vdMinY = getCanvas(monitors)
+	return
 }
