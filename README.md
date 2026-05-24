@@ -15,7 +15,8 @@ go install github.com/dvgamerr/go-livepaper/cmd/livepaper@latest
 > **Requirements**
 > - Windows 10 / 11
 > - Go 1.21+
-> - [ffmpeg](https://ffmpeg.org/download.html) in `PATH` — only needed for video wallpapers
+> - [ffmpeg](https://ffmpeg.org/download.html) in `PATH` — only needed for video wallpapers (default renderer)
+> - [mpv](https://mpv.io/installation/) in `PATH` — optional alternative video renderer (smoother playback, hardware decode)
 
 ---
 
@@ -31,8 +32,11 @@ livepaper "C:\Wallpapers\left.jpg" "C:\Wallpapers\right.png"
 # Target specific monitors by number
 livepaper -m 2 -m 3 "C:\Wallpapers\portrait.jpg" "C:\Wallpapers\stats.png"
 
-# Live video wallpaper on the primary monitor
+# Live video wallpaper on the primary monitor (ffmpeg, default)
 livepaper "C:\Wallpapers\rain.mp4"
+
+# Live video wallpaper using mpv instead of ffmpeg
+livepaper --player mpv "C:\Wallpapers\rain.mp4"
 
 # Mix: static on monitor 1, video on monitor 2
 livepaper -m 1 -m 2 "C:\Wallpapers\left.jpg" "C:\Wallpapers\loop.mp4"
@@ -50,9 +54,9 @@ livepaper --clean
 | Multi-monitor | Reads real screen layout from Windows — no manual config |
 | Per-monitor images | One image per monitor; fill-crop keeps aspect ratio |
 | EXIF-aware | Rotates photos to correct orientation before applying |
-| Live video | Loops any video file as a live wallpaper via ffmpeg |
+| Live video | Loops any video file as a live wallpaper via ffmpeg or mpv |
 | Mixed mode | Static images and video on different monitors simultaneously |
-| Formats | Images: `jpg` `jpeg` `png` · Video: `mp4` `mkv` `avi` `mov` `webm` `m4v` `flv` |
+| Formats | Images: `jpg` `jpeg` `png` · Video: `mp4` `mkv` `avi` `mov` `webm` `m4v` `flv` `gif` |
 | Zero config | No settings file — everything via CLI flags |
 
 ---
@@ -66,6 +70,7 @@ livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 | Flag | Short | Description |
 |---|---|---|
 | `--monitor N` | `-m N` | Target monitor by number (1-based). Repeat for each monitor. |
+| `--player mpv` | `-p mpv` | Video renderer: `ffmpeg` (default) or `mpv` |
 | `--clean` | `-c` | Delete all temp wallpaper files from `%TEMP%\livepaper` |
 | `--version` | | Print version |
 | `--help` | `-h` | Print help |
@@ -101,6 +106,31 @@ With version embedded:
 
 ```sh
 go build -ldflags "-X main.VERSION=$(cat VERSION)" -o livepaper.exe ./cmd/livepaper
+```
+
+---
+
+## Video renderers
+
+Two video backends are supported. Choose with `--player`.
+
+| | ffmpeg (default) | mpv |
+|---|---|---|
+| Availability | Must be in `PATH` | Must be in `PATH` |
+| Decode | Software + `hwaccel auto` | Hardware (DXVA2/D3D11VA) |
+| Frame delivery | Raw BGRA pipe → GDI `StretchDIBits` | Native window embed via `--wid` |
+| CPU usage | Higher (GDI blit per frame) | Lower (GPU compositing) |
+| Playback quality | Good | Better (subtitles, HDR, etc.) |
+| Install | [ffmpeg.org](https://ffmpeg.org/download.html) | [mpv.io](https://mpv.io/installation/) |
+
+**When to use mpv** — prefer `--player mpv` when you have a high-resolution or high-framerate video, or when ffmpeg causes visible CPU load. mpv renders directly into the desktop shell layer using its `--wid` embedding flag; no frame piping is needed.
+
+```sh
+# Verify mpv is available
+mpv --version
+
+# Use mpv for a 4K wallpaper loop
+livepaper --player mpv "C:\Wallpapers\4k-loop.mp4"
 ```
 
 ---
