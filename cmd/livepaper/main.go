@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/draw"
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/alexflint/go-arg"
@@ -90,64 +89,67 @@ func main() {
 		log.Printf("Monitor %d%s: %+v\n", monitor.index+1, primaryStatus, monitor.resolution)
 	}
 
-	if isVideoFile(args.Wallpaper[0]) {
-		target := monitors[0]
-		for _, m := range monitors {
-			if m.primary {
-				target = m
-				break
-			}
-		}
-		// Convert normalised coords back to real Windows screen coords.
-		// Primary monitor is always at (0,0) on Windows; other monitors may be negative.
-		rawX := int(target.resolution.x) + int(vdMinX)
-		rawY := int(target.resolution.y) + int(vdMinY)
-		log.Printf("Video target: Monitor %d raw=(%d,%d) size=(%dx%d)\n",
-			target.index+1, rawX, rawY,
-			target.resolution.width, target.resolution.height)
-		if err := runVideoWallpaper(args.Wallpaper[0],
-			rawX, rawY,
-			int(target.resolution.width), int(target.resolution.height),
-		); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
-
 	targets, err := selectMonitors(monitors, args.Monitor)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if len(args.Monitor) == 0 && len(args.Wallpaper) > len(monitors) {
-		log.Printf("Warning: %d wallpaper(s) ignored because only %d monitor(s) were detected\n", len(args.Wallpaper)-len(monitors), len(monitors))
-	}
-
-	if err := setWallpaperStyle(STYLE_SPAN); err != nil {
-		log.Printf("Error setting wallpaper style: %v\n", err)
+	if len(args.Wallpaper) > len(targets) {
+		log.Printf("Warning: %d wallpaper(s) ignored — only %d monitor(s) available\n",
+			len(args.Wallpaper)-len(targets), len(targets))
 	}
 
 	canvas := createBlackCanvas(canvasWidth, canvasHeight)
+	var vTargets []videoTarget
+	hasImage := false
 
-	for i, monitor := range targets {
-		if i > len(args.Wallpaper)-1 {
-			continue
+	for i, wp := range args.Wallpaper {
+		if i >= len(targets) {
+			break
 		}
-		img1, err := loadAndResizeImage(args.Wallpaper[i], uint(monitor.resolution.width), uint(monitor.resolution.height))
+		m := targets[i]
+
+		if isVideoFile(wp) {
+			rawX := int(m.resolution.x) + int(vdMinX)
+			rawY := int(m.resolution.y) + int(vdMinY)
+			log.Printf("Video %d → Monitor %d raw=(%d,%d) size=(%dx%d)",
+				i+1, m.index+1, rawX, rawY, m.resolution.width, m.resolution.height)
+			vTargets = append(vTargets, videoTarget{
+				path: wp,
+				x:    rawX, y: rawY,
+				w:    int(m.resolution.width), h: int(m.resolution.height),
+			})
+		} else {
+			img, err := loadAndResizeImage(wp, uint(m.resolution.width), uint(m.resolution.height))
+			if err != nil {
+				log.Printf("Error loading image for monitor %d: %v\n", m.index+1, err)
+				continue
+			}
+			draw.Draw(canvas,
+				img.Bounds().Add(image.Pt(int(m.resolution.x), int(m.resolution.y))),
+				img, image.Point{}, draw.Over)
+			hasImage = true
+		}
+	}
+
+	// Set static wallpaper whenever any image is present, or as black backdrop for videos.
+	if hasImage || len(vTargets) > 0 {
+		if err := setWallpaperStyle(STYLE_SPAN); err != nil {
+			log.Printf("Error setting wallpaper style: %v\n", err)
+		}
+		outputPath, err := saveImageAs(canvas, 90)
 		if err != nil {
-			log.Printf("Error loadAndResizeImage: %v\n", err)
+			log.Printf("Error saving canvas: %v\n", err)
+		} else {
+			log.Printf("saved to: %s\n", outputPath)
+			if err := setWallpaper(outputPath); err != nil {
+				log.Printf("Error setting wallpaper: %v\n", err)
+			}
 		}
-		draw.Draw(canvas, img1.Bounds().Add(image.Pt(int(monitor.resolution.x), int(monitor.resolution.y))), img1, image.Point{}, draw.Over)
 	}
 
-	outputPath, err := saveImageAs(canvas, 90)
-	if err != nil {
-		log.Printf("Error saving image: %v\n", err)
-	}
-
-	log.Printf("saved to: %s\n", outputPath)
-
-	if err := setWallpaper(outputPath); err != nil {
-		log.Printf("Error setting wallpaper: %v\n", err)
-		os.Exit(1)
+	if len(vTargets) > 0 {
+		if err := runVideoWallpapers(vTargets); err != nil {
+			log.Fatal(err)
+		}
 	}
 }

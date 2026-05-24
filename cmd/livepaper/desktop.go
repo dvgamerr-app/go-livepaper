@@ -28,8 +28,6 @@ const (
 	wmDestroy              = 0x0002
 	wmPaint                = 0x000F
 	smtoNormal             = 0x0000
-	dibRgbColors           = 0
-	srccopy        uintptr = 0x00CC0020
 	swpFrameChanged uintptr = 0x0020 // notify Windows of GWL_STYLE change
 	swpNoMove       uintptr = 0x0002
 	swpNoSize       uintptr = 0x0001
@@ -55,10 +53,8 @@ var (
 	getMessageW         = user32.NewProc("GetMessageW")
 	translateMessageW   = user32.NewProc("TranslateMessage")
 	dispatchMessageW    = user32.NewProc("DispatchMessageW")
-	showWindowW          = user32.NewProc("ShowWindow")
-	getDCW               = user32.NewProc("GetDC")
-	releaseDCW           = user32.NewProc("ReleaseDC")
-	validateRectW        = user32.NewProc("ValidateRect")
+	showWindowW   = user32.NewProc("ShowWindow")
+	validateRectW = user32.NewProc("ValidateRect")
 	getWindowLongPtrW          = user32.NewProc("GetWindowLongPtrW")
 	setWindowLongPtrW          = user32.NewProc("SetWindowLongPtrW")
 	getWindowRectW             = user32.NewProc("GetWindowRect")
@@ -66,9 +62,6 @@ var (
 
 	kernel32         = windows.NewLazySystemDLL("kernel32.dll")
 	getModuleHandleW = kernel32.NewProc("GetModuleHandleW")
-
-	gdi32          = windows.NewLazySystemDLL("gdi32.dll")
-	stretchDIBitsW = gdi32.NewProc("StretchDIBits")
 )
 
 // wndClassEx mirrors WNDCLASSEXW (80 bytes on amd64).
@@ -101,21 +94,6 @@ type winMsg struct {
 
 // winRect mirrors RECT for GetWindowRect.
 type winRect struct{ left, top, right, bottom int32 }
-
-// bitmapInfoHeader mirrors BITMAPINFOHEADER for StretchDIBits.
-type bitmapInfoHeader struct {
-	biSize          uint32
-	biWidth         int32
-	biHeight        int32 // negative = top-down
-	biPlanes        uint16
-	biBitCount      uint16
-	biCompression   uint32
-	biSizeImage     uint32
-	biXPelsPerMeter int32
-	biYPelsPerMeter int32
-	biClrUsed       uint32
-	biClrImportant  uint32
-}
 
 // findBgWorkerW looks for a background WorkerW that is large enough to be a
 // genuine desktop background layer (not a tiny system utility window).
