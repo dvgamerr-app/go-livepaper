@@ -122,9 +122,9 @@ func imageThumbnail(filePath string) string {
 	if err != nil {
 		return ""
 	}
-	thumb := resize.Thumbnail(320, 180, img, resize.Lanczos3)
+	thumb := resize.Thumbnail(800, 450, img, resize.Lanczos3)
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, thumb, &jpeg.Options{Quality: 92}); err != nil {
+	if err := jpeg.Encode(&buf, thumb, &jpeg.Options{Quality: 88}); err != nil {
 		return ""
 	}
 	return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
@@ -135,7 +135,7 @@ func videoThumbnail(filePath string) string {
 	cmd := exec.Command("ffmpeg",
 		"-ss", fmt.Sprintf("%.3f", seekSec),
 		"-i", filePath,
-		"-vf", "scale=320:180:force_original_aspect_ratio=decrease,pad=320:180:(ow-iw)/2:(oh-ih)/2",
+		"-vf", "scale=800:450:force_original_aspect_ratio=decrease,pad=800:450:(ow-iw)/2:(oh-ih)/2",
 		"-frames:v", "1",
 		"-f", "image2pipe",
 		"-vcodec", "mjpeg",
