@@ -235,6 +235,18 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 		if isVideo {
 			rawX := int(m.Resolution.X) + int(vdMinX)
 			rawY := int(m.Resolution.Y) + int(vdMinY)
+
+			// Draw a mid-frame onto the static wallpaper canvas so the background
+			// image matches the video when mpv hasn't started yet or after it exits.
+			if frame, err := wp.ExtractVideoFrame(a.FilePath, int(m.Resolution.Width), int(m.Resolution.Height)); err == nil {
+				draw.Draw(canvas,
+					frame.Bounds().Add(image.Pt(int(m.Resolution.X), int(m.Resolution.Y))),
+					frame, image.Point{}, draw.Over)
+				hasImage = true
+			} else {
+				log.Printf("monitor %d: frame extract: %v", m.Index+1, err)
+			}
+
 			// filePath is already the encoded cached path (set by JS after PreprocessVideo)
 			vTargets = append(vTargets, wp.VideoTarget{
 				Path: a.FilePath,

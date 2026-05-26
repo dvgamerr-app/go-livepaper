@@ -1,7 +1,11 @@
 package wallpaper
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -9,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var videoExts = map[string]bool{
@@ -64,7 +69,6 @@ func stopSession() {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 func RunVideoWallpapers(targets []VideoTarget) error {
-	// Stop any previously running session before starting a new one.
 	sessionMu.Lock()
 	stopSession()
 	stop := make(chan struct{})
@@ -80,6 +84,7 @@ func RunVideoWallpapers(targets []VideoTarget) error {
 		sessionHwnds = append(sessionHwnds, hwnd)
 		sessionMu.Unlock()
 
+		go fadeInWindow(hwnd)
 		go spawnMpv(t.Path, hwnd, stop)
 	}
 
@@ -135,6 +140,68 @@ func PreprocessVideo(src string, w, h int) (string, error) {
 
 	log.Printf("transcoded: %s", out)
 	return out, nil
+}
+
+// ExtractVideoFrame extracts a single frame from the middle of the video,
+// scaled and center-cropped to the given dimensions. Returns image.Image.
+func ExtractVideoFrame(path string, w, h int) (image.Image, error) {
+	seekSec := videoMidSec(path)
+
+	cmd := exec.Command("ffmpeg",
+		"-ss", fmt.Sprintf("%.3f", seekSec),
+		"-i", path,
+		"-vf", fmt.Sprintf(
+			"scale=%d:%d:force_original_aspect_ratio=increase,crop=%d:%d",
+			w, h, w, h,
+		),
+		"-frames:v", "1",
+		"-f", "image2pipe",
+		"-vcodec", "mjpeg",
+		"-",
+	)
+	cmd.Stderr = io.Discard
+	out, err := cmd.Output()
+	if err != nil || len(out) == 0 {
+		return nil, fmt.Errorf("ffmpeg frame extract: %w", err)
+	}
+	img, _, err := image.Decode(bytes.NewReader(out))
+	return img, err
+}
+
+// videoMidSec returns the timestamp (seconds) at the midpoint of the video.
+func videoMidSec(path string) float64 {
+	cmd := exec.Command("ffprobe",
+		"-v", "quiet",
+		"-show_entries", "format=duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		path,
+	)
+	out, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	f, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
+	if err != nil || f <= 0 {
+		return 0
+	}
+	return f / 2
+}
+
+// fadeInWindow animates the desktop window from fully transparent to fully
+// opaque over ~600 ms. Only effective when WS_EX_LAYERED is set (Case B).
+func fadeInWindow(hwnd uintptr) {
+	exStyle, _, _ := getWindowLongPtrW.Call(hwnd, gwlpExStyle)
+	if exStyle&wsExLayered == 0 {
+		return
+	}
+	const steps = 60
+	const delay = 10 * time.Millisecond // 600 ms total
+	for i := 0; i <= steps; i++ {
+		setLayeredWindowAttributesW.Call(hwnd, 0, uintptr(255*i/steps), lwaAlpha)
+		if i < steps {
+			time.Sleep(delay)
+		}
+	}
 }
 
 // ── Internal ──────────────────────────────────────────────────────────────────

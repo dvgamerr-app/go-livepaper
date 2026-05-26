@@ -239,7 +239,7 @@ func CreateDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 		swpNoMove|swpNoSize|swpNoZOrder|swpFrameChanged|swpNoActivate)
 
 	setWindowLongPtrW.Call(hwnd, gwlpExStyle, wsExLayered)
-	setLayeredWindowAttributesW.Call(hwnd, 0, 255, lwaAlpha)
+	setLayeredWindowAttributesW.Call(hwnd, 0, 0, lwaAlpha) // start invisible; fadeInWindow animates to 255
 
 	shellViewClass, _ := windows.UTF16PtrFromString("SHELLDLL_DefView")
 	hShellView, _, _ := findWindowExW.Call(hProgman, 0, uintptr(unsafe.Pointer(shellViewClass)), 0)
