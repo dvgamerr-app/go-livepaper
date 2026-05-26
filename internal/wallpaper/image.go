@@ -1,4 +1,4 @@
-package main
+package wallpaper
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/nfnt/resize"
 )
 
-func loadAndResizeImage(path string, width, height uint) (image.Image, error) {
+func LoadAndResizeImage(path string, width, height uint) (image.Image, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,6 @@ func loadAndResizeImage(path string, width, height uint) (image.Image, error) {
 	origW := float64(bounds.Dx())
 	origH := float64(bounds.Dy())
 
-	// contain: scale to fit within target, preserve aspect ratio
 	scaleW := float64(width) / origW
 	scaleH := float64(height) / origH
 	scale := scaleW
@@ -57,17 +56,17 @@ func loadAndResizeImage(path string, width, height uint) (image.Image, error) {
 	return result, nil
 }
 
-func createBlackCanvas(width, height int) *image.RGBA {
+func CreateBlackCanvas(width, height int) *image.RGBA {
 	canvas := image.NewRGBA(image.Rect(0, 0, width, height))
 	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: image.Black}, image.Point{}, draw.Src)
 	return canvas
 }
 
-func saveImageAs(img image.Image, quality int) (string, error) {
+func SaveImageAs(img image.Image, quality int) (string, error) {
 	filename := fmt.Sprintf("wallpaper_%d.jpg", time.Now().UnixNano())
 
 	if !filepath.IsAbs(filename) {
-		tempDir, err := getTempDir()
+		tempDir, err := GetTempDir()
 		if err != nil {
 			return "", fmt.Errorf("failed to get temp directory: %w", err)
 		}
@@ -94,7 +93,7 @@ func saveImageAs(img image.Image, quality int) (string, error) {
 	return filename, nil
 }
 
-func getTempDir() (string, error) {
+func GetTempDir() (string, error) {
 	tempDir := filepath.Join(os.TempDir(), "livepaper")
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create temp directory: %w", err)
@@ -102,8 +101,8 @@ func getTempDir() (string, error) {
 	return tempDir, nil
 }
 
-func cleanTempDir() error {
-	tempDir, err := getTempDir()
+func CleanTempDir() error {
+	tempDir, err := GetTempDir()
 	if err != nil {
 		return err
 	}

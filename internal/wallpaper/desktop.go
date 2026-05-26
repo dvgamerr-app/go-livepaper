@@ -1,4 +1,4 @@
-package main
+package wallpaper
 
 import (
 	"fmt"
@@ -10,61 +10,34 @@ import (
 )
 
 const (
-	wsVisible      uintptr = 0x10000000
-	wsPopup        uintptr = 0x80000000
-	wsChild        uintptr = 0x40000000
-	wsExToolwindow          uintptr = 0x00000080 // hide from taskbar and Alt+Tab
-	wsExNoActivate          uintptr = 0x08000000 // prevent focus steal
-	wsExLayered             uintptr = 0x00080000 // DWM compositing (required on 24H2)
-	wsExNoRedirectionBitmap uintptr = 0x00200000 // set on Progman on Windows 11 24H2
+	wsVisible               uintptr = 0x10000000
+	wsPopup                 uintptr = 0x80000000
+	wsChild                 uintptr = 0x40000000
+	wsExToolwindow          uintptr = 0x00000080
+	wsExNoActivate          uintptr = 0x08000000
+	wsExLayered             uintptr = 0x00080000
+	wsExNoRedirectionBitmap uintptr = 0x00200000
 	lwaAlpha                uintptr = 0x2
 	wmSysCommand                    = 0x0112
 	scMinimize              uintptr = 0xF020
-	hwndBottom     uintptr = 1
-	swShow                 = 5
-	csHredraw              = 0x0002
-	csVredraw              = 0x0001
-	idcArrow               = 32512
-	wmDestroy              = 0x0002
-	wmPaint                = 0x000F
-	smtoNormal             = 0x0000
-	swpFrameChanged uintptr = 0x0020 // notify Windows of GWL_STYLE change
-	swpNoMove       uintptr = 0x0002
-	swpNoSize       uintptr = 0x0001
-	swpNoZOrder     uintptr = 0x0004
-	swpNoActivate   uintptr = 0x0010
+	hwndBottom              uintptr = 1
+	swShow                          = 5
+	csHredraw                       = 0x0002
+	csVredraw                       = 0x0001
+	idcArrow                        = 32512
+	wmDestroy                       = 0x0002
+	wmPaint                         = 0x000F
+	smtoNormal                      = 0x0000
+	swpFrameChanged         uintptr = 0x0020
+	swpNoMove               uintptr = 0x0002
+	swpNoSize               uintptr = 0x0001
+	swpNoZOrder             uintptr = 0x0004
+	swpNoActivate           uintptr = 0x0010
 
-	// GetWindowLongPtr / SetWindowLongPtr indices (signed, passed as uintptr).
 	gwlpStyle   uintptr = 0xFFFFFFFFFFFFFFF0 // GWL_STYLE   = -16
 	gwlpExStyle uintptr = 0xFFFFFFFFFFFFFFEC // GWL_EXSTYLE = -20
 )
 
-var (
-	findWindowW         = user32.NewProc("FindWindowW")
-	sendMessageTimeoutW = user32.NewProc("SendMessageTimeoutW")
-	findWindowExW       = user32.NewProc("FindWindowExW")
-	setParentW          = user32.NewProc("SetParent")
-	setWindowPosW       = user32.NewProc("SetWindowPos")
-	createWindowExW     = user32.NewProc("CreateWindowExW")
-	registerClassExW    = user32.NewProc("RegisterClassExW")
-	defWindowProcW      = user32.NewProc("DefWindowProcW")
-	postQuitMessageW    = user32.NewProc("PostQuitMessage")
-	loadCursorW         = user32.NewProc("LoadCursorW")
-	getMessageW         = user32.NewProc("GetMessageW")
-	translateMessageW   = user32.NewProc("TranslateMessage")
-	dispatchMessageW    = user32.NewProc("DispatchMessageW")
-	showWindowW   = user32.NewProc("ShowWindow")
-	validateRectW = user32.NewProc("ValidateRect")
-	getWindowLongPtrW          = user32.NewProc("GetWindowLongPtrW")
-	setWindowLongPtrW          = user32.NewProc("SetWindowLongPtrW")
-	getWindowRectW             = user32.NewProc("GetWindowRect")
-	setLayeredWindowAttributesW = user32.NewProc("SetLayeredWindowAttributes")
-
-	kernel32         = windows.NewLazySystemDLL("kernel32.dll")
-	getModuleHandleW = kernel32.NewProc("GetModuleHandleW")
-)
-
-// wndClassEx mirrors WNDCLASSEXW (80 bytes on amd64).
 type wndClassEx struct {
 	cbSize        uint32
 	style         uint32
@@ -80,7 +53,6 @@ type wndClassEx struct {
 	hIconSm       uintptr
 }
 
-// winMsg mirrors MSG (44 usable bytes; C sizeof = 48 with trailing padding).
 type winMsg struct {
 	hwnd    uintptr
 	message uint32
@@ -92,15 +64,8 @@ type winMsg struct {
 	ptY     int32
 }
 
-// winRect mirrors RECT for GetWindowRect.
 type winRect struct{ left, top, right, bottom int32 }
 
-// findBgWorkerW looks for a background WorkerW that is large enough to be a
-// genuine desktop background layer (not a tiny system utility window).
-// minW/minH are the minimum acceptable dimensions.
-//
-// Returns 0 when no valid WorkerW exists — caller should fall back to the
-// top-level-below-Progman strategy (Case B).
 func findBgWorkerW(minW, minH int) uintptr {
 	shellViewClass, _ := windows.UTF16PtrFromString("SHELLDLL_DefView")
 	workerWClass, _ := windows.UTF16PtrFromString("WorkerW")
@@ -116,7 +81,6 @@ func findBgWorkerW(minW, minH int) uintptr {
 		ww, _, _ = findWindowExW.Call(0, ww, uintptr(unsafe.Pointer(workerWClass)), 0)
 	}
 
-	// Case A: two-layer WorkerW structure — return the layer AFTER the icon host.
 	if iconWW != 0 {
 		bgWW, _, _ := findWindowExW.Call(0, iconWW, uintptr(unsafe.Pointer(workerWClass)), 0)
 		if bgWW != 0 {
@@ -130,8 +94,6 @@ func findBgWorkerW(minW, minH int) uintptr {
 		}
 	}
 
-	// Windows 11: SHELLDLL_DefView lives in Progman directly (no iconWW).
-	// Scan every WorkerW for a large-enough background layer created by 0x052C.
 	ww, _, _ = findWindowExW.Call(0, 0, uintptr(unsafe.Pointer(workerWClass)), 0)
 	for ww != 0 {
 		var r winRect
@@ -148,9 +110,6 @@ func findBgWorkerW(minW, minH int) uintptr {
 	return 0
 }
 
-// findProgman returns the Progman window handle and triggers the WorkerW
-// split. (0xD, 0x1) is required on Windows 11 to create a full-size WorkerW;
-// the second call with (0, 0) keeps compatibility with Windows 10.
 func findProgman() uintptr {
 	progmanClass, _ := windows.UTF16PtrFromString("Progman")
 	hProgman, _, _ := findWindowW.Call(uintptr(unsafe.Pointer(progmanClass)), 0)
@@ -161,20 +120,7 @@ func findProgman() uintptr {
 	return hProgman
 }
 
-// createDesktopWindow embeds a borderless window behind the desktop icons.
-//
-// Case A — a valid background WorkerW exists (size >= w/2 × h/2):
-//   SetParent the window into WorkerW, convert screen→client coords via GetWindowRect.
-//
-// Case B — icons live directly in Progman, no valid large WorkerW:
-//   Create a top-level WS_POPUP|WS_EX_TOOLWINDOW window at (screenX,screenY) and
-//   place it just below Progman in z-order. Progman's icons naturally float above.
-//
-// Returns (hwnd, progmanRef): progmanRef is 0 for Case A, hProgman for Case B.
-// progmanRef is used by renderFrames to periodically re-assert z-order.
-//
-// Must be called from the goroutine that will also run runMessageLoop.
-func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, err error) {
+func CreateDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, err error) {
 	runtime.LockOSThread()
 
 	hProgman := findProgman()
@@ -199,7 +145,7 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 			return 0
 		case wmSysCommand:
 			if wParam&0xFFF0 == scMinimize {
-				return 0 // block Win+D / minimize
+				return 0
 			}
 		}
 		r, _, _ := defWindowProcW.Call(hwnd, msg, wParam, lParam)
@@ -218,8 +164,6 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 	registerClassExW.Call(uintptr(unsafe.Pointer(&wc)))
 
 	if bgWW != 0 {
-		// Case A: embed as child of the background WorkerW layer.
-		// Convert screen coords to WorkerW client coords via its screen rect.
 		var parentRect winRect
 		getWindowRectW.Call(bgWW, uintptr(unsafe.Pointer(&parentRect)))
 		log.Printf("WorkerW rect: left=%d top=%d right=%d bottom=%d\n",
@@ -229,7 +173,6 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 		clientY := screenY - int(parentRect.top)
 		log.Printf("Case A — client pos: (%d,%d) size: %dx%d\n", clientX, clientY, w, h)
 
-		// Create as WS_POPUP first; cross-process SetParent rejects WS_CHILD.
 		hwnd, _, lastErr := createWindowExW.Call(
 			0,
 			uintptr(unsafe.Pointer(className)),
@@ -244,7 +187,6 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 
 		setParentW.Call(hwnd, bgWW)
 
-		// WS_POPUP → WS_CHILD after cross-process reparent.
 		style, _, _ := getWindowLongPtrW.Call(hwnd, gwlpStyle)
 		style = (style &^ wsPopup) | wsChild
 		setWindowLongPtrW.Call(hwnd, gwlpStyle, style)
@@ -259,12 +201,7 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 		return hwnd, 0, nil
 	}
 
-	// Case B (Windows 11 24H2): no full-size WorkerW exists.
-	// Progman has WS_EX_NOREDIRECTIONBITMAP → DWM composites directly.
-	// Technique from Lively Wallpaper v2.2.0.0:
-	//   • Reparent into Progman as WS_CHILD
-	//   • Add WS_EX_LAYERED so DWM includes us in its composition tree
-	//   • Insert just below SHELLDLL_DefView (desktop icons) in z-order
+	// Case B (Windows 11 24H2)
 	var progmanRect winRect
 	getWindowRectW.Call(hProgman, uintptr(unsafe.Pointer(&progmanRect)))
 
@@ -274,8 +211,6 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 		hProgman, progmanRect.left, progmanRect.top, progmanRect.right, progmanRect.bottom,
 		clientX, clientY, w, h)
 
-	// Create with WS_EX_LAYERED from the start — setting it after creation via
-	// SetWindowLongPtr gets cleared by SWP_FRAMECHANGED on 24H2.
 	hwnd, _, lastErr := createWindowExW.Call(
 		uintptr(wsExLayered),
 		uintptr(unsafe.Pointer(className)),
@@ -288,23 +223,17 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 		return 0, 0, fmt.Errorf("CreateWindowExW: %w", lastErr)
 	}
 
-	// Reparent into Progman (cross-process SetParent is allowed for popups).
 	setParentW.Call(hwnd, hProgman)
 
-	// WS_POPUP → WS_CHILD. SWP_FRAMECHANGED notifies Windows of the style change
-	// but also clears WS_EX_LAYERED — re-set it explicitly afterwards.
 	style, _, _ := getWindowLongPtrW.Call(hwnd, gwlpStyle)
 	style = (style &^ wsPopup) | wsChild
 	setWindowLongPtrW.Call(hwnd, gwlpStyle, style)
 	setWindowPosW.Call(hwnd, 0, 0, 0, 0, 0,
 		swpNoMove|swpNoSize|swpNoZOrder|swpFrameChanged|swpNoActivate)
 
-	// SWP_FRAMECHANGED clears WS_EX_LAYERED — re-set it and re-configure.
 	setWindowLongPtrW.Call(hwnd, gwlpExStyle, wsExLayered)
 	setLayeredWindowAttributesW.Call(hwnd, 0, 255, lwaAlpha)
 
-	// Find SHELLDLL_DefView (Progman's icon child) and insert our window just
-	// below it so icons remain visible above the video.
 	shellViewClass, _ := windows.UTF16PtrFromString("SHELLDLL_DefView")
 	hShellView, _, _ := findWindowExW.Call(hProgman, 0, uintptr(unsafe.Pointer(shellViewClass)), 0)
 	insertAfter := hwndBottom
@@ -322,8 +251,7 @@ func createDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 	return hwnd, 0, nil
 }
 
-// runMessageLoop pumps Win32 messages on the locked OS thread until WM_QUIT.
-func runMessageLoop() {
+func RunMessageLoop() {
 	var m winMsg
 	for {
 		r, _, _ := getMessageW.Call(uintptr(unsafe.Pointer(&m)), 0, 0, 0)

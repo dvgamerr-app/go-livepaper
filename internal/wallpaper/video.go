@@ -1,4 +1,4 @@
-package main
+package wallpaper
 
 import (
 	"fmt"
@@ -16,37 +16,32 @@ var videoExts = map[string]bool{
 	".gif": true,
 }
 
-func isVideoFile(path string) bool {
+func IsVideoFile(path string) bool {
 	return videoExts[strings.ToLower(filepath.Ext(path))]
 }
 
-type videoTarget struct {
-	path    string
-	x, y   int
-	w, h   int
+type VideoTarget struct {
+	Path string
+	X, Y int
+	W, H int
 }
 
-// runVideoWallpapers pre-processes each video, embeds one mpv per monitor,
-// then blocks on a single Win32 message loop shared by all windows.
-func runVideoWallpapers(targets []videoTarget) error {
+func RunVideoWallpapers(targets []VideoTarget) error {
 	for _, t := range targets {
-		optimized, err := preprocessVideo(t.path, t.w, t.h)
+		optimized, err := preprocessVideo(t.Path, t.W, t.H)
 		if err != nil {
-			return fmt.Errorf("preprocess %s: %w", t.path, err)
+			return fmt.Errorf("preprocess %s: %w", t.Path, err)
 		}
-		hwnd, _, err := createDesktopWindow(t.x, t.y, t.w, t.h)
+		hwnd, _, err := CreateDesktopWindow(t.X, t.Y, t.W, t.H)
 		if err != nil {
-			return fmt.Errorf("desktop window for %s: %w", t.path, err)
+			return fmt.Errorf("desktop window for %s: %w", t.Path, err)
 		}
 		go spawnMpv(optimized, hwnd)
 	}
-	runMessageLoop()
+	RunMessageLoop()
 	return nil
 }
 
-// preprocessVideo transcodes src to an h264 MP4 scaled and cropped to w×h,
-// capped at 30 fps, with audio stripped. The result is cached in
-// %TEMP%\livepaper\ by {name}_{w}x{h}.mp4 — re-runs skip the encode.
 func preprocessVideo(src string, w, h int) (string, error) {
 	tmpDir := filepath.Join(os.TempDir(), "livepaper")
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
@@ -69,17 +64,17 @@ func preprocessVideo(src string, w, h int) (string, error) {
 			w, h, w, h,
 		),
 		"-c:v", "libx264",
-		"-crf", "23",       // quality: lower = bigger/better (18–28 range)
-		"-preset", "fast",  // encode speed vs compression tradeoff
-		"-movflags", "+faststart", // moov atom at front for instant seek
-		"-r", "30",         // cap frame rate
-		"-an",              // no audio needed for wallpaper
+		"-crf", "23",
+		"-preset", "fast",
+		"-movflags", "+faststart",
+		"-r", "30",
+		"-an",
 		"-y", out,
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		os.Remove(out) // remove partial output on failure
+		os.Remove(out)
 		return "", fmt.Errorf("ffmpeg encode: %w", err)
 	}
 
@@ -87,8 +82,6 @@ func preprocessVideo(src string, w, h int) (string, error) {
 	return out, nil
 }
 
-// spawnMpv launches mpv with --wid so it renders directly into hwnd using
-// hardware-accelerated decoding. Restarts automatically if mpv exits.
 func spawnMpv(videoPath string, hwnd uintptr) {
 	wid := strconv.FormatUint(uint64(hwnd), 10)
 	for {

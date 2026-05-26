@@ -9,14 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build
 
 ```nu
-^go build -o livepaper.exe ./cmd/livepaper
-```
-
-With version from `VERSION` file:
-
-```nu
 let version = (open VERSION | str trim)
-^go build -ldflags $"-X main.VERSION=($version)" -o livepaper.exe ./cmd/livepaper
+^go build -ldflags $"-X main.VERSION=($version)" -o livepaper.exe ./cmd/livepaper/
 ```
 
 ## Run / Test
@@ -29,15 +23,32 @@ There is no test suite. Manual testing requires a Windows machine with multiple 
 
 ## Architecture
 
-All source lives in `cmd/livepaper/` as a single `main` package. The flow is:
+Shared logic lives in `internal/wallpaper/` (exported package). Two entry points:
 
-1. **main.go** — CLI parsing (`go-arg`), argument validation, orchestration. `selectMonitors` maps `-m` flags (1-based) to `MonitorInfo` structs. If the first positional argument is a video file, jumps to `runVideoWallpaper` immediately (skips image compositing).
-2. **monitor.go** — Calls `EnumDisplayMonitors` / `GetMonitorInfoW` via `user32.dll`. `getCanvas` normalises all monitor coordinates to a 0-based origin **and returns `vdMinX, vdMinY`** (the raw virtual-desktop origin) so callers can un-normalise back to real Windows screen coordinates. Primary monitor is always at screen `(0,0)`.
-3. **wallpaper.go** — Image pipeline: `loadAndResizeImage` → decode → read EXIF orientation → `resizeImageToFill` (fill/crop to exact monitor size) → `draw.Draw` onto the main canvas. `saveImageAs` writes a timestamped JPEG to `%TEMP%\livepaper\`.
+- `cmd/livepaper/` — CLI tool (`livepaper.exe`)
+- `cmd/tray/` — Wails v3 system tray app (`livepaper-tray.exe`)
+
+### internal/wallpaper/ files
+
+1. **win32.go** — All `user32.dll` / `kernel32.dll` proc variables shared across the package.
+2. **monitor.go** — `GetMonitors()`: calls `EnumDisplayMonitors` / `GetMonitorInfoW`. `getCanvas` normalises all monitor coordinates to a 0-based origin **and returns `vdMinX, vdMinY`** (the raw virtual-desktop origin) so callers can un-normalise back to real Windows screen coordinates. Primary monitor is always at screen `(0,0)`.
+3. **image.go** — `LoadAndResizeImage` → decode → read EXIF orientation → resize → `draw.Draw` onto the main canvas. `SaveImageAs` writes a timestamped JPEG to `%TEMP%\livepaper\`.
 4. **orientation.go** — Reads EXIF orientation tag from image file and returns an integer used by `applyOrientation` (in the same file) to rotate/flip the `image.Image`.
-5. **win64_sys.go** — Two Windows API calls: `setWallpaperStyle` writes `WallpaperStyle` and `TileWallpaper` to `HKCU\Control Panel\Desktop`, then `setWallpaper` calls `SystemParametersInfoW(SPI_SETDESKWALLPAPER)` to apply the image.
-6. **desktop.go** — Win32 window management for live wallpaper embedding (see below).
-7. **video.go** — ffmpeg-based video decode + GDI render loop. `decodeVideoFrames` runs `ffmpeg -stream_loop -1 -hwaccel auto` piping raw BGRA frames. `renderFrames` blits at 30 fps via `GetDC`/`StretchDIBits`/`ReleaseDC`.
+5. **sys.go** — `SetWallpaperStyle` writes `WallpaperStyle` and `TileWallpaper` to `HKCU\Control Panel\Desktop`, then `SetWallpaper` calls `SystemParametersInfoW(SPI_SETDESKWALLPAPER)` to apply the image.
+6. **desktop.go** — Win32 window management for live wallpaper embedding (see below). `CreateDesktopWindow` / `RunMessageLoop`.
+7. **video.go** — `RunVideoWallpapers`: ffmpeg transcodes → mpv renders into the desktop window via `--wid`.
+
+### Tray mode (Wails v3 system tray, built into cmd/livepaper/)
+
+Running `livepaper.exe` with **no arguments** launches the system tray app.
+Running with arguments behaves as CLI.
+
+Tray menu:
+- **Set Wallpaper...** — file picker → apply to all monitors
+- **Set for Monitor N** — submenu per monitor (only shown when >1 monitor)
+- **Set Video Wallpaper...** — file picker for video files
+- **Clean Temp Files** — removes `%TEMP%\livepaper\`
+- **Quit**
 
 ### Key design constraints
 
@@ -140,3 +151,12 @@ Setting `GWL_EXSTYLE = WS_EX_TOOLWINDOW` on a window embedded as a Progman child
 
 ### Top-level window approach for Case B — video visible but always above icons
 Creating a top-level `WS_POPUP` window (not embedded in any shell window) makes video visible but always renders above icons regardless of z-order manipulation. Cannot achieve "behind icons" with a top-level window on Windows 11 24H2.
+
+### Wails v3 — `app.NewSystemTray()` does not exist
+The correct API is `app.SystemTray.New()` (field, not method). `app.NewSystemTray()` causes compile error "type *application.App has no field or method NewSystemTray".
+
+### Wails v3 — `application.OpenFileDialog()` does not exist
+File dialogs are accessed via `app.Dialog.OpenFile()` (on the app instance), not a package-level function. The method to get a single file is `PromptForSingleSelection()`, not `PromptForSingleFile()`.
+
+### Wails v3 — `wails3 dev` hangs waiting for frontend on a no-frontend systray app
+`wails3 dev` injects `FRONTEND_DEVSERVER_URL=http://localhost:9245` into the spawned process. The non-production Wails build checks this env var and waits 5 seconds for a Vite server — causing a fatal error when none exists. Fix: build with `-tags production` in `build/config.yml` executes so `preRun()` is a no-op. The hot-reload file watcher still works normally.

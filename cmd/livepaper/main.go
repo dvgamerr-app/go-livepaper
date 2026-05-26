@@ -8,9 +8,9 @@ import (
 	"strconv"
 
 	"github.com/alexflint/go-arg"
+	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
 )
 
-// VERSION is set during build using ldflags.
 var VERSION = "dev"
 
 func (Args) Version() string {
@@ -21,7 +21,6 @@ func init() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
 }
 
-// Args defines the command line arguments.
 type Args struct {
 	Monitor   []string `arg:"-m,--monitor" help:"Target monitor numbers in wallpaper order, 1-based (e.g. -m 1 -m 2)"`
 	Clean     bool     `arg:"-c,--clean" help:"Clean all temporary files"`
@@ -30,12 +29,12 @@ type Args struct {
 
 var args Args
 
-func selectMonitors(monitors []MonitorInfo, selected []string) ([]MonitorInfo, error) {
+func selectMonitors(monitors []wp.MonitorInfo, selected []string) ([]wp.MonitorInfo, error) {
 	if len(selected) == 0 {
 		return monitors, nil
 	}
 
-	targets := make([]MonitorInfo, 0, len(selected))
+	targets := make([]wp.MonitorInfo, 0, len(selected))
 	seen := make(map[int]struct{}, len(selected))
 
 	for _, raw := range selected {
@@ -61,12 +60,17 @@ func main() {
 	arg.MustParse(&args)
 
 	if args.Clean {
-		if err := cleanTempDir(); err != nil {
+		if err := wp.CleanTempDir(); err != nil {
 			log.Printf("Error cleaning temp directory: %v\n", err)
 		} else {
 			log.Println("Temporary files cleaned successfully")
 			return
 		}
+	}
+
+	if len(args.Wallpaper) == 0 && len(args.Monitor) == 0 {
+		runTrayApp()
+		return
 	}
 
 	if len(args.Wallpaper) == 0 {
@@ -76,17 +80,17 @@ func main() {
 		log.Fatalf("Invalid arguments: monitors (%d) must match of wallpapers (%d)", len(args.Monitor), len(args.Wallpaper))
 	}
 
-	canvasWidth, canvasHeight, monitors, vdMinX, vdMinY := getMonitors()
+	canvasWidth, canvasHeight, monitors, vdMinX, vdMinY := wp.GetMonitors()
 	log.Printf("  Monitor: %d\n", len(monitors))
 	log.Printf("Wallpaper: %dx%dpx", canvasWidth, canvasHeight)
 	log.Printf("VD origin: (%d,%d)\n", vdMinX, vdMinY)
 
 	for _, monitor := range monitors {
 		primaryStatus := " "
-		if monitor.primary {
+		if monitor.Primary {
 			primaryStatus = "*"
 		}
-		log.Printf("Monitor %d%s: %+v\n", monitor.index+1, primaryStatus, monitor.resolution)
+		log.Printf("Monitor %d%s: %+v\n", monitor.Index+1, primaryStatus, monitor.Resolution)
 	}
 
 	targets, err := selectMonitors(monitors, args.Monitor)
@@ -98,57 +102,56 @@ func main() {
 			len(args.Wallpaper)-len(targets), len(targets))
 	}
 
-	canvas := createBlackCanvas(canvasWidth, canvasHeight)
-	var vTargets []videoTarget
+	canvas := wp.CreateBlackCanvas(canvasWidth, canvasHeight)
+	var vTargets []wp.VideoTarget
 	hasImage := false
 
-	for i, wp := range args.Wallpaper {
+	for i, wallpaperPath := range args.Wallpaper {
 		if i >= len(targets) {
 			break
 		}
 		m := targets[i]
 
-		if isVideoFile(wp) {
-			rawX := int(m.resolution.x) + int(vdMinX)
-			rawY := int(m.resolution.y) + int(vdMinY)
+		if wp.IsVideoFile(wallpaperPath) {
+			rawX := int(m.Resolution.X) + int(vdMinX)
+			rawY := int(m.Resolution.Y) + int(vdMinY)
 			log.Printf("Video %d → Monitor %d raw=(%d,%d) size=(%dx%d)",
-				i+1, m.index+1, rawX, rawY, m.resolution.width, m.resolution.height)
-			vTargets = append(vTargets, videoTarget{
-				path: wp,
-				x:    rawX, y: rawY,
-				w:    int(m.resolution.width), h: int(m.resolution.height),
+				i+1, m.Index+1, rawX, rawY, m.Resolution.Width, m.Resolution.Height)
+			vTargets = append(vTargets, wp.VideoTarget{
+				Path: wallpaperPath,
+				X:    rawX, Y: rawY,
+				W: int(m.Resolution.Width), H: int(m.Resolution.Height),
 			})
 		} else {
-			img, err := loadAndResizeImage(wp, uint(m.resolution.width), uint(m.resolution.height))
+			img, err := wp.LoadAndResizeImage(wallpaperPath, uint(m.Resolution.Width), uint(m.Resolution.Height))
 			if err != nil {
-				log.Printf("Error loading image for monitor %d: %v\n", m.index+1, err)
+				log.Printf("Error loading image for monitor %d: %v\n", m.Index+1, err)
 				continue
 			}
 			draw.Draw(canvas,
-				img.Bounds().Add(image.Pt(int(m.resolution.x), int(m.resolution.y))),
+				img.Bounds().Add(image.Pt(int(m.Resolution.X), int(m.Resolution.Y))),
 				img, image.Point{}, draw.Over)
 			hasImage = true
 		}
 	}
 
-	// Set static wallpaper whenever any image is present, or as black backdrop for videos.
 	if hasImage || len(vTargets) > 0 {
-		if err := setWallpaperStyle(STYLE_SPAN); err != nil {
+		if err := wp.SetWallpaperStyle(wp.STYLE_SPAN); err != nil {
 			log.Printf("Error setting wallpaper style: %v\n", err)
 		}
-		outputPath, err := saveImageAs(canvas, 90)
+		outputPath, err := wp.SaveImageAs(canvas, 90)
 		if err != nil {
 			log.Printf("Error saving canvas: %v\n", err)
 		} else {
 			log.Printf("saved to: %s\n", outputPath)
-			if err := setWallpaper(outputPath); err != nil {
+			if err := wp.SetWallpaper(outputPath); err != nil {
 				log.Printf("Error setting wallpaper: %v\n", err)
 			}
 		}
 	}
 
 	if len(vTargets) > 0 {
-		if err := runVideoWallpapers(vTargets); err != nil {
+		if err := wp.RunVideoWallpapers(vTargets); err != nil {
 			log.Fatal(err)
 		}
 	}

@@ -1,0 +1,30 @@
+version: '3'
+
+info:
+  companyName: "dvgamerr"
+  productName: "livepaper"
+  productIdentifier: "io.dvgamerr.livepaper"
+  description: "Live wallpaper with system tray"
+  copyright: "(c) 2025, dvgamerr"
+  version: "1.0.0"
+
+dev_mode:
+  root_path: .
+  log_level: warn
+  debounce: 1000
+  ignore:
+    dir:
+      - .git
+      - build
+      - bin
+    file:
+      - .DS_Store
+      - .gitignore
+    watched_extension:
+      - "*.go"
+    git_ignore: true
+  executes:
+    - cmd: go build -tags production -o livepaper.exe ./cmd/livepaper/
+      type: blocking
+    - cmd: ./livepaper.exe
+      type: primary
