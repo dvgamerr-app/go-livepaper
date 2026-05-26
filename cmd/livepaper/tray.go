@@ -42,9 +42,11 @@ func runTrayApp() {
 		Width:         740,
 		Height:        480,
 		DisableResize: true,
+		Frameless:     true,
 		Hidden:        true,
 		HideOnEscape:  true,
 	})
+	svc.window = window
 
 	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		e.Cancel()

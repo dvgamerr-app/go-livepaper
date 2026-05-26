@@ -28,6 +28,69 @@
       --wails-draggable: drag;
     }
 
+    /* ── Titlebar ──────────────────────────────────────────────────── */
+    .titlebar {
+      height: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15,15,15,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      --wails-draggable: drag;
+    }
+    .tb-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      --wails-draggable: drag;
+    }
+    .tb-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .tb-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--text);
+    }
+    .tb-version {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-left: 2px;
+    }
+    .tb-controls {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      --wails-draggable: no-drag;
+    }
+    .tb-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.12s, color 0.12s;
+      flex-shrink: 0;
+    }
+    .tb-btn:hover           { background: rgba(255,255,255,0.06); color: var(--text); }
+    .tb-btn.close:hover     { background: rgba(239,68,68,0.75);   color: #fff; }
+
     /* ── Virtual desktop stage ─────────────────────────────────────── */
     .content {
       flex: 1;
@@ -52,27 +115,33 @@
       transition: border-color 0.2s;
       --wails-draggable: no-drag;
     }
-    .monitor-block.has-file  { border-color: var(--border-active); }
+    .monitor-block.has-file  { border-color: var(--border-active); box-shadow: 0 0 0 1px rgba(74,158,255,0.25), inset 0 0 0 1px rgba(74,158,255,0.1); }
     .monitor-block.encoding  { cursor: not-allowed; }
     .monitor-block:not(.encoding):hover .mon-hover { opacity: 1; }
 
     .mon-bg {
       position: absolute;
       inset: 0;
-      background-size: cover;
-      background-position: center;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      opacity: 0;
+      transition: opacity 0.3s;
     }
+    .monitor-block.has-file .mon-bg { opacity: 1; }
 
     /* bottom gradient label */
     .mon-info {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      padding: 12px 6px 4px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+      padding: 16px 6px 5px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.75));
       pointer-events: none;
     }
     .mon-name { font-size: 10px; font-weight: 700; color: #fff; line-height: 1.2; }
-    .mon-res  { font-size: 9px;  color: rgba(255,255,255,0.55); line-height: 1.2; }
+    .mon-res  { font-size: 9px;  color: rgba(255,255,255,0.6); line-height: 1.2; }
 
     /* top-left PRIMARY badge */
     .mon-primary {
@@ -149,6 +218,81 @@
       pointer-events: none;
     }
 
+    /* ── Thumbnail strip ───────────────────────────────────────────── */
+    .thumb-strip {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-shrink: 0;
+      min-height: 0;
+      max-height: 90px;
+      scrollbar-width: thin;
+      scrollbar-color: #333 transparent;
+      --wails-draggable: no-drag;
+    }
+    .thumb-strip:empty { display: none; }
+    .thumb-strip::-webkit-scrollbar { height: 3px; }
+    .thumb-strip::-webkit-scrollbar-track { background: transparent; }
+    .thumb-strip::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+    .thumb-card {
+      flex-shrink: 0;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #161616;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px 6px 6px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      min-width: 0;
+      max-width: 220px;
+    }
+    .thumb-card:hover { border-color: #444; background: #1c1c1c; }
+
+    .thumb-img {
+      width: 64px;
+      height: 40px;
+      border-radius: 3px;
+      background: #0a0a0a;
+      object-fit: cover;
+      object-position: center;
+      flex-shrink: 0;
+      border: 1px solid #222;
+      display: block;
+    }
+    .thumb-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+    .thumb-mon  { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .thumb-file {
+      font-size: 9px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+    .thumb-type {
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      width: fit-content;
+      letter-spacing: 0.4px;
+    }
+    .thumb-type.image { background: rgba(0,180,0,0.2);  color: #4caf50; }
+    .thumb-type.video { background: rgba(220,130,0,0.2); color: #ff9800; }
+    .thumb-type.gif   { background: rgba(180,0,180,0.2); color: #ce93d8; }
+
     /* ── Footer ────────────────────────────────────────────────────── */
     .footer {
       padding: 8px 16px;
@@ -181,17 +325,81 @@
     }
     .apply-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .apply-btn:not(:disabled):hover { background: #6ab0ff; }
+    .ghost-btn {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+      min-height: 36px;
+      --wails-draggable: no-drag;
+    }
+    .ghost-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .ghost-btn.danger:not(:disabled):hover { color: var(--danger); border-color: var(--danger); }
+    .ghost-btn:not(.danger):not(:disabled):hover { color: var(--text); border-color: #555; }
+
+    /* ── Dependency warning banner ─────────────────────────────── */
+    .dep-warn {
+      background: rgba(255, 85, 85, 0.12);
+      border-bottom: 1px solid rgba(255, 85, 85, 0.3);
+      color: var(--danger);
+      font-size: 12px;
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .dep-warn a {
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
+  <div class="dep-warn" id="dep-warn" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <span id="dep-warn-msg"></span>
+  </div>
+  <header class="titlebar">
+    <div class="tb-left">
+      <div class="tb-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+          <path d="M20 2v4"/><path d="M22 4h-4"/>
+          <circle cx="4" cy="20" r="2"/>
+        </svg>
+      </div>
+      <span class="tb-title">LivePaper</span>
+      <span class="tb-version" id="tb-version"></span>
+    </div>
+    <div class="tb-controls">
+      <button class="tb-btn" id="tb-min" title="Minimise">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+      </button>
+      <button class="tb-btn close" id="tb-close" title="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  </header>
   <div class="content" id="content">
     <div class="loading">Loading monitors…</div>
   </div>
+  <div class="thumb-strip" id="thumb-strip"></div>
   <div class="footer">
     <div class="footer-left">
       <span class="version" id="version"></span>
       <span class="status"  id="status"></span>
     </div>
+    <button class="ghost-btn" id="clean-btn">Clean Cache</button>
+    <button class="ghost-btn danger" id="reset-btn" disabled>Reset</button>
     <button class="apply-btn" id="apply-btn" disabled>Apply Wallpapers</button>
   </div>
 
@@ -202,9 +410,11 @@
     const state = {}
     let monitors = []
 
-    const contentEl = document.getElementById('content')
-    const applyBtn  = document.getElementById('apply-btn')
-    const statusEl  = document.getElementById('status')
+    const contentEl  = document.getElementById('content')
+    const applyBtn   = document.getElementById('apply-btn')
+    const resetBtn   = document.getElementById('reset-btn')
+    const statusEl   = document.getElementById('status')
+    const thumbStrip = document.getElementById('thumb-strip')
 
     const STORAGE_KEY = 'livepaper_state_v1'
 
@@ -217,6 +427,58 @@
       const anySelected   = Object.values(state).some(s => s.filePath)
       const anyProcessing = Object.values(state).some(s => s.filePath && s.isVideo && !s.ready)
       applyBtn.disabled = !anySelected || anyProcessing
+      resetBtn.disabled = !anySelected || anyProcessing
+    }
+
+    function resetMonitor(idx) {
+      delete state[idx]
+      const block = document.getElementById(`mb-${idx}`)
+      if (!block) return
+      block.classList.remove('has-file', 'encoding')
+      const bg = document.getElementById(`bg-${idx}`)
+      if (bg) bg.src = ''
+      const bd = document.getElementById(`bd-${idx}`)
+      if (bd) { bd.style.display = 'none'; bd.className = 'mon-badge' }
+      const mp = document.getElementById(`mp-${idx}`)
+      if (mp) mp.classList.remove('active')
+      const tc = document.getElementById(`tc-${idx}`)
+      if (tc) tc.remove()
+    }
+
+    function refreshThumb(idx, thumbnail, filePath, isVideo) {
+      const existing = document.getElementById(`tc-${idx}`)
+      if (existing) existing.remove()
+
+      const e = extOf(filePath)
+      let typeClass = 'image', typeLabel = 'IMG'
+      if (isVideo && e !== 'gif') { typeClass = 'video'; typeLabel = 'VIDEO' }
+      else if (e === 'gif')       { typeClass = 'gif';   typeLabel = 'GIF'   }
+
+      const mon = monitors.find(m => m.index === idx)
+      const monLabel = mon ? `Monitor ${idx + 1}${mon.primary ? ' · PRIMARY' : ''}` : `Monitor ${idx + 1}`
+      const fileName = filePath.replace(/\\/g, '/').split('/').pop()
+
+      const card = document.createElement('div')
+      card.className = 'thumb-card'
+      card.id = `tc-${idx}`
+      card.innerHTML = `
+        <img class="thumb-img" id="ti-${idx}" src="${thumbnail || ''}" alt="">
+        <div class="thumb-meta">
+          <div class="thumb-mon">${monLabel}</div>
+          <div class="thumb-file" title="${fileName}">${fileName}</div>
+          <div class="thumb-type ${typeClass}">${typeLabel}</div>
+        </div>
+      `
+      card.addEventListener('click', () => {
+        const s = state[idx]
+        if (s && s.isVideo && !s.ready) return
+        browse(idx, mon?.width ?? 1920, mon?.height ?? 1080)
+      })
+
+      // insert in monitor index order
+      const cards = [...thumbStrip.querySelectorAll('.thumb-card')]
+      const after = cards.find(c => parseInt(c.id.replace('tc-', '')) > idx)
+      thumbStrip.insertBefore(card, after || null)
     }
 
     async function call(method, ...args) {
@@ -262,7 +524,7 @@
         block.style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px`
 
         block.innerHTML = `
-          <div class="mon-bg" id="bg-${m.index}"></div>
+          <img class="mon-bg" id="bg-${m.index}" src="" alt="">
           ${m.primary ? `<div class="mon-primary">PRIMARY</div>` : ''}
           <div class="mon-info">
             <div class="mon-name">Monitor ${m.index + 1}</div>
@@ -300,10 +562,8 @@
       if (!block) return
       block.classList.add('has-file')
 
-      if (thumbnail) {
-        const bg = document.getElementById(`bg-${idx}`)
-        if (bg) bg.style.backgroundImage = `url('${thumbnail}')`
-      }
+      const bg = document.getElementById(`bg-${idx}`)
+      if (bg) bg.src = thumbnail || ''
 
       const e  = extOf(filePath)
       const bd = document.getElementById(`bd-${idx}`)
@@ -313,6 +573,8 @@
         else if (e === 'gif')       { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
         else                        { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
       }
+
+      refreshThumb(idx, thumbnail, filePath, isVideo)
     }
 
     function setEncoding(idx, active, pct) {
@@ -397,6 +659,34 @@
       refreshApply()
     })
 
+    // ── Clean cache ─────────────────────────────────────────────────
+    document.getElementById('clean-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('clean-btn')
+      btn.disabled = true
+      status('Cleaning cache…')
+      try {
+        await call('CleanTempFiles')
+        status('Cache cleaned', 'success')
+        setTimeout(() => status(''), 3000)
+      } catch (e) {
+        status(`Clean failed: ${e}`, 'error')
+      }
+      btn.disabled = false
+    })
+
+    // ── Reset ────────────────────────────────────────────────────────
+    resetBtn.addEventListener('click', async () => {
+      resetBtn.disabled = true
+      applyBtn.disabled = true
+      status('Resetting…')
+      try { await call('ResetWallpapers') } catch (e) {}
+      for (const idx of Object.keys(state).map(Number)) resetMonitor(idx)
+      localStorage.removeItem(STORAGE_KEY)
+      status('Reset complete', 'success')
+      setTimeout(() => status(''), 3000)
+      refreshApply()
+    })
+
     // ── State persistence (localStorage) ───────────────────────────
     function saveState() {
       const saved = {}
@@ -420,11 +710,10 @@
         const exists = await call('FileExists', s.filePath)
         if (!exists) continue
 
-        // For video: cachedPath must also exist, otherwise skip auto-apply for that monitor
         const cachedPath = s.cachedPath || s.filePath
-        const cachedExists = s.isVideo ? await call('FileExists', cachedPath) : true
+        if (s.isVideo && !await call('FileExists', cachedPath)) continue
 
-        state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: cachedExists }
+        state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: true }
         const thumbnail = await call('GetThumbnail', s.filePath)
         applyThumb(i, thumbnail, s.filePath, s.isVideo)
       }
@@ -453,11 +742,25 @@
       try {
         monitors = await call('GetMonitors')
         const ver = await call('GetVersion')
-        document.getElementById('version').textContent = ver ? `v${ver}` : ''
+        const verText = ver ? `v${ver}` : ''
+        document.getElementById('version').textContent = verText
+        document.getElementById('tb-version').textContent = verText
       } catch (e) {
         contentEl.innerHTML = `<div class="loading" style="color:var(--danger)">Failed to load monitors: ${e}</div>`
         return
       }
+
+      // Check required dependencies (ffmpeg, mpv)
+      try {
+        const deps = await call('CheckDependencies')
+        const missing = Object.entries(deps).filter(([,ok]) => !ok).map(([k]) => k)
+        if (missing.length > 0) {
+          const warnEl = document.getElementById('dep-warn')
+          const msgEl  = document.getElementById('dep-warn-msg')
+          msgEl.innerHTML = `Missing: <strong>${missing.join(', ')}</strong> — video wallpapers won't work. Run <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:3px">scripts\\install-deps.ps1</code> to install.`
+          warnEl.style.display = 'flex'
+        }
+      } catch (_) { /* non-fatal */ }
 
       contentEl.innerHTML = ''
       contentEl.appendChild(buildStage(monitors))
@@ -465,6 +768,9 @@
       const hasRestored = await restoreState()
       if (hasRestored) autoApply()
     }
+
+    document.getElementById('tb-min').addEventListener('click', () => call('WindowMinimise').catch(() => {}))
+    document.getElementById('tb-close').addEventListener('click', () => call('WindowHide').catch(() => {}))
 
     init()
   </script>

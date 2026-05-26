@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log"
 	"os"
@@ -145,7 +146,7 @@ func PreprocessVideo(src string, w, h int) (string, error) {
 // ExtractVideoFrame extracts a single frame from the middle of the video,
 // scaled and center-cropped to the given dimensions. Returns image.Image.
 func ExtractVideoFrame(path string, w, h int) (image.Image, error) {
-	seekSec := videoMidSec(path)
+	seekSec := VideoMidSec(path)
 
 	cmd := exec.Command("ffmpeg",
 		"-ss", fmt.Sprintf("%.3f", seekSec),
@@ -156,7 +157,7 @@ func ExtractVideoFrame(path string, w, h int) (image.Image, error) {
 		),
 		"-frames:v", "1",
 		"-f", "image2pipe",
-		"-vcodec", "mjpeg",
+		"-vcodec", "png",
 		"-",
 	)
 	cmd.Stderr = io.Discard
@@ -168,8 +169,8 @@ func ExtractVideoFrame(path string, w, h int) (image.Image, error) {
 	return img, err
 }
 
-// videoMidSec returns the timestamp (seconds) at the midpoint of the video.
-func videoMidSec(path string) float64 {
+// VideoMidSec returns the timestamp (seconds) at the midpoint of the video.
+func VideoMidSec(path string) float64 {
 	cmd := exec.Command("ffprobe",
 		"-v", "quiet",
 		"-show_entries", "format=duration",

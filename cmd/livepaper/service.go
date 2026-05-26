@@ -10,6 +10,7 @@ import (
 	"image/jpeg"
 	_ "image/gif"
 	_ "image/png"
+	_ "golang.org/x/image/webp"
 	"io"
 	"log"
 	"os"
@@ -43,7 +44,20 @@ type ProgressEvent struct {
 }
 
 type AppService struct {
-	app *application.App
+	app    *application.App
+	window *application.WebviewWindow
+}
+
+func (s *AppService) WindowMinimise() {
+	if s.window != nil {
+		s.window.Minimise()
+	}
+}
+
+func (s *AppService) WindowHide() {
+	if s.window != nil {
+		s.window.Hide()
+	}
 }
 
 func (s *AppService) FileExists(path string) bool {
@@ -110,19 +124,22 @@ func imageThumbnail(filePath string) string {
 	}
 	thumb := resize.Thumbnail(320, 180, img, resize.Lanczos3)
 	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, thumb, &jpeg.Options{Quality: 80}); err != nil {
+	if err := jpeg.Encode(&buf, thumb, &jpeg.Options{Quality: 92}); err != nil {
 		return ""
 	}
 	return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
 }
 
 func videoThumbnail(filePath string) string {
+	seekSec := wp.VideoMidSec(filePath)
 	cmd := exec.Command("ffmpeg",
+		"-ss", fmt.Sprintf("%.3f", seekSec),
 		"-i", filePath,
 		"-vf", "scale=320:180:force_original_aspect_ratio=decrease,pad=320:180:(ow-iw)/2:(oh-ih)/2",
 		"-frames:v", "1",
 		"-f", "image2pipe",
 		"-vcodec", "mjpeg",
+		"-q:v", "1",
 		"-",
 	)
 	cmd.Stderr = io.Discard
@@ -206,6 +223,26 @@ func getVideoDurationUs(filePath string) int64 {
 		return 0
 	}
 	return int64(f * 1e6)
+}
+
+func (s *AppService) CheckDependencies() map[string]bool {
+	check := func(cmd string) bool {
+		_, err := exec.LookPath(cmd)
+		return err == nil
+	}
+	return map[string]bool{
+		"ffmpeg": check("ffmpeg"),
+		"ffprobe": check("ffprobe"),
+		"mpv":    check("mpv"),
+	}
+}
+
+func (s *AppService) CleanTempFiles() error {
+	return wp.CleanTempDir()
+}
+
+func (s *AppService) ResetWallpapers() {
+	wp.StopVideoWallpapers()
 }
 
 func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {

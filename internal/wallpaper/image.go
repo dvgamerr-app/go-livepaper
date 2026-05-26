@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	_ "image/png"
+	_ "golang.org/x/image/webp"
 	"os"
 	"path/filepath"
 	"time"
