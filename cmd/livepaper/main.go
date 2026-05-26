@@ -117,8 +117,13 @@ func main() {
 			rawY := int(m.Resolution.Y) + int(vdMinY)
 			log.Printf("Video %d → Monitor %d raw=(%d,%d) size=(%dx%d)",
 				i+1, m.Index+1, rawX, rawY, m.Resolution.Width, m.Resolution.Height)
+			cached, err := wp.PreprocessVideo(wallpaperPath, int(m.Resolution.Width), int(m.Resolution.Height))
+			if err != nil {
+				log.Printf("preprocess video: %v", err)
+				continue
+			}
 			vTargets = append(vTargets, wp.VideoTarget{
-				Path: wallpaperPath,
+				Path: cached,
 				X:    rawX, Y: rawY,
 				W: int(m.Resolution.Width), H: int(m.Resolution.Height),
 			})

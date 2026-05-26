@@ -34,10 +34,11 @@ func LoadAndResizeImage(path string, width, height uint) (image.Image, error) {
 	origW := float64(bounds.Dx())
 	origH := float64(bounds.Dy())
 
+	// cover: scale so the image fills the monitor entirely, then crop to center
 	scaleW := float64(width) / origW
 	scaleH := float64(height) / origH
 	scale := scaleW
-	if scaleH < scaleW {
+	if scaleH > scaleW {
 		scale = scaleH
 	}
 	newW := uint(origW * scale)
@@ -46,12 +47,9 @@ func LoadAndResizeImage(path string, width, height uint) (image.Image, error) {
 	resized := resize.Resize(newW, newH, img, resize.Lanczos3)
 
 	result := image.NewRGBA(image.Rect(0, 0, int(width), int(height)))
-	draw.Draw(result, result.Bounds(), &image.Uniform{C: image.Black}, image.Point{}, draw.Src)
-
-	dstX := (int(width) - int(newW)) / 2
-	dstY := (int(height) - int(newH)) / 2
-	dstRect := image.Rect(dstX, dstY, dstX+int(newW), dstY+int(newH))
-	draw.Draw(result, dstRect, resized, image.Point{}, draw.Over)
+	srcX := (int(newW) - int(width)) / 2
+	srcY := (int(newH) - int(height)) / 2
+	draw.Draw(result, result.Bounds(), resized, image.Point{X: srcX, Y: srcY}, draw.Src)
 
 	return result, nil
 }

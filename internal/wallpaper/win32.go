@@ -30,4 +30,5 @@ var (
 	loadCursorW                 = user32.NewProc("LoadCursorW")
 
 	getModuleHandleW = kernel32.NewProc("GetModuleHandleW")
+	postMessageW     = user32.NewProc("PostMessageW")
 )

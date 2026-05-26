@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"sync"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -120,6 +121,27 @@ func findProgman() uintptr {
 	return hProgman
 }
 
+// desktopWndProc is held at package level so the Go GC never collects the
+// callback. windows.NewCallback must not be called more than once per function.
+var desktopWndProc = windows.NewCallback(func(hwnd, msg, wParam, lParam uintptr) uintptr {
+	switch msg {
+	case wmDestroy:
+		postQuitMessageW.Call(0)
+		return 0
+	case wmPaint:
+		validateRectW.Call(hwnd, 0)
+		return 0
+	case wmSysCommand:
+		if wParam&0xFFF0 == scMinimize {
+			return 0
+		}
+	}
+	r, _, _ := defWindowProcW.Call(hwnd, msg, wParam, lParam)
+	return r
+})
+
+var registerClassOnce sync.Once
+
 func CreateDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, err error) {
 	runtime.LockOSThread()
 
@@ -135,33 +157,18 @@ func CreateDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 	className, _ := windows.UTF16PtrFromString("LivepaperWindow")
 	windowName, _ := windows.UTF16PtrFromString("livepaper")
 
-	wndProc := windows.NewCallback(func(hwnd, msg, wParam, lParam uintptr) uintptr {
-		switch msg {
-		case wmDestroy:
-			postQuitMessageW.Call(0)
-			return 0
-		case wmPaint:
-			validateRectW.Call(hwnd, 0)
-			return 0
-		case wmSysCommand:
-			if wParam&0xFFF0 == scMinimize {
-				return 0
-			}
+	registerClassOnce.Do(func() {
+		cursor, _, _ := loadCursorW.Call(0, idcArrow)
+		wc := wndClassEx{
+			style:         csHredraw | csVredraw,
+			lpfnWndProc:   desktopWndProc,
+			hInstance:     hInstance,
+			hCursor:       cursor,
+			lpszClassName: className,
 		}
-		r, _, _ := defWindowProcW.Call(hwnd, msg, wParam, lParam)
-		return r
+		wc.cbSize = uint32(unsafe.Sizeof(wc))
+		registerClassExW.Call(uintptr(unsafe.Pointer(&wc)))
 	})
-
-	cursor, _, _ := loadCursorW.Call(0, idcArrow)
-	wc := wndClassEx{
-		style:         csHredraw | csVredraw,
-		lpfnWndProc:   wndProc,
-		hInstance:     hInstance,
-		hCursor:       cursor,
-		lpszClassName: className,
-	}
-	wc.cbSize = uint32(unsafe.Sizeof(wc))
-	registerClassExW.Call(uintptr(unsafe.Pointer(&wc)))
 
 	if bgWW != 0 {
 		var parentRect winRect

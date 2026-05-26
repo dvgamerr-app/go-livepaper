@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>LivePaper</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --border: #2a2a2a;
+      --border-active: #4a9eff;
+      --accent: #4a9eff;
+      --text: #e0e0e0;
+      --muted: #888;
+      --danger: #ff5555;
+      --success: #4caf50;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+      --wails-draggable: drag;
+    }
+
+    /* ── Virtual desktop stage ─────────────────────────────────────── */
+    .content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 16px 8px;
+      overflow: hidden;
+      --wails-draggable: drag;
+    }
+    .loading { color: var(--muted); text-align: center; font-size: 13px; }
+
+    .vd-stage { position: relative; }
+
+    .monitor-block {
+      position: absolute;
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color 0.2s;
+      --wails-draggable: no-drag;
+    }
+    .monitor-block.has-file  { border-color: var(--border-active); }
+    .monitor-block.encoding  { cursor: not-allowed; }
+    .monitor-block:not(.encoding):hover .mon-hover { opacity: 1; }
+
+    .mon-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* bottom gradient label */
+    .mon-info {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 6px 4px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+      pointer-events: none;
+    }
+    .mon-name { font-size: 10px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .mon-res  { font-size: 9px;  color: rgba(255,255,255,0.55); line-height: 1.2; }
+
+    /* top-left PRIMARY badge */
+    .mon-primary {
+      position: absolute;
+      top: 4px; left: 4px;
+      font-size: 8px; font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      background: #1a3a5c;
+      color: var(--accent);
+      letter-spacing: 0.3px;
+      pointer-events: none;
+    }
+
+    /* top-right file type badge */
+    .mon-badge {
+      position: absolute;
+      top: 4px; right: 4px;
+      font-size: 8px; font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      letter-spacing: 0.4px;
+      pointer-events: none;
+      display: none;
+    }
+    .mon-badge.image { background: rgba(0,180,0,0.85);  color: #fff; }
+    .mon-badge.video { background: rgba(220,130,0,0.9);  color: #fff; }
+    .mon-badge.gif   { background: rgba(180,0,180,0.85); color: #fff; }
+
+    /* encoding progress overlay */
+    .mon-progress {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 10px;
+      pointer-events: none;
+    }
+    .mon-progress.active { display: flex; }
+    .prog-label { font-size: 10px; color: #ccc; }
+    .prog-track {
+      width: 100%;
+      height: 2px;
+      background: #333;
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 1px;
+      transition: width 0.4s ease;
+    }
+
+    /* hover overlay */
+    .mon-hover {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      pointer-events: none;
+    }
+
+    /* ── Footer ────────────────────────────────────────────────────── */
+    .footer {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      --wails-draggable: no-drag;
+    }
+    .footer-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .version  { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .status   { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .status.error   { color: var(--danger); }
+    .status.success { color: var(--success); }
+    .apply-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity 0.15s, background 0.15s;
+      white-space: nowrap;
+      min-height: 36px;
+      --wails-draggable: no-drag;
+    }
+    .apply-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .apply-btn:not(:disabled):hover { background: #6ab0ff; }
+  </style>
+</head>
+<body>
+  <div class="content" id="content">
+    <div class="loading">Loading monitors…</div>
+  </div>
+  <div class="footer">
+    <div class="footer-left">
+      <span class="version" id="version"></span>
+      <span class="status"  id="status"></span>
+    </div>
+    <button class="apply-btn" id="apply-btn" disabled>Apply Wallpapers</button>
+  </div>
+
+  <script type="module">
+    import { Events, Call } from '/wails/runtime.js'
+
+    // monitorIndex -> { filePath, cachedPath, isVideo, ready }
+    const state = {}
+    let monitors = []
+
+    const contentEl = document.getElementById('content')
+    const applyBtn  = document.getElementById('apply-btn')
+    const statusEl  = document.getElementById('status')
+
+    const STORAGE_KEY = 'livepaper_state_v1'
+
+    function status(msg, type) {
+      statusEl.textContent = msg
+      statusEl.className = 'status' + (type ? ` ${type}` : '')
+    }
+
+    function refreshApply() {
+      const anySelected   = Object.values(state).some(s => s.filePath)
+      const anyProcessing = Object.values(state).some(s => s.filePath && s.isVideo && !s.ready)
+      applyBtn.disabled = !anySelected || anyProcessing
+    }
+
+    async function call(method, ...args) {
+      return await Call.ByName('main.AppService.' + method, ...args)
+    }
+
+    function extOf(p) {
+      return p.replace(/\\/g, '/').split('/').pop().split('.').pop().toLowerCase()
+    }
+
+    // ── Virtual desktop builder ─────────────────────────────────────
+    function buildStage(mons) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      for (const m of mons) {
+        minX = Math.min(minX, m.x);        minY = Math.min(minY, m.y)
+        maxX = Math.max(maxX, m.x + m.width); maxY = Math.max(maxY, m.y + m.height)
+      }
+      const totalW = maxX - minX
+      const totalH = maxY - minY
+
+      const PAD    = 0
+      const availW = contentEl.clientWidth  - PAD
+      const availH = contentEl.clientHeight - PAD
+      const scale  = Math.min(availW / totalW, availH / totalH, 1)
+
+      const stageW = Math.round(totalW * scale)
+      const stageH = Math.round(totalH * scale)
+
+      const stage = document.createElement('div')
+      stage.className = 'vd-stage'
+      stage.style.width  = `${stageW}px`
+      stage.style.height = `${stageH}px`
+
+      for (const m of mons) {
+        const bx = Math.round((m.x - minX) * scale)
+        const by = Math.round((m.y - minY) * scale)
+        const bw = Math.round(m.width  * scale)
+        const bh = Math.round(m.height * scale)
+
+        const block = document.createElement('div')
+        block.className = 'monitor-block'
+        block.id = `mb-${m.index}`
+        block.style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px`
+
+        block.innerHTML = `
+          <div class="mon-bg" id="bg-${m.index}"></div>
+          ${m.primary ? `<div class="mon-primary">PRIMARY</div>` : ''}
+          <div class="mon-info">
+            <div class="mon-name">Monitor ${m.index + 1}</div>
+            <div class="mon-res">${m.width}×${m.height}</div>
+          </div>
+          <span class="mon-badge" id="bd-${m.index}"></span>
+          <div class="mon-progress" id="mp-${m.index}">
+            <div class="prog-label" id="pl-${m.index}">Encoding…</div>
+            <div class="prog-track"><div class="prog-fill" id="pf-${m.index}" style="width:0%"></div></div>
+          </div>
+          <div class="mon-hover">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Choose File
+          </div>
+        `
+
+        block.addEventListener('click', () => {
+          const s = state[m.index]
+          if (s && s.isVideo && !s.ready) return  // locked while encoding
+          browse(m.index, m.width, m.height)
+        })
+
+        stage.appendChild(block)
+      }
+      return stage
+    }
+
+    // ── Card update helpers ─────────────────────────────────────────
+    function applyThumb(idx, thumbnail, filePath, isVideo) {
+      const block = document.getElementById(`mb-${idx}`)
+      if (!block) return
+      block.classList.add('has-file')
+
+      if (thumbnail) {
+        const bg = document.getElementById(`bg-${idx}`)
+        if (bg) bg.style.backgroundImage = `url('${thumbnail}')`
+      }
+
+      const e  = extOf(filePath)
+      const bd = document.getElementById(`bd-${idx}`)
+      if (bd) {
+        bd.style.display = 'inline'
+        if (isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
+        else if (e === 'gif')       { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
+        else                        { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
+      }
+    }
+
+    function setEncoding(idx, active, pct) {
+      const block = document.getElementById(`mb-${idx}`)
+      const mp    = document.getElementById(`mp-${idx}`)
+      const pf    = document.getElementById(`pf-${idx}`)
+      const pl    = document.getElementById(`pl-${idx}`)
+      if (!mp) return
+      mp.classList.toggle('active', active)
+      if (block) block.classList.toggle('encoding', active)
+      if (pf) pf.style.width = `${pct}%`
+      if (pl) pl.textContent = active ? `Encoding ${pct}%` : 'Done'
+    }
+
+    // ── Browse / encode flow ────────────────────────────────────────
+    async function browse(idx, w, h) {
+      status('Opening file picker…')
+      let filePath
+      try {
+        filePath = await call('BrowseFile')
+      } catch (e) {
+        status(`Dialog error: ${e}`, 'error')
+        return
+      }
+      status('')
+      if (!filePath) return
+
+      const isVideo   = await call('IsVideoFile', filePath)
+      const thumbnail = await call('GetThumbnail', filePath)
+
+      // For images / GIF: cachedPath = filePath (no encode needed)
+      state[idx] = { filePath, cachedPath: filePath, isVideo, ready: !isVideo }
+      applyThumb(idx, thumbnail, filePath, isVideo)
+      refreshApply()
+
+      if (isVideo) {
+        setEncoding(idx, true, 0)
+        try {
+          const cached = await call('PreprocessVideo', filePath, w, h)
+          state[idx].cachedPath = cached  // use encoded path when applying
+          state[idx].ready = true
+        } catch (e) {
+          status(`Encode error: ${e}`, 'error')
+          state[idx].ready = false
+        }
+        setEncoding(idx, false, 100)
+        refreshApply()
+      }
+    }
+
+    // ── Progress events from Go ─────────────────────────────────────
+    Events.On('video:progress', (evt) => {
+      const d = evt?.data || {}
+      for (const [idx, s] of Object.entries(state)) {
+        if (s.filePath === d.file) {
+          setEncoding(parseInt(idx), true, d.progress ?? 0)
+        }
+      }
+    })
+
+    // ── Apply ───────────────────────────────────────────────────────
+    applyBtn.addEventListener('click', async () => {
+      applyBtn.disabled = true
+      status('Applying…')
+
+      // Send cachedPath (encoded mp4 for video, original path for images)
+      const list = Object.entries(state)
+        .filter(([, s]) => s.filePath)
+        .map(([idx, s]) => ({
+          monitorIndex: parseInt(idx),
+          filePath: s.cachedPath || s.filePath,
+        }))
+
+      try {
+        await call('ApplyWallpapers', list)
+        status('Applied!', 'success')
+        saveState()
+        setTimeout(() => status(''), 3000)
+      } catch (e) {
+        status(`Failed: ${e}`, 'error')
+      }
+      refreshApply()
+    })
+
+    // ── State persistence (localStorage) ───────────────────────────
+    function saveState() {
+      const saved = {}
+      for (const [idx, s] of Object.entries(state)) {
+        if (s.filePath) {
+          saved[idx] = { filePath: s.filePath, cachedPath: s.cachedPath, isVideo: s.isVideo }
+        }
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+    }
+
+    async function restoreState() {
+      let saved
+      try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') } catch {}
+      if (!saved) return false
+
+      for (const [idx, s] of Object.entries(saved)) {
+        const i = parseInt(idx)
+        if (!monitors.find(m => m.index === i)) continue
+
+        const exists = await call('FileExists', s.filePath)
+        if (!exists) continue
+
+        // For video: cachedPath must also exist, otherwise skip auto-apply for that monitor
+        const cachedPath = s.cachedPath || s.filePath
+        const cachedExists = s.isVideo ? await call('FileExists', cachedPath) : true
+
+        state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: cachedExists }
+        const thumbnail = await call('GetThumbnail', s.filePath)
+        applyThumb(i, thumbnail, s.filePath, s.isVideo)
+      }
+      refreshApply()
+      return Object.keys(state).length > 0
+    }
+
+    async function autoApply() {
+      const list = Object.entries(state)
+        .filter(([, s]) => s.filePath && s.ready)
+        .map(([idx, s]) => ({ monitorIndex: parseInt(idx), filePath: s.cachedPath || s.filePath }))
+      if (list.length === 0) return
+
+      status('Restoring wallpaper…')
+      try {
+        await call('ApplyWallpapers', list)
+        status('Wallpaper restored', 'success')
+        setTimeout(() => status(''), 3000)
+      } catch (e) {
+        status(`Restore failed: ${e}`, 'error')
+      }
+    }
+
+    // ── Init ────────────────────────────────────────────────────────
+    async function init() {
+      try {
+        monitors = await call('GetMonitors')
+        const ver = await call('GetVersion')
+        document.getElementById('version').textContent = ver ? `v${ver}` : ''
+      } catch (e) {
+        contentEl.innerHTML = `<div class="loading" style="color:var(--danger)">Failed to load monitors: ${e}</div>`
+        return
+      }
+
+      contentEl.innerHTML = ''
+      contentEl.appendChild(buildStage(monitors))
+
+      const hasRestored = await restoreState()
+      if (hasRestored) autoApply()
+    }
+
+    init()
+  </script>
+</body>
+</html>
