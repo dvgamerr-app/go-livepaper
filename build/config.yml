@@ -24,7 +24,7 @@ dev_mode:
       - "*.go"
     git_ignore: true
   executes:
-    - cmd: go build -tags production -o livepaper.exe ./cmd/livepaper/
+    - cmd: go build -tags production,livepaper_dev -o livepaper.exe ./cmd/livepaper/
       type: blocking
     - cmd: ./livepaper.exe
       type: primary

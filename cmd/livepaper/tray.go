@@ -1,11 +1,8 @@
 package main
 
 import (
-	"embed"
 	"fmt"
-	"io/fs"
 	"log"
-	"net/http"
 	"time"
 
 	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
@@ -13,22 +10,14 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
-//go:embed frontend
-var frontendFS embed.FS
-
 func runTrayApp() {
 	svc := &AppService{}
-
-	assetsFS, err := fs.Sub(frontendFS, "frontend")
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	app := application.New(application.Options{
 		Name:        "livepaper",
 		Description: "Live wallpaper",
 		Assets: application.AssetOptions{
-			Handler: http.FileServer(http.FS(assetsFS)),
+			Handler: getAssetHandler(),
 		},
 		Services: []application.Service{
 			application.NewService(svc),
