@@ -69,6 +69,9 @@ func main() {
 	}
 
 	if len(args.Wallpaper) == 0 && len(args.Monitor) == 0 {
+		if !checkSingleInstance() {
+			return
+		}
 		runTrayApp()
 		return
 	}

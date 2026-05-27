@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/nfnt/resize"
 	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
@@ -59,8 +60,17 @@ type ProgressEvent struct {
 }
 
 type AppService struct {
-	app    *application.App
-	window *application.WebviewWindow
+	app      *application.App
+	window   *application.WebviewWindow
+	encoding sync.Map // key: filePath → *exec.Cmd
+}
+
+func (s *AppService) CancelEncoding(filePath string) {
+	if v, ok := s.encoding.Load(filePath); ok {
+		if cmd := v.(*exec.Cmd); cmd.Process != nil {
+			cmd.Process.Kill()
+		}
+	}
 }
 
 func (s *AppService) WindowMinimise() {
@@ -282,6 +292,8 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 	if err := cmd.Start(); err != nil {
 		return "", err
 	}
+	s.encoding.Store(filePath, cmd)
+	defer s.encoding.Delete(filePath)
 
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {
@@ -353,6 +365,8 @@ func (s *AppService) preprocessGIF(filePath string) (string, error) {
 	if err := cmd.Start(); err != nil {
 		return "", err
 	}
+	s.encoding.Store(filePath, cmd)
+	defer s.encoding.Delete(filePath)
 
 	scanner := bufio.NewScanner(stdout)
 	for scanner.Scan() {

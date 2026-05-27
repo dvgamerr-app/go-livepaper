@@ -263,8 +263,19 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
             <div class="mon-res">${m.width}×${m.height}</div>
           </div>
           <div class="mon-progress" id="mp-${m.index}">
-            <div class="prog-label" id="pl-${m.index}">Encoding…</div>
-            <div class="prog-track"><div class="prog-fill" id="pf-${m.index}" style="width:0%"></div></div>
+            <div class="prog-ring-wrap">
+              <svg class="prog-ring" viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="prog-ring-bg" cx="18" cy="18" r="15.9"/>
+                <circle class="prog-ring-fill" id="pf-${m.index}" cx="18" cy="18" r="15.9"/>
+              </svg>
+              <span class="prog-pct" id="pl-${m.index}" aria-live="polite">0%</span>
+              <div class="prog-cancel-btn" id="pc-${m.index}" role="button" aria-label="Cancel encoding" tabindex="0">
+                <div class="prog-cancel-icon">
+                  <span class="prog-cancel-label">Cancel</span>
+                </div>
+              </div>
+            </div>
+            <span class="prog-status-label">Encoding…</span>
           </div>
           <div class="mon-hover" aria-hidden="true">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -282,6 +293,15 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
         if (s && s.isVideo && !s.ready) return
         browse(m.index, m.width, m.height)
       })
+
+      const cancelBtn = block.querySelector(`#pc-${m.index}`)
+      const doCancel = (e) => {
+        e.stopPropagation()
+        const s = state[m.index]
+        if (s?.filePath) call('CancelEncoding', s.filePath)
+      }
+      cancelBtn?.addEventListener('click', doCancel)
+      cancelBtn?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') doCancel(e) })
 
       const label = document.createElement('p')
       label.className = 'mon-label'
@@ -351,8 +371,8 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     if (!mp) return
     mp.classList.toggle('active', active)
     if (block) block.classList.toggle('encoding', active)
-    if (pf) pf.style.width = `${pct}%`
-    if (pl) pl.textContent = active ? `Encoding ${pct}%` : 'Done'
+    if (pf) pf.style.strokeDashoffset = `${100 - pct}`
+    if (pl) pl.textContent = `${pct}%`
   }
 
   // ── Browse / encode flow ─────────────────────────────────────────
