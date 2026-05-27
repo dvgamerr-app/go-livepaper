@@ -48,27 +48,7 @@ jobs:
         id: changelog
         uses: mikepenz/release-changelog-builder-action@v5
         with:
-          configurationJson: |
-            {
-              "categories": [
-                { "title": "### Features",       "labels": ["feat"]     },
-                { "title": "### Bug Fixes",       "labels": ["fix"]      },
-                { "title": "### Refactor",        "labels": ["refactor"] },
-                { "title": "### Documentation",   "labels": ["docs"]     },
-                { "title": "### Build / CI",      "labels": ["build", "ci"] },
-                { "title": "### Other",           "labels": []           }
-              ],
-              "label_extractor": [
-                { "pattern": "^feat(\\(.+\\))?[!:]",     "target": "feat"     },
-                { "pattern": "^fix(\\(.+\\))?[!:]",      "target": "fix"      },
-                { "pattern": "^refactor(\\(.+\\))?[!:]", "target": "refactor" },
-                { "pattern": "^docs(\\(.+\\))?[!:]",     "target": "docs"     },
-                { "pattern": "^build(\\(.+\\))?[!:]",    "target": "build"    },
-                { "pattern": "^ci(\\(.+\\))?[!:]",       "target": "ci"       }
-              ],
-              "pr_template": "- ${{TITLE}} (${{MERGE_SHA}})",
-              "template": "${{CHANGELOG}}\n\n**Full Changelog**: ${{RELEASE_DIFF}}"
-            }
+          configuration: .github/changelog-config.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
