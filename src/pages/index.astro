@@ -78,10 +78,6 @@ import Footer from '../components/Footer.astro';
         <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#fbbf24"></span>Nature</button>
       </div>
 
-      <div class="mt-auto border-t border-lp-border flex items-center gap-2 px-2.5 min-w-0 h-9 wails-no-drag">
-        <span class="w-[7px] h-[7px] rounded-full bg-lp-success shrink-0 transition-colors duration-300" id="ab-dot"></span>
-        <span class="status text-[11px] min-w-0" id="status" role="status" aria-live="polite"></span>
-      </div>
     </aside>
 
     <!-- Main panel -->
@@ -129,10 +125,12 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
   const STORAGE_KEY = 'livepaper_state_v1'
 
   function status(msg, type) {
-    statusEl.textContent = msg
+    statusEl.textContent = msg || 'Running'
     statusEl.className = 'status' + (type ? ` ${type}` : '')
     if (dotEl) {
-      dotEl.className = 'ab-dot' + (type === 'error' ? ' busy' : '')
+      if (type === 'error')          dotEl.className = 'ab-dot error'
+      else if (type === 'success' || !msg) dotEl.className = 'ab-dot'
+      else                           dotEl.className = 'ab-dot busy'
     }
   }
 
@@ -177,15 +175,21 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     const cs     = getComputedStyle(contentEl)
     const availW = contentEl.clientWidth  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
     const availH = contentEl.clientHeight - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom)
-    const scale  = Math.min(availW / totalW, availH / totalH, 1)
+    const labelH = 28
+    const scale  = Math.min(availW / totalW, (availH - labelH) / totalH, 1)
 
     const stageW = Math.round(totalW * scale)
-    const stageH = Math.round(totalH * scale)
+    const stageH = Math.round(totalH * scale) + labelH
 
     const stage = document.createElement('div')
     stage.className = 'vd-stage'
     stage.style.width  = `${stageW}px`
     stage.style.height = `${stageH}px`
+
+    // faint floor grid
+    const grid = document.createElement('div')
+    grid.className = 'vd-grid'
+    stage.appendChild(grid)
 
     for (const m of mons) {
       const bx = Math.round((m.x - minX) * scale)
@@ -193,20 +197,23 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
       const bw = Math.round(m.width  * scale)
       const bh = Math.round(m.height * scale)
 
+      const wrapper = document.createElement('div')
+      wrapper.className = 'mon-wrapper'
+      wrapper.style.cssText = `left:${bx}px;top:${by}px;width:${bw}px`
+
       const block = document.createElement('div')
-      block.className = 'monitor-block'
+      block.className = 'monitor-block' + (m.primary ? ' primary-mon' : '')
       block.id = `mb-${m.index}`
-      block.style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px`
+      block.style.height = `${bh}px`
 
       block.innerHTML = `
         <div class="mon-inner">
           <img class="mon-bg" id="bg-${m.index}" src="" alt="">
           ${m.primary ? `<div class="mon-primary">Primary</div>` : ''}
+          <span class="mon-badge" id="bd-${m.index}"></span>
           <div class="mon-info">
-            <div class="mon-name">Monitor ${m.index + 1}</div>
             <div class="mon-res">${m.width}×${m.height}</div>
           </div>
-          <span class="mon-badge" id="bd-${m.index}"></span>
           <div class="mon-progress" id="mp-${m.index}">
             <div class="prog-label" id="pl-${m.index}">Encoding…</div>
             <div class="prog-track"><div class="prog-fill" id="pf-${m.index}" style="width:0%"></div></div>
@@ -228,7 +235,13 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
         browse(m.index, m.width, m.height)
       })
 
-      stage.appendChild(block)
+      const label = document.createElement('p')
+      label.className = 'mon-label'
+      label.textContent = `Monitor ${m.index + 1}`
+
+      wrapper.appendChild(block)
+      wrapper.appendChild(label)
+      stage.appendChild(wrapper)
     }
     return stage
   }
@@ -400,13 +413,13 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
       .map(([idx, s]) => ({ monitorIndex: parseInt(idx), filePath: s.cachedPath || s.filePath }))
     if (list.length === 0) return
 
-    status('Restoring wallpaper…')
+    status('Restoring…')
     try {
       await call('ApplyWallpapers', list)
-      status('Wallpaper restored', 'success')
+      status('Rrestored', 'success')
       setTimeout(() => status(''), 3000)
     } catch (e) {
-      status(`Restore failed: ${e}`, 'error')
+      status(`failed: ${e}`, 'error')
     }
   }
 
@@ -481,7 +494,8 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
   document.getElementById('tb-close').addEventListener('click', () => call('WindowHide').catch(() => {}))
 
   // ── GPU stats polling ─────────────────────────────────────────────
-  const gpuEl = document.getElementById('gpu-stats')
+  const gpuEl  = document.getElementById('gpu-stats')
+  const gpuSep = document.getElementById('gpu-sep')
   async function updateGPUStats() {
     if (!gpuEl) return
     try {
@@ -493,8 +507,10 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
         : `${s.usedMB} MB`
       gpuEl.textContent = `GPU · ${pct}% · ${vram} VRAM`
       gpuEl.classList.remove('hidden')
+      if (gpuSep) gpuSep.classList.remove('hidden')
     } catch (_) {
       gpuEl.classList.add('hidden')
+      if (gpuSep) gpuSep.classList.add('hidden')
     }
   }
   setTimeout(() => {

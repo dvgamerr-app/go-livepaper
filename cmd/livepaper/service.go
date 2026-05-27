@@ -103,8 +103,7 @@ func (s *AppService) BrowseFile() string {
 }
 
 func (s *AppService) IsVideoFile(filePath string) bool {
-	ext := strings.ToLower(filepath.Ext(filePath))
-	return wp.IsVideoFile(filePath) && ext != ".gif"
+	return wp.IsVideoFile(filePath)
 }
 
 func (s *AppService) GetThumbnail(filePath string) string {
@@ -155,6 +154,10 @@ func videoThumbnail(filePath string) string {
 }
 
 func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) {
+	if strings.ToLower(filepath.Ext(filePath)) == ".gif" {
+		return s.preprocessGIF(filePath)
+	}
+
 	tmpDir := filepath.Join(os.TempDir(), "livepaper")
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return "", err
@@ -205,6 +208,76 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 	if err := cmd.Wait(); err != nil {
 		os.Remove(out)
 		return "", fmt.Errorf("ffmpeg encode: %w", err)
+	}
+
+	s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: 100})
+	return out, nil
+}
+
+func (s *AppService) preprocessGIF(filePath string) (string, error) {
+	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return "", err
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	cfg, _, err := image.DecodeConfig(f)
+	f.Close()
+	if err != nil {
+		return "", err
+	}
+
+	base := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
+	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d_gif.mp4", base, cfg.Width, cfg.Height))
+
+	if _, err := os.Stat(out); err == nil {
+		s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: 100})
+		return out, nil
+	}
+
+	durationUs := getVideoDurationUs(filePath)
+
+	// Preserve original GIF fps and size. H.264 requires even dimensions,
+	// so round each axis down to the nearest even pixel if needed.
+	cmd := exec.Command("ffmpeg",
+		"-i", filePath,
+		"-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+		"-c:v", "libx264", "-crf", "23", "-preset", "fast",
+		"-movflags", "+faststart", "-an",
+		"-progress", "pipe:1",
+		"-nostats",
+		"-y", out,
+	)
+	cmd.Stderr = io.Discard
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return "", err
+	}
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "out_time_us=") {
+			us, _ := strconv.ParseInt(strings.TrimPrefix(line, "out_time_us="), 10, 64)
+			if durationUs > 0 && us > 0 {
+				pct := int(float64(us) / float64(durationUs) * 100)
+				if pct > 99 {
+					pct = 99
+				}
+				s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: pct})
+			}
+		}
+	}
+
+	if err := cmd.Wait(); err != nil {
+		os.Remove(out)
+		return "", fmt.Errorf("ffmpeg gif encode: %w", err)
 	}
 
 	s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: 100})
@@ -270,8 +343,7 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 			continue
 		}
 
-		ext := strings.ToLower(filepath.Ext(a.FilePath))
-		isVideo := wp.IsVideoFile(a.FilePath) && ext != ".gif"
+		isVideo := wp.IsVideoFile(a.FilePath)
 
 		if isVideo {
 			rawX := int(m.Resolution.X) + int(vdMinX)

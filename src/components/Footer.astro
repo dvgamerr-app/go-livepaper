@@ -1,7 +1,12 @@
 ---
 ---
 <footer class="h-14 shrink-0 flex items-center justify-between px-5 border-t border-lp-border bg-[rgba(19,19,22,0.8)] backdrop-blur-[16px] wails-no-drag">
-  <div class="flex items-center gap-2 text-[11px] text-lp-muted">
+  <div class="flex items-center gap-2 text-[11px] text-lp-muted min-w-0 flex-1">
+    <div class="flex items-center gap-2 w-18 shrink-0">
+      <span class="ab-dot" id="ab-dot"></span>
+      <span class="status font-medium truncate" id="status" role="status" aria-live="polite">Running</span>
+    </div>
+    <span class="mx-1.5 w-px h-3 bg-lp-border shrink-0 hidden" id="gpu-sep"></span>
     <span id="gpu-stats" class="font-mono tabular-nums hidden"></span>
   </div>
 
