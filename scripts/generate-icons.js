@@ -10,6 +10,14 @@ const outDir = path.join(__dirname, "..", "public");
 const GRADIENT_START = [0x2f, 0x8a, 0xef];
 const GRADIENT_END = [0xa8, 0x55, 0xf7];
 const WHITE = [0xff, 0xff, 0xff];
+const BG_RADIUS_RATIO = 0.22;
+const ICON_INSET_RATIO = 24 / 256;
+const ICON_BOUNDS = {
+  minX: 0.75,
+  minY: 0.75,
+  width: 22.5,
+  height: 22.5,
+};
 
 const MAIN_SPARKLE = [
   [11.017, 2.814],
@@ -93,13 +101,15 @@ function strokeCoverage(distance, strokeWidth) {
 }
 
 function createTransform(size) {
-  const iconSize = size * 0.6;
-  const offset = (size - iconSize) * 0.5;
-  const scale = iconSize / 24;
+  const inset = size * ICON_INSET_RATIO;
+  const usable = size - (inset * 2);
+  const scale = Math.min(usable / ICON_BOUNDS.width, usable / ICON_BOUNDS.height);
+  const offsetX = inset - (ICON_BOUNDS.minX * scale);
+  const offsetY = inset - (ICON_BOUNDS.minY * scale);
   return {
     scale,
     map([x, y]) {
-      return [offset + (x * scale), offset + (y * scale)];
+      return [offsetX + (x * scale), offsetY + (y * scale)];
     },
   };
 }
@@ -131,12 +141,11 @@ function renderIconCoverage(x, y, size) {
 
 function renderIcon(size) {
   const rgba = Buffer.alloc(size * size * 4);
-  const pad = Math.max(1, size * 0.08);
-  const left = pad;
-  const top = pad;
-  const right = size - pad;
-  const bottom = size - pad;
-  const radius = size * 0.22;
+  const left = 0;
+  const top = 0;
+  const right = size;
+  const bottom = size;
+  const radius = size * BG_RADIUS_RATIO;
   const samples = 4;
   const totalSamples = samples * samples;
 

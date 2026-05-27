@@ -168,6 +168,7 @@ rawY = normalizedY + vdMinY
 - ใช้ Nushell `enumerate` กับ `.index` / `.item` shorthand ใน environment นี้ล้มเหลว; ใช้ `$row.index` และ `$row.item` แทน
 - ส่ง Nushell `$row...` ผ่าน PowerShell double quotes จะโดน PowerShell strip ตัวแปรก่อนถึง Nushell
 - ส่ง regex ให้ `rg` ผ่าน nested double quotes ของ PowerShell/Nushell ทำให้ pattern พัง; ใช้ single-quoted pattern ใน `nu -c`
+- อัดคำสั่ง `nu -c "^git diff ..."` ที่ quote ซ้อนหนัก ๆ เข้า `multi_tool_use.parallel` อาจล้มตั้งแต่ launcher setup; รันคำสั่ง inspection แบบเดี่ยวแทน
 
 ## Manual Verification
 
