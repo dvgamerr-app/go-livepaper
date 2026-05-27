@@ -41,6 +41,9 @@ jobs:
       - name: Build
         run: go build -ldflags "-X main.VERSION=${{ steps.version.outputs.value }} -H windowsgui" -o livepaper.exe ./cmd/livepaper/
 
+      - name: Build installer
+        run: makensis /DAPP_VERSION=${{ steps.version.outputs.value }} installer\livepaper.nsi
+
       - name: Build changelog
         id: changelog
         uses: mikepenz/release-changelog-builder-action@v5
@@ -74,6 +77,8 @@ jobs:
         with:
           name: Live Paper v${{ steps.version.outputs.value }}
           body: ${{ steps.changelog.outputs.changelog }}
-          files: livepaper.exe
+          files: |
+            livepaper-setup-${{ steps.version.outputs.value }}.exe
+            livepaper.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
