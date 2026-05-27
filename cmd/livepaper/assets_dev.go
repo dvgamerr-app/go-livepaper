@@ -8,7 +8,7 @@ import (
 	"net/url"
 )
 
-const astroDevURL = "http://localhost:4321"
+const astroDevURL = "http://localhost:9245"
 
 func getAssetHandler() http.Handler {
 	target, _ := url.Parse(astroDevURL)

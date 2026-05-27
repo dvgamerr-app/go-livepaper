@@ -28,11 +28,9 @@ dev_mode:
       type: blocking
     - cmd: bun scripts/generate-icons.js
       type: blocking
-    - cmd: bun run build
-      type: blocking
     - cmd: go run github.com/akavel/rsrc@latest -ico public/icon.ico -o cmd/livepaper/rsrc_windows_amd64.syso
       type: blocking
-    - cmd: go build -ldflags "-H windowsgui" -o bin/livepaper.exe ./cmd/livepaper/
+    - cmd: go build -tags livepaper_dev -o bin/livepaper.exe ./cmd/livepaper/
       type: blocking
     - cmd: ./bin/livepaper.exe
       type: primary

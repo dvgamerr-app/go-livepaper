@@ -15,11 +15,29 @@ mkdir bin
 ^go build -ldflags $"-X main.VERSION=($version)" -o bin/livepaper.exe ./cmd/livepaper/
 ```
 
-Frontend:
+Frontend (production only):
 
 ```sh
 bun run build
 ```
+
+## Dev Mode (`wails3 dev`)
+
+**Do not run `bun run build` before `wails3 dev`.** Dev mode proxies the frontend from the Astro dev server — it does NOT embed or build the frontend.
+
+Workflow (run in two separate terminals):
+
+```sh
+# Terminal 1 — Astro dev server (port 5432)
+bun run dev
+
+# Terminal 2 — Wails dev (builds Go with livepaper_dev tag, proxies to :5432)
+wails3 dev
+```
+
+- `assets_dev.go` (build tag `livepaper_dev`) proxies all asset requests to `http://localhost:9245`
+- `build/config.yml` excludes `bun run build` and passes `-tags livepaper_dev` to `go build`
+- **Never add `bun run build` to the `wails3 dev` pipeline** — it wastes time and is unused at runtime
 
 ## Run / Test
 
@@ -27,12 +45,6 @@ There is no test suite. Manual testing requires a Windows machine with multiple 
 
 ```nu
 .\bin\livepaper.exe 'C:\Wallpapers\test.jpg'
-```
-
-Frontend dev server:
-
-```sh
-bun run dev
 ```
 
 ## Frameworks And Runtime
@@ -84,7 +96,7 @@ bun run dev
 
 ### Asset delivery
 
-- dev: `assets_dev.go` proxy ไป Astro dev server `http://localhost:4321`
+- dev: `assets_dev.go` proxy ไป Astro dev server `http://localhost:9245`
 - prod: `assets_prod.go` serve embedded `dist/`
 
 ## Key Constraints

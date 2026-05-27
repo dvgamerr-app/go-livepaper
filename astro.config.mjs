@@ -6,7 +6,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   server: {
-    port: 4321,
+    port: 9245,
     host: 'localhost',
   },
   outDir: 'cmd/livepaper/dist',
