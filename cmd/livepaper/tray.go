@@ -80,7 +80,7 @@ func runTrayApp() {
 	savedState := loadWindowState()
 
 	opts := application.WebviewWindowOptions{
-		Title:        "LivePaper",
+		Title:        "Live Paper",
 		Width:        900,
 		Height:       580,
 		MinWidth:     900,
@@ -156,7 +156,7 @@ func runTrayApp() {
 
 	tray := app.SystemTray.New()
 	tray.SetIcon(makeTrayIcon())
-	tray.SetTooltip("livepaper")
+	tray.SetTooltip("Live Paper")
 	// AttachWindow for debounce only; click position is handled by OnClick below
 	tray.AttachWindow(window).
 		WindowOffset(5).
@@ -185,7 +185,7 @@ func runTrayApp() {
 
 func buildTrayMenu(app *application.App) *application.Menu {
 	menu := app.NewMenu()
-	menu.Add(fmt.Sprintf("livepaper %s", VERSION)).SetEnabled(false)
+	menu.Add(fmt.Sprintf("Live Paper %s", VERSION)).SetEnabled(false)
 	menu.AddSeparator()
 	menu.Add("Quit").OnClick(func(ctx *application.Context) {
 		wp.StopVideoWallpapers()

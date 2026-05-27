@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install JS deps
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        run: bun run build
+
+      - name: Generate Windows resource
+        run: go run github.com/akavel/rsrc@latest -ico public/icon.ico -o cmd/livepaper/rsrc_windows_amd64.syso
+
+      - name: Get version from tag
+        id: version
+        shell: bash
+        run: echo "value=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Build
+        run: go build -ldflags "-X main.VERSION=${{ steps.version.outputs.value }} -H windowsgui" -o livepaper.exe ./cmd/livepaper/
+
+      - name: Build changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          configurationJson: |
+            {
+              "categories": [
+                { "title": "### Features",       "labels": ["feat"]     },
+                { "title": "### Bug Fixes",       "labels": ["fix"]      },
+                { "title": "### Refactor",        "labels": ["refactor"] },
+                { "title": "### Documentation",   "labels": ["docs"]     },
+                { "title": "### Build / CI",      "labels": ["build", "ci"] },
+                { "title": "### Other",           "labels": []           }
+              ],
+              "label_extractor": [
+                { "pattern": "^feat(\\(.+\\))?[!:]",     "target": "feat"     },
+                { "pattern": "^fix(\\(.+\\))?[!:]",      "target": "fix"      },
+                { "pattern": "^refactor(\\(.+\\))?[!:]", "target": "refactor" },
+                { "pattern": "^docs(\\(.+\\))?[!:]",     "target": "docs"     },
+                { "pattern": "^build(\\(.+\\))?[!:]",    "target": "build"    },
+                { "pattern": "^ci(\\(.+\\))?[!:]",       "target": "ci"       }
+              ],
+              "pr_template": "- ${{TITLE}} (${{MERGE_SHA}})",
+              "template": "${{CHANGELOG}}\n\n**Full Changelog**: ${{RELEASE_DIFF}}"
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Live Paper v${{ steps.version.outputs.value }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          files: livepaper.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

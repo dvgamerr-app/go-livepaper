@@ -24,6 +24,32 @@
           <div class="modal-row-desc">Encoded video files are cached in <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;font-size:10px">%TEMP%\livepaper\</code></div>
         </div>
       </div>
+      <div class="modal-divider"></div>
+      <div class="modal-row">
+        <div class="modal-row-text">
+          <div class="modal-row-label">Clean Cache</div>
+          <div class="modal-row-desc">Remove encoded video files from the temp folder</div>
+        </div>
+        <button class="ghost-btn" id="clean-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>
+          </svg>
+          Clean Cache
+        </button>
+      </div>
+      <div class="modal-row">
+        <div class="modal-row-text">
+          <div class="modal-row-label">Reset Wallpapers</div>
+          <div class="modal-row-desc">Remove all assigned wallpapers and restore defaults</div>
+        </div>
+        <button class="ghost-btn danger" id="reset-btn" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          Reset
+        </button>
+      </div>
     </div>
   </div>
 </div>

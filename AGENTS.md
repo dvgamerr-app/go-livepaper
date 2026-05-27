@@ -10,7 +10,7 @@ Deep references:
 ## Build
 
 ```nu
-let version = (open VERSION | str trim)
+let version = (try { ^git describe --tags --abbrev=0 | str trim | str replace --regex '^v' '' } catch { "dev" })
 ^go build -ldflags $"-X main.VERSION=($version)" -o livepaper.exe ./cmd/livepaper/
 ```
 
