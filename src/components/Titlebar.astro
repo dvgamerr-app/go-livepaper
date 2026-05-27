@@ -1,24 +1,24 @@
 ---
 ---
-<header class="titlebar">
-  <div class="tb-left">
+<header class="h-10 shrink-0 flex items-center justify-between pl-4 pr-1 border-b border-lp-border bg-[rgba(19,19,22,0.85)] backdrop-blur-[20px] wails-drag">
+  <div class="flex items-center gap-2.5 wails-drag">
     <img src="/icon.svg" width="16" height="16" alt="" aria-hidden="true" />
-    <span class="tb-title">Live Paper</span>
-    <span class="tb-version" id="tb-version"></span>
+    <span class="text-xs font-semibold tracking-[0.03em] text-lp-text">Live Paper</span>
+    <span class="text-[10px] font-medium text-lp-muted ml-0.5" id="tb-version"></span>
   </div>
-  <div class="tb-controls">
-    <button class="tb-btn" id="tb-settings" title="Settings" aria-label="Settings">
+  <div class="flex items-center gap-0.5 wails-no-drag">
+    <button class="w-8 h-8 border-0 bg-transparent text-lp-muted rounded cursor-pointer grid place-items-center transition-colors duration-[120ms] shrink-0 hover:bg-white/[0.06] hover:text-lp-text" id="tb-settings" title="Settings" aria-label="Settings">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     </button>
-    <button class="tb-btn" id="tb-min" title="Minimise" aria-label="Minimise">
+    <button class="w-8 h-8 border-0 bg-transparent text-lp-muted rounded cursor-pointer grid place-items-center transition-colors duration-[120ms] shrink-0 hover:bg-white/[0.06] hover:text-lp-text" id="tb-min" title="Minimise" aria-label="Minimise">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M5 12h14"/>
       </svg>
     </button>
-    <button class="tb-btn close" id="tb-close" title="Close" aria-label="Close">
+    <button class="w-8 h-8 border-0 bg-transparent text-lp-muted rounded cursor-pointer grid place-items-center transition-colors duration-[120ms] shrink-0 hover:bg-red-500/75 hover:text-white" id="tb-close" title="Close" aria-label="Close">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
       </svg>

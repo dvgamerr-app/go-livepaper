@@ -1,12 +1,14 @@
 ---
 ---
-<footer class="action-bar">
-  <div class="ab-left">
-    <span class="ab-dot" id="ab-dot"></span>
+<footer class="h-14 shrink-0 flex items-center justify-between px-5 border-t border-lp-border bg-[rgba(19,19,22,0.8)] backdrop-blur-[16px] wails-no-drag">
+  <div class="flex items-center gap-2 flex-1 min-w-0">
+    <span class="w-[7px] h-[7px] rounded-full bg-lp-success shrink-0 transition-colors duration-300" id="ab-dot"></span>
     <span class="status" id="status" role="status" aria-live="polite"></span>
   </div>
-  <div class="ab-actions">
-    <button class="apply-btn" id="apply-btn" disabled>
+  <div class="flex items-center gap-1.5">
+    <button
+      class="h-9 px-[18px] inline-flex items-center gap-1.5 bg-lp-accent text-white border-0 rounded-md cursor-pointer text-xs font-semibold whitespace-nowrap transition-[opacity,background-color] duration-150 shadow-[0_8px_24px_-8px_rgba(47,138,239,0.55)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none enabled:hover:bg-[#4a9fff]"
+      id="apply-btn" disabled>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="20 6 9 17 4 12"/>
       </svg>

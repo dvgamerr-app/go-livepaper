@@ -10,38 +10,40 @@ import Footer from '../components/Footer.astro';
   <Titlebar />
   <DepWarn />
 
-  <div class="app-body">
+  <div class="flex-1 flex overflow-hidden wails-no-drag">
     <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sb-search">
-        <input class="sb-input" placeholder="Search library…" tabindex="-1" readonly />
+    <aside class="w-56 shrink-0 border-r border-lp-border bg-[rgba(19,19,22,0.5)] backdrop-blur-[12px] flex flex-col wails-drag">
+      <div class="p-2.5 pb-1.5 wails-no-drag">
+        <input
+          class="w-full h-[30px] px-2.5 bg-white/[0.04] border border-lp-border rounded-md text-lp-text text-[11px] outline-none transition-[border-color,background-color] duration-150 placeholder:text-lp-muted focus:border-[rgba(47,138,239,0.5)] focus:bg-white/[0.06]"
+          placeholder="Search library…" tabindex="-1" readonly />
       </div>
 
-      <nav class="sb-nav">
+      <nav class="px-2 flex flex-col gap-0.5 wails-no-drag">
         <!-- Displays — active/functional -->
-        <button class="sb-item active" aria-current="page">
-          <span class="sb-icon">
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-lp-accent-soft text-lp-text text-[12px] font-medium cursor-pointer transition-colors duration-[120ms] text-left whitespace-nowrap overflow-hidden" aria-current="page">
+          <span class="shrink-0 text-lp-accent flex items-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
             </svg>
           </span>
           Displays
-          <span class="sb-active-dot"></span>
+          <span class="ml-auto w-1.5 h-1.5 rounded-full bg-lp-accent shrink-0"></span>
         </button>
 
         <!-- Placeholder nav items -->
-        <button class="sb-item inactive" tabindex="-1">
-          <span class="sb-icon">
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
+          <span class="shrink-0 text-lp-muted flex items-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
             </svg>
           </span>
           Playlists
-          <span class="sb-badge">—</span>
+          <span class="ml-auto text-[10px] px-1.5 py-px rounded bg-white/[0.06] text-lp-muted shrink-0">—</span>
         </button>
 
-        <button class="sb-item inactive" tabindex="-1">
-          <span class="sb-icon">
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
+          <span class="shrink-0 text-lp-muted flex items-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
             </svg>
@@ -49,8 +51,8 @@ import Footer from '../components/Footer.astro';
           Live Wallpapers
         </button>
 
-        <button class="sb-item inactive" tabindex="-1">
-          <span class="sb-icon">
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
+          <span class="shrink-0 text-lp-muted flex items-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
             </svg>
@@ -58,8 +60,8 @@ import Footer from '../components/Footer.astro';
           Static
         </button>
 
-        <button class="sb-item inactive" tabindex="-1">
-          <span class="sb-icon">
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
+          <span class="shrink-0 text-lp-muted flex items-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
@@ -68,46 +70,46 @@ import Footer from '../components/Footer.astro';
         </button>
       </nav>
 
-      <div class="sb-section">Collections</div>
-      <div class="sb-nav">
-        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#34d399"></span>Atmospheric</button>
-        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#a78bfa"></span>Cyberpunk</button>
-        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#f472b6"></span>Anime</button>
-        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#fbbf24"></span>Nature</button>
+      <div class="px-[18px] pt-4 pb-1 text-[10px] font-semibold text-lp-muted uppercase tracking-[0.12em] wails-drag">Collections</div>
+      <div class="px-2 flex flex-col gap-0.5 wails-no-drag">
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#34d399"></span>Atmospheric</button>
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#a78bfa"></span>Cyberpunk</button>
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#f472b6"></span>Anime</button>
+        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#fbbf24"></span>Nature</button>
       </div>
 
-      <div class="sb-footer">
-        <div class="sb-ver" id="version"></div>
+      <div class="mt-auto border-t border-lp-border p-2 flex flex-col gap-0.5 wails-no-drag">
+        <div class="px-2.5 py-1 text-[10px] text-lp-muted" id="version"></div>
       </div>
     </aside>
 
     <!-- Main panel -->
-    <section class="main">
+    <section class="flex-1 flex flex-col overflow-hidden min-w-0">
 
       <!-- Top bar -->
-      <div class="main-topbar">
-        <div class="mt-info">
-          <h1 class="mt-title">Display Workspace</h1>
-          <p class="mt-subtitle" id="monitor-subtitle">Loading displays…</p>
+      <div class="h-[52px] shrink-0 flex items-center justify-between px-6 border-b border-lp-border wails-drag">
+        <div class="wails-drag">
+          <h1 class="text-sm font-semibold tracking-[-0.01em] leading-tight">Display Workspace</h1>
+          <p class="text-[11px] text-lp-muted mt-px" id="monitor-subtitle">Loading displays…</p>
         </div>
       </div>
 
       <!-- Monitor canvas -->
-      <div class="canvas-area">
-        <div class="content" id="content">
+      <div class="flex-1 min-h-[100px] relative wails-drag before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)]">
+        <div class="absolute inset-0 flex items-center justify-center p-12 overflow-hidden" id="content">
           <div class="loading">Loading monitors…</div>
         </div>
       </div>
 
       <!-- Gallery / selected wallpapers strip -->
-      <div class="gallery-section">
-        <div class="gallery-header">
-          <span class="gallery-title">Selected Wallpapers</span>
-          <span class="gallery-sub" id="gallery-sub"></span>
+      <div class="shrink-0 h-[154px] border-t border-lp-border flex flex-col bg-[rgba(19,19,22,0.35)]">
+        <div class="h-[34px] shrink-0 flex items-center justify-between pl-6 pr-5">
+          <span class="text-xs font-semibold">Selected Wallpapers</span>
+          <span class="text-[10px] text-lp-muted ml-1.5" id="gallery-sub"></span>
         </div>
-        <div class="gallery-body">
+        <div class="flex-1 min-h-0 relative before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-8 before:z-[1] before:pointer-events-none before:bg-gradient-to-r before:from-lp-bg before:to-transparent after:content-[''] after:absolute after:inset-y-0 after:right-0 after:w-8 after:z-[1] after:pointer-events-none after:bg-gradient-to-l after:from-lp-bg after:to-transparent">
           <div class="gallery-strip" id="thumb-strip">
-            <span class="gallery-empty" id="gallery-empty">Click a monitor above to assign a wallpaper</span>
+            <span class="w-full text-center text-lp-muted text-[11px] px-6" id="gallery-empty">Click a monitor above to assign a wallpaper</span>
           </div>
         </div>
       </div>
