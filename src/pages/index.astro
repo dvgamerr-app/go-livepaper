@@ -2,18 +2,130 @@
 import Layout from '../layouts/Layout.astro';
 import Titlebar from '../components/Titlebar.astro';
 import DepWarn from '../components/DepWarn.astro';
-import ThumbStrip from '../components/ThumbStrip.astro';
+import SettingsModal from '../components/SettingsModal.astro';
 import Footer from '../components/Footer.astro';
 ---
 
 <Layout title="LivePaper">
-  <DepWarn />
   <Titlebar />
-  <div class="content" id="content">
-    <div class="loading">Loading monitors…</div>
+  <DepWarn />
+
+  <div class="app-body">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sb-search">
+        <input class="sb-input" placeholder="Search library…" tabindex="-1" readonly />
+      </div>
+
+      <nav class="sb-nav">
+        <!-- Displays — active/functional -->
+        <button class="sb-item active" aria-current="page">
+          <span class="sb-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
+            </svg>
+          </span>
+          Displays
+          <span class="sb-active-dot"></span>
+        </button>
+
+        <!-- Placeholder nav items -->
+        <button class="sb-item inactive" tabindex="-1">
+          <span class="sb-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            </svg>
+          </span>
+          Playlists
+          <span class="sb-badge">—</span>
+        </button>
+
+        <button class="sb-item inactive" tabindex="-1">
+          <span class="sb-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+            </svg>
+          </span>
+          Live Wallpapers
+        </button>
+
+        <button class="sb-item inactive" tabindex="-1">
+          <span class="sb-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </span>
+          Static
+        </button>
+
+        <button class="sb-item inactive" tabindex="-1">
+          <span class="sb-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </span>
+          Local Folders
+        </button>
+      </nav>
+
+      <div class="sb-section">Collections</div>
+      <div class="sb-nav">
+        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#34d399"></span>Atmospheric</button>
+        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#a78bfa"></span>Cyberpunk</button>
+        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#f472b6"></span>Anime</button>
+        <button class="sb-item inactive" tabindex="-1"><span class="sb-dot" style="background:#fbbf24"></span>Nature</button>
+      </div>
+
+      <div class="sb-footer">
+        <button class="sb-item" id="tb-settings">
+          <span class="sb-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </span>
+          Settings
+        </button>
+        <div class="sb-ver" id="version"></div>
+      </div>
+    </aside>
+
+    <!-- Main panel -->
+    <section class="main">
+
+      <!-- Top bar -->
+      <div class="main-topbar">
+        <div class="mt-info">
+          <h1 class="mt-title">Display Workspace</h1>
+          <p class="mt-subtitle" id="monitor-subtitle">Loading displays…</p>
+        </div>
+      </div>
+
+      <!-- Monitor canvas -->
+      <div class="canvas-area">
+        <div class="content" id="content">
+          <div class="loading">Loading monitors…</div>
+        </div>
+      </div>
+
+      <!-- Gallery / selected wallpapers strip -->
+      <div class="gallery-section">
+        <div class="gallery-header">
+          <span class="gallery-title">Selected Wallpapers</span>
+          <span class="gallery-sub" id="gallery-sub"></span>
+        </div>
+        <div class="gallery-body">
+          <div class="gallery-strip" id="thumb-strip">
+            <span class="gallery-empty" id="gallery-empty">Click a monitor above to assign a wallpaper</span>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </section>
   </div>
-  <ThumbStrip />
-  <Footer />
+
+  <SettingsModal />
 </Layout>
 
 <script type="module" is:inline>
@@ -23,17 +135,27 @@ import Footer from '../components/Footer.astro';
   const state = {}
   let monitors = []
 
-  const contentEl  = document.getElementById('content')
-  const applyBtn   = document.getElementById('apply-btn')
-  const resetBtn   = document.getElementById('reset-btn')
-  const statusEl   = document.getElementById('status')
-  const thumbStrip = document.getElementById('thumb-strip')
+  const contentEl     = document.getElementById('content')
+  const applyBtn      = document.getElementById('apply-btn')
+  const resetBtn      = document.getElementById('reset-btn')
+  const statusEl      = document.getElementById('status')
+  const dotEl         = document.getElementById('ab-dot')
+  const settingsModal = document.getElementById('settings-modal')
+  const galleryEmpty  = document.getElementById('gallery-empty')
+  const galleryStrip  = document.getElementById('thumb-strip')
+
+  document.getElementById('tb-settings').addEventListener('click', () => { settingsModal.hidden = false })
+  document.getElementById('modal-close').addEventListener('click',  () => { settingsModal.hidden = true  })
+  settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.hidden = true })
 
   const STORAGE_KEY = 'livepaper_state_v1'
 
   function status(msg, type) {
     statusEl.textContent = msg
     statusEl.className = 'status' + (type ? ` ${type}` : '')
+    if (dotEl) {
+      dotEl.className = 'ab-dot' + (type === 'error' ? ' busy' : '')
+    }
   }
 
   function refreshApply() {
@@ -41,6 +163,12 @@ import Footer from '../components/Footer.astro';
     const anyProcessing = Object.values(state).some(s => s.filePath && s.isVideo && !s.ready)
     applyBtn.disabled = !anySelected || anyProcessing
     resetBtn.disabled = !anySelected || anyProcessing
+    updateGalleryEmpty()
+  }
+
+  function updateGalleryEmpty() {
+    const hasCards = Object.values(state).some(s => s.filePath)
+    if (galleryEmpty) galleryEmpty.style.display = hasCards ? 'none' : ''
   }
 
   function resetMonitor(idx) {
@@ -54,44 +182,8 @@ import Footer from '../components/Footer.astro';
     if (bd) { bd.style.display = 'none'; bd.className = 'mon-badge' }
     const mp = document.getElementById(`mp-${idx}`)
     if (mp) mp.classList.remove('active')
-    const tc = document.getElementById(`tc-${idx}`)
-    if (tc) tc.remove()
-  }
-
-  function refreshThumb(idx, thumbnail, filePath, isVideo) {
-    const existing = document.getElementById(`tc-${idx}`)
-    if (existing) existing.remove()
-
-    const e = extOf(filePath)
-    let typeClass = 'image', typeLabel = 'IMG'
-    if (isVideo && e !== 'gif') { typeClass = 'video'; typeLabel = 'VIDEO' }
-    else if (e === 'gif')       { typeClass = 'gif';   typeLabel = 'GIF'   }
-
-    const mon = monitors.find(m => m.index === idx)
-    const monLabel = mon ? `Monitor ${idx + 1}${mon.primary ? ' · PRIMARY' : ''}` : `Monitor ${idx + 1}`
-    const fileName = filePath.replace(/\\/g, '/').split('/').pop()
-
-    const card = document.createElement('div')
-    card.className = 'thumb-card'
-    card.id = `tc-${idx}`
-    card.setAttribute('role', 'listitem')
-    card.innerHTML = `
-      <img class="thumb-img" id="ti-${idx}" src="${thumbnail || ''}" alt="${fileName}">
-      <div class="thumb-meta">
-        <div class="thumb-mon">${monLabel}</div>
-        <div class="thumb-file" title="${fileName}">${fileName}</div>
-        <div class="thumb-type ${typeClass}">${typeLabel}</div>
-      </div>
-    `
-    card.addEventListener('click', () => {
-      const s = state[idx]
-      if (s && s.isVideo && !s.ready) return
-      browse(idx, mon?.width ?? 1920, mon?.height ?? 1080)
-    })
-
-    const cards = [...thumbStrip.querySelectorAll('.thumb-card')]
-    const after = cards.find(c => parseInt(c.id.replace('tc-', '')) > idx)
-    thumbStrip.insertBefore(card, after || null)
+    const gc = document.getElementById(`gc-${idx}`)
+    if (gc) gc.remove()
   }
 
   async function call(method, ...args) {
@@ -112,8 +204,8 @@ import Footer from '../components/Footer.astro';
     const totalW = maxX - minX
     const totalH = maxY - minY
 
-    const availW = contentEl.clientWidth
-    const availH = contentEl.clientHeight
+    const availW = contentEl.clientWidth  - 8
+    const availH = contentEl.clientHeight - 8
     const scale  = Math.min(availW / totalW, availH / totalH, 1)
 
     const stageW = Math.round(totalW * scale)
@@ -136,24 +228,26 @@ import Footer from '../components/Footer.astro';
       block.style.cssText = `left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px`
 
       block.innerHTML = `
-        <img class="mon-bg" id="bg-${m.index}" src="" alt="">
-        ${m.primary ? `<div class="mon-primary">PRIMARY</div>` : ''}
-        <div class="mon-info">
-          <div class="mon-name">Monitor ${m.index + 1}</div>
-          <div class="mon-res">${m.width}×${m.height}</div>
-        </div>
-        <span class="mon-badge" id="bd-${m.index}"></span>
-        <div class="mon-progress" id="mp-${m.index}">
-          <div class="prog-label" id="pl-${m.index}">Encoding…</div>
-          <div class="prog-track"><div class="prog-fill" id="pf-${m.index}" style="width:0%"></div></div>
-        </div>
-        <div class="mon-hover" aria-hidden="true">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          Choose File
+        <div class="mon-inner">
+          <img class="mon-bg" id="bg-${m.index}" src="" alt="">
+          ${m.primary ? `<div class="mon-primary">Primary</div>` : ''}
+          <div class="mon-info">
+            <div class="mon-name">Monitor ${m.index + 1}</div>
+            <div class="mon-res">${m.width}×${m.height}</div>
+          </div>
+          <span class="mon-badge" id="bd-${m.index}"></span>
+          <div class="mon-progress" id="mp-${m.index}">
+            <div class="prog-label" id="pl-${m.index}">Encoding…</div>
+            <div class="prog-track"><div class="prog-fill" id="pf-${m.index}" style="width:0%"></div></div>
+          </div>
+          <div class="mon-hover" aria-hidden="true">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Choose File
+          </div>
         </div>
       `
 
@@ -166,6 +260,39 @@ import Footer from '../components/Footer.astro';
       stage.appendChild(block)
     }
     return stage
+  }
+
+  // ── Gallery card helpers ─────────────────────────────────────────
+  function updateGalleryCard(idx, thumbnail, filePath, isVideo) {
+    let card = document.getElementById(`gc-${idx}`)
+    const mon = monitors.find(m => m.index === idx)
+    const monName = mon ? `Monitor ${mon.index + 1}` : `Monitor ${idx + 1}`
+    const monRes  = mon ? `${mon.width}×${mon.height}` : ''
+    const e = extOf(filePath)
+    const badgeClass = isVideo && e !== 'gif' ? 'video' : e === 'gif' ? 'gif' : 'image'
+    const badgeText  = isVideo && e !== 'gif' ? 'VIDEO' : e === 'gif' ? 'GIF' : 'IMG'
+
+    if (!card) {
+      card = document.createElement('button')
+      card.className = 'gallery-card'
+      card.id = `gc-${idx}`
+      card.addEventListener('click', () => {
+        const s = state[idx]
+        if (s && s.isVideo && !s.ready) return
+        browse(idx, mon?.width || 1920, mon?.height || 1080)
+      })
+      if (galleryStrip) galleryStrip.appendChild(card)
+    }
+
+    card.innerHTML = `
+      <img class="gc-img" src="${thumbnail || ''}" alt="${monName}">
+      <div class="gc-overlay"></div>
+      <span class="gc-badge ${badgeClass}">${badgeText}</span>
+      <div class="gc-info">
+        <p class="gc-name">${monName}</p>
+        <p class="gc-res">${monRes}</p>
+      </div>
+    `
   }
 
   // ── Card update helpers ──────────────────────────────────────────
@@ -186,7 +313,7 @@ import Footer from '../components/Footer.astro';
       else                        { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
     }
 
-    refreshThumb(idx, thumbnail, filePath, isVideo)
+    updateGalleryCard(idx, thumbnail, filePath, isVideo)
   }
 
   function setEncoding(idx, active, pct) {
@@ -217,7 +344,7 @@ import Footer from '../components/Footer.astro';
     const isVideo   = await call('IsVideoFile', filePath)
     const thumbnail = await call('GetThumbnail', filePath)
 
-    state[idx] = { filePath, cachedPath: filePath, isVideo, ready: !isVideo }
+    state[idx] = { filePath, cachedPath: filePath, isVideo, ready: !isVideo, thumbnail }
     applyThumb(idx, thumbnail, filePath, isVideo)
     refreshApply()
 
@@ -323,8 +450,8 @@ import Footer from '../components/Footer.astro';
       const cachedPath = s.cachedPath || s.filePath
       if (s.isVideo && !await call('FileExists', cachedPath)) continue
 
-      state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: true }
       const thumbnail = await call('GetThumbnail', s.filePath)
+      state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: true, thumbnail }
       applyThumb(i, thumbnail, s.filePath, s.isVideo)
     }
     refreshApply()
@@ -347,6 +474,36 @@ import Footer from '../components/Footer.astro';
     }
   }
 
+  // ── Resize: rebuild stage when canvas size changes ───────────────
+  let resizeTimer
+  const ro = new ResizeObserver(() => {
+    clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(() => {
+      if (monitors.length === 0) return
+      contentEl.innerHTML = ''
+      contentEl.appendChild(buildStage(monitors))
+      // Re-apply wallpaper state to the newly created monitor blocks
+      for (const [idxStr, s] of Object.entries(state)) {
+        if (!s.filePath) continue
+        const idx = parseInt(idxStr)
+        const block = document.getElementById(`mb-${idx}`)
+        if (!block) continue
+        block.classList.add('has-file')
+        const bg = document.getElementById(`bg-${idx}`)
+        if (bg) bg.src = s.thumbnail || ''
+        const bd = document.getElementById(`bd-${idx}`)
+        if (bd) {
+          const e = extOf(s.filePath)
+          bd.style.display = 'inline'
+          if (s.isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
+          else if (e === 'gif')         { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
+          else                          { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
+        }
+        if (s.isVideo && !s.ready) setEncoding(idx, true, 0)
+      }
+    }, 80)
+  })
+
   // ── Init ──────────────────────────────────────────────────────────
   async function init() {
     try {
@@ -355,8 +512,14 @@ import Footer from '../components/Footer.astro';
       const verText = ver ? `v${ver}` : ''
       document.getElementById('version').textContent = verText
       document.getElementById('tb-version').textContent = verText
+      const modalVer = document.getElementById('modal-version')
+      if (modalVer) modalVer.textContent = verText || '—'
+
+      const n = monitors.length
+      document.getElementById('monitor-subtitle').textContent =
+        `${n} display${n !== 1 ? 's' : ''} connected · Click a monitor to assign a wallpaper`
     } catch (e) {
-      contentEl.innerHTML = `<div class="loading" style="color:var(--danger)">Failed to load monitors: ${e}</div>`
+      contentEl.innerHTML = `<div class="loading" style="color:var(--lp-danger)">Failed to load monitors: ${e}</div>`
       return
     }
 
@@ -373,12 +536,13 @@ import Footer from '../components/Footer.astro';
 
     contentEl.innerHTML = ''
     contentEl.appendChild(buildStage(monitors))
+    ro.observe(contentEl)
 
     const hasRestored = await restoreState()
     if (hasRestored) autoApply()
   }
 
-  document.getElementById('tb-min').addEventListener('click', () => call('WindowMinimise').catch(() => {}))
+  document.getElementById('tb-min').addEventListener('click',   () => call('WindowMinimise').catch(() => {}))
   document.getElementById('tb-close').addEventListener('click', () => call('WindowHide').catch(() => {}))
 
   init()

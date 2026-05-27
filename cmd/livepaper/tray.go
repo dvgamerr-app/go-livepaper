@@ -27,13 +27,14 @@ func runTrayApp() {
 	svc.app = app
 
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:         "LivePaper",
-		Width:         740,
-		Height:        480,
-		DisableResize: true,
-		Frameless:     true,
-		Hidden:        true,
-		HideOnEscape:  true,
+		Title:        "LivePaper",
+		Width:        900,
+		Height:       580,
+		MinWidth:     900,
+		MinHeight:    580,
+		Frameless:    true,
+		Hidden:       true,
+		HideOnEscape: true,
 	})
 	svc.window = window
 
