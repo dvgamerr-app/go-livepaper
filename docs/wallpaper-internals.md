@@ -169,6 +169,7 @@ rawY = normalizedY + vdMinY
 - ส่ง Nushell `$row...` ผ่าน PowerShell double quotes จะโดน PowerShell strip ตัวแปรก่อนถึง Nushell
 - ส่ง regex ให้ `rg` ผ่าน nested double quotes ของ PowerShell/Nushell ทำให้ pattern พัง; ใช้ single-quoted pattern ใน `nu -c`
 - อัดคำสั่ง `nu -c "^git diff ..."` ที่ quote ซ้อนหนัก ๆ เข้า `multi_tool_use.parallel` อาจล้มตั้งแต่ launcher setup; รันคำสั่ง inspection แบบเดี่ยวแทน
+- `rtk go build -o livepaper-test.exe ./cmd/livepaper` ใน session นี้ compile ผ่านแต่ไม่ควรสมมติว่า artifact จะอยู่ที่ `livepaper-test.exe`; อย่าใช้ path นี้เป็นขั้นล้างไฟล์ต่อ
 
 ## Manual Verification
 

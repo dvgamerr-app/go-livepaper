@@ -93,6 +93,7 @@ import Footer from '../components/Footer.astro';
 
       <!-- Monitor canvas -->
       <div class="flex-1 min-h-[100px] relative wails-drag before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)]">
+        <div aria-hidden="true" class="absolute inset-x-0 bottom-0 h-24 opacity-[0.08] pointer-events-none" style="background-image:linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to top, black, transparent)"></div>
         <div class="absolute inset-0 flex items-center justify-center p-12 overflow-hidden" id="content">
           <div class="loading">Loading monitors…</div>
         </div>
@@ -162,49 +163,36 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     return p.replace(/\\/g, '/').split('/').pop().split('.').pop().toLowerCase()
   }
 
-  // ── Virtual desktop builder ──────────────────────────────────────
-  function buildStage(mons) {
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    for (const m of mons) {
-      minX = Math.min(minX, m.x);        minY = Math.min(minY, m.y)
-      maxX = Math.max(maxX, m.x + m.width); maxY = Math.max(maxY, m.y + m.height)
+  function getMonitorViewport() {
+    const cs = getComputedStyle(contentEl)
+    return {
+      width: Math.max(1, Math.floor(contentEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))),
+      height: Math.max(1, Math.floor(contentEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))),
+      labelHeight: 28,
     }
-    const totalW = maxX - minX
-    const totalH = maxY - minY
+  }
 
-    const cs     = getComputedStyle(contentEl)
-    const availW = contentEl.clientWidth  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
-    const availH = contentEl.clientHeight - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom)
-    const labelH = 28
-    const scale  = Math.min(availW / totalW, (availH - labelH) / totalH, 1)
-
-    const stageW = Math.round(totalW * scale)
-    const stageH = Math.round(totalH * scale) + labelH
-
+  // ── Virtual desktop builder ──────────────────────────────────────
+  function buildStage(layout) {
     const stage = document.createElement('div')
     stage.className = 'vd-stage'
-    stage.style.width  = `${stageW}px`
-    stage.style.height = `${stageH}px`
+    stage.style.width  = `${layout.stageWidth}px`
+    stage.style.height = `${layout.stageHeight}px`
 
     // faint floor grid
     const grid = document.createElement('div')
     grid.className = 'vd-grid'
     stage.appendChild(grid)
 
-    for (const m of mons) {
-      const bx = Math.round((m.x - minX) * scale)
-      const by = Math.round((m.y - minY) * scale)
-      const bw = Math.round(m.width  * scale)
-      const bh = Math.round(m.height * scale)
-
+    for (const m of layout.monitors) {
       const wrapper = document.createElement('div')
       wrapper.className = 'mon-wrapper'
-      wrapper.style.cssText = `left:${bx}px;top:${by}px;width:${bw}px`
+      wrapper.style.cssText = `left:${m.previewX}px;top:${m.previewY}px;width:${m.previewWidth}px`
 
       const block = document.createElement('div')
       block.className = 'monitor-block' + (m.primary ? ' primary-mon' : '')
       block.id = `mb-${m.index}`
-      block.style.height = `${bh}px`
+      block.style.height = `${m.previewHeight}px`
 
       block.innerHTML = `
         <div class="mon-inner">
@@ -244,6 +232,36 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
       stage.appendChild(wrapper)
     }
     return stage
+  }
+
+  function reapplyStageState() {
+    for (const [idxStr, s] of Object.entries(state)) {
+      if (!s.filePath) continue
+      const idx = parseInt(idxStr)
+      const block = document.getElementById(`mb-${idx}`)
+      if (!block) continue
+      block.classList.add('has-file')
+      const bg = document.getElementById(`bg-${idx}`)
+      if (bg) bg.src = s.thumbnail || ''
+      const bd = document.getElementById(`bd-${idx}`)
+      if (bd) {
+        const e = extOf(s.filePath)
+        bd.style.display = 'inline'
+        if (s.isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
+        else if (e === 'gif')         { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
+        else                          { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
+      }
+      if (s.isVideo && !s.ready) setEncoding(idx, true, 0)
+    }
+  }
+
+  async function renderMonitorLayout() {
+    const viewport = getMonitorViewport()
+    const layout = await call('GetMonitorLayout', viewport.width, viewport.height, viewport.labelHeight)
+    monitors = layout?.monitors || []
+    contentEl.innerHTML = ''
+    contentEl.appendChild(buildStage(layout))
+    reapplyStageState()
   }
 
   // ── Card update helpers ──────────────────────────────────────────
@@ -427,41 +445,22 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
   let resizeTimer
   const ro = new ResizeObserver(() => {
     clearTimeout(resizeTimer)
-    resizeTimer = setTimeout(() => {
+    resizeTimer = setTimeout(async () => {
       if (monitors.length === 0) return
-      contentEl.innerHTML = ''
-      contentEl.appendChild(buildStage(monitors))
-      // Re-apply wallpaper state to the newly created monitor blocks
-      for (const [idxStr, s] of Object.entries(state)) {
-        if (!s.filePath) continue
-        const idx = parseInt(idxStr)
-        const block = document.getElementById(`mb-${idx}`)
-        if (!block) continue
-        block.classList.add('has-file')
-        const bg = document.getElementById(`bg-${idx}`)
-        if (bg) bg.src = s.thumbnail || ''
-        const bd = document.getElementById(`bd-${idx}`)
-        if (bd) {
-          const e = extOf(s.filePath)
-          bd.style.display = 'inline'
-          if (s.isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
-          else if (e === 'gif')         { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
-          else                          { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
-        }
-        if (s.isVideo && !s.ready) setEncoding(idx, true, 0)
-      }
+      await renderMonitorLayout()
     }, 80)
   })
 
   // ── Init ──────────────────────────────────────────────────────────
   async function init() {
     try {
-      monitors = await call('GetMonitors')
       const ver = await call('GetVersion')
-      const verText = ver ? `v${ver}` : ''
+      const verText = ver === 'dev' ? 'preview' : (ver ? `v${ver}` : '')
       document.getElementById('tb-version').textContent = verText
       const modalVer = document.getElementById('modal-version')
       if (modalVer) modalVer.textContent = verText || '—'
+
+      await renderMonitorLayout()
 
       const n = monitors.length
       document.getElementById('monitor-subtitle').textContent =
@@ -482,8 +481,6 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
       }
     } catch (_) {}
 
-    contentEl.innerHTML = ''
-    contentEl.appendChild(buildStage(monitors))
     ro.observe(contentEl)
 
     const hasRestored = await restoreState()

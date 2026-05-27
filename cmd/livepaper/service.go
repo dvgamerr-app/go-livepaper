@@ -13,6 +13,7 @@ import (
 	_ "golang.org/x/image/webp"
 	"io"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -25,12 +26,26 @@ import (
 )
 
 type MonitorData struct {
-	Index   int  `json:"index"`
-	Width   int  `json:"width"`
-	Height  int  `json:"height"`
-	X       int  `json:"x"`
-	Y       int  `json:"y"`
-	Primary bool `json:"primary"`
+	Index         int     `json:"index"`
+	Width         int     `json:"width"`
+	Height        int     `json:"height"`
+	X             int     `json:"x"`
+	Y             int     `json:"y"`
+	PreviewX      int     `json:"previewX"`
+	PreviewY      int     `json:"previewY"`
+	PreviewWidth  int     `json:"previewWidth"`
+	PreviewHeight int     `json:"previewHeight"`
+	AspectRatio   float64 `json:"aspectRatio"`
+	Primary       bool    `json:"primary"`
+}
+
+type MonitorLayoutData struct {
+	CanvasWidth  int           `json:"canvasWidth"`
+	CanvasHeight int           `json:"canvasHeight"`
+	StageWidth   int           `json:"stageWidth"`
+	StageHeight  int           `json:"stageHeight"`
+	Scale        float64       `json:"scale"`
+	Monitors     []MonitorData `json:"monitors"`
 }
 
 type WallpaperAssignment struct {
@@ -78,15 +93,84 @@ func (s *AppService) GetMonitors() []MonitorData {
 	result := make([]MonitorData, len(monitors))
 	for i, m := range monitors {
 		result[i] = MonitorData{
-			Index:   m.Index,
-			Width:   int(m.Resolution.Width),
-			Height:  int(m.Resolution.Height),
-			X:       int(m.Resolution.X),
-			Y:       int(m.Resolution.Y),
-			Primary: m.Primary,
+			Index:       m.Index,
+			Width:       int(m.Resolution.Width),
+			Height:      int(m.Resolution.Height),
+			X:           int(m.Resolution.X),
+			Y:           int(m.Resolution.Y),
+			AspectRatio: monitorAspectRatio(m),
+			Primary:     m.Primary,
 		}
 	}
 	return result
+}
+
+func (s *AppService) GetMonitorLayout(availWidth, availHeight, labelHeight int) MonitorLayoutData {
+	canvasWidth, canvasHeight, monitors, _, _ := wp.GetMonitors()
+	layout := MonitorLayoutData{
+		CanvasWidth:  canvasWidth,
+		CanvasHeight: canvasHeight,
+		StageHeight:  labelHeight,
+		Scale:        1,
+		Monitors:     make([]MonitorData, len(monitors)),
+	}
+
+	if len(monitors) == 0 || canvasWidth <= 0 || canvasHeight <= 0 {
+		return layout
+	}
+
+	if availWidth < 1 {
+		availWidth = 1
+	}
+	usableHeight := availHeight - labelHeight
+	if usableHeight < 1 {
+		usableHeight = 1
+	}
+
+	scaleW := float64(availWidth) / float64(canvasWidth)
+	scaleH := float64(usableHeight) / float64(canvasHeight)
+	scale := math.Min(scaleW, scaleH)
+	if scale > 1 {
+		scale = 1
+	}
+	if scale <= 0 {
+		scale = 1
+	}
+
+	layout.Scale = scale
+	layout.StageWidth = int(math.Round(float64(canvasWidth) * scale))
+	layout.StageHeight = int(math.Round(float64(canvasHeight)*scale)) + labelHeight
+
+	for i, m := range monitors {
+		layout.layoutMonitors(i, m, scale)
+	}
+
+	return layout
+}
+
+func (layout *MonitorLayoutData) layoutMonitors(i int, m wp.MonitorInfo, scale float64) {
+	width := int(m.Resolution.Width)
+	height := int(m.Resolution.Height)
+	layout.Monitors[i] = MonitorData{
+		Index:         m.Index,
+		Width:         width,
+		Height:        height,
+		X:             int(m.Resolution.X),
+		Y:             int(m.Resolution.Y),
+		PreviewX:      int(math.Round(float64(m.Resolution.X) * scale)),
+		PreviewY:      int(math.Round(float64(m.Resolution.Y) * scale)),
+		PreviewWidth:  int(math.Round(float64(m.Resolution.Width) * scale)),
+		PreviewHeight: int(math.Round(float64(m.Resolution.Height) * scale)),
+		AspectRatio:   monitorAspectRatio(m),
+		Primary:       m.Primary,
+	}
+}
+
+func monitorAspectRatio(m wp.MonitorInfo) float64 {
+	if m.Resolution.Height == 0 {
+		return 0
+	}
+	return float64(m.Resolution.Width) / float64(m.Resolution.Height)
 }
 
 func (s *AppService) BrowseFile() string {
