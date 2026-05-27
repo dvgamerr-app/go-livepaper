@@ -236,6 +236,7 @@ func videoThumbnail(filePath string) string {
 		"-q:v", "1",
 		"-",
 	)
+	wp.ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	out, err := cmd.Output()
 	if err != nil || len(out) == 0 {
@@ -272,6 +273,7 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 		"-nostats",
 		"-y", out,
 	)
+	wp.ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -342,6 +344,7 @@ func (s *AppService) preprocessGIF(filePath string) (string, error) {
 		"-nostats",
 		"-y", out,
 	)
+	wp.ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -382,6 +385,7 @@ func getVideoDurationUs(filePath string) int64 {
 		"-of", "default=noprint_wrappers=1:nokey=1",
 		filePath,
 	)
+	wp.ConfigureBackgroundCommand(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return 0

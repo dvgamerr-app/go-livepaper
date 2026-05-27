@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "build:test:installer": "cmd /c \".\\scripts\\build-test-installer.bat\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",

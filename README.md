@@ -99,13 +99,15 @@ livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 ```sh
 git clone https://github.com/dvgamerr/go-livepaper.git
 cd go-livepaper
-go build -o livepaper.exe ./cmd/livepaper
+mkdir bin
+go build -o bin/livepaper.exe ./cmd/livepaper
 ```
 
 With version embedded:
 
 ```sh
-go build -ldflags "-X main.VERSION=$(cat VERSION)" -o livepaper.exe ./cmd/livepaper
+mkdir bin
+go build -ldflags "-X main.VERSION=$(cat VERSION)" -o bin/livepaper.exe ./cmd/livepaper
 ```
 
 ---

@@ -11,7 +11,8 @@ Deep references:
 
 ```nu
 let version = (try { ^git describe --tags --abbrev=0 | str trim | str replace --regex '^v' '' } catch { "dev" })
-^go build -ldflags $"-X main.VERSION=($version)" -o livepaper.exe ./cmd/livepaper/
+mkdir bin
+^go build -ldflags $"-X main.VERSION=($version)" -o bin/livepaper.exe ./cmd/livepaper/
 ```
 
 Frontend:
@@ -25,7 +26,7 @@ bun run build
 There is no test suite. Manual testing requires a Windows machine with multiple monitors. Verify by running the built binary directly:
 
 ```nu
-.\livepaper.exe 'C:\Wallpapers\test.jpg'
+.\bin\livepaper.exe 'C:\Wallpapers\test.jpg'
 ```
 
 Frontend dev server:

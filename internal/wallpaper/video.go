@@ -132,6 +132,7 @@ func PreprocessVideo(src string, w, h int) (string, error) {
 		"-an",
 		"-y", out,
 	)
+	ConfigureBackgroundCommand(cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -160,6 +161,7 @@ func ExtractVideoFrame(path string, w, h int) (image.Image, error) {
 		"-vcodec", "png",
 		"-",
 	)
+	ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	out, err := cmd.Output()
 	if err != nil || len(out) == 0 {
@@ -177,6 +179,7 @@ func VideoMidSec(path string) float64 {
 		"-of", "default=noprint_wrappers=1:nokey=1",
 		path,
 	)
+	ConfigureBackgroundCommand(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return 0
@@ -228,6 +231,7 @@ func spawnMpv(videoPath string, hwnd uintptr, stop <-chan struct{}) {
 			"--hwdec=auto",
 			videoPath,
 		)
+		ConfigureBackgroundCommand(cmd)
 
 		sessionMu.Lock()
 		sessionCmds = append(sessionCmds, cmd)

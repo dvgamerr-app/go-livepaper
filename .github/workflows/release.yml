@@ -27,6 +27,9 @@ jobs:
       - name: Install JS deps
         run: bun install --frozen-lockfile
 
+      - name: Generate icons
+        run: bun scripts/generate-icons.js
+
       - name: Build frontend
         run: bun run build
 
@@ -35,14 +38,43 @@ jobs:
 
       - name: Get version from tag
         id: version
-        shell: bash
-        run: echo "value=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        shell: pwsh
+        run: |
+          $displayVersion = "${env:GITHUB_REF_NAME}" -replace '^v', ''
+          if ([string]::IsNullOrWhiteSpace($displayVersion)) {
+            throw "Release tag must include a version, for example v1.0"
+          }
+
+          $parts = $displayVersion.Split('.')
+          if ($parts.Count -gt 4) {
+            throw "Release tag version must have at most four numeric parts: $displayVersion"
+          }
+
+          foreach ($part in $parts) {
+            if ($part -notmatch '^\d+$') {
+              throw "Release tag version must be numeric dot-separated parts only: $displayVersion"
+            }
+          }
+
+          $fileVersion = (@($parts + @('0', '0', '0', '0'))[0..3]) -join '.'
+          "display=$displayVersion" >> $env:GITHUB_OUTPUT
+          "file=$fileVersion" >> $env:GITHUB_OUTPUT
+
+      - name: Prepare bin payload
+        shell: pwsh
+        run: |
+          if (Test-Path bin) {
+            Remove-Item -Recurse -Force bin
+          }
+
+          New-Item -ItemType Directory -Path bin\scripts | Out-Null
+          Copy-Item scripts\install-deps.ps1 bin\scripts\install-deps.ps1
 
       - name: Build
-        run: go build -ldflags "-X main.VERSION=${{ steps.version.outputs.value }} -H windowsgui" -o livepaper.exe ./cmd/livepaper/
+        run: go build -ldflags "-X main.VERSION=${{ steps.version.outputs.display }} -H windowsgui" -o bin/livepaper.exe ./cmd/livepaper/
 
       - name: Build installer
-        run: makensis /DAPP_VERSION=${{ steps.version.outputs.value }} installer\livepaper.nsi
+        run: makensis /DAPP_VERSION=${{ steps.version.outputs.display }} /DAPP_FILE_VERSION=${{ steps.version.outputs.file }} installer\livepaper.nsi
 
       - name: Build changelog
         id: changelog
@@ -55,10 +87,10 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          name: Live Paper v${{ steps.version.outputs.value }}
+          name: Live Paper v${{ steps.version.outputs.display }}
           body: ${{ steps.changelog.outputs.changelog }}
           files: |
-            livepaper-setup-${{ steps.version.outputs.value }}.exe
-            livepaper.exe
+            bin/livepaper-setup-${{ steps.version.outputs.display }}.exe
+            bin/livepaper.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

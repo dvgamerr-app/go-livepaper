@@ -168,6 +168,10 @@ rawY = normalizedY + vdMinY
 - ใช้ Nushell `enumerate` กับ `.index` / `.item` shorthand ใน environment นี้ล้มเหลว; ใช้ `$row.index` และ `$row.item` แทน
 - ส่ง Nushell `$row...` ผ่าน PowerShell double quotes จะโดน PowerShell strip ตัวแปรก่อนถึง Nushell
 - ส่ง regex ให้ `rg` ผ่าน nested double quotes ของ PowerShell/Nushell ทำให้ pattern พัง; ใช้ single-quoted pattern ใน `nu -c`
+- ซ่อน console ของ child process บน Windows ด้วย `syscall.CREATE_NO_WINDOW` ตรง ๆ ใน Go 1.26.3 ของ environment นี้ compile ไม่ผ่าน (`undefined: syscall.CREATE_NO_WINDOW`); ถ้าต้องใช้ flag นี้ให้ประกาศค่า Win32 เองแทน
+- `bun run` บน Windows ที่ชี้ script เป็น `scripts\\build-test.bat` ตรง ๆ เคยถูก parse พังเป็น `scriptsbuild-test.bat`; เรียก batch ผ่าน `cmd /c` แทน
+- `bun run` บน Windows ที่ใช้ `cmd /c scripts\\build-test.bat` ยังกลืน backslash จนกลายเป็น `scriptsbuild-test.bat`; ถ้าจะเรียก batch ผ่าน `package.json` ให้ใช้ forward slashes
+- `bun run` บน Windows ที่ใช้ `cmd /c scripts/build-test.bat` จะโดน `cmd` มอง `/` เป็น option ของ path; ถ้าจะเรียก `.bat` ผ่าน `cmd /c` ให้ส่ง path แบบ quoted command
 - อัดคำสั่ง `nu -c "^git diff ..."` ที่ quote ซ้อนหนัก ๆ เข้า `multi_tool_use.parallel` อาจล้มตั้งแต่ launcher setup; รันคำสั่ง inspection แบบเดี่ยวแทน
 - `rtk go build -o livepaper-test.exe ./cmd/livepaper` ใน session นี้ compile ผ่านแต่ไม่ควรสมมติว่า artifact จะอยู่ที่ `livepaper-test.exe`; อย่าใช้ path นี้เป็นขั้นล้างไฟล์ต่อ
 
@@ -177,6 +181,7 @@ rawY = normalizedY + vdMinY
 
 ```nu
 let version = (open VERSION | str trim)
-^go build -ldflags $"-X main.VERSION=($version)" -o livepaper.exe ./cmd/livepaper/
-.\livepaper.exe 'C:\Wallpapers\test.jpg'
+mkdir bin
+^go build -ldflags $"-X main.VERSION=($version)" -o bin/livepaper.exe ./cmd/livepaper/
+.\bin\livepaper.exe 'C:\Wallpapers\test.jpg'
 ```
