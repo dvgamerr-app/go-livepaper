@@ -14,12 +14,24 @@ let version = (try { ^git describe --tags --abbrev=0 | str trim | str replace --
 ^go build -ldflags $"-X main.VERSION=($version)" -o livepaper.exe ./cmd/livepaper/
 ```
 
+Frontend:
+
+```sh
+bun run build
+```
+
 ## Run / Test
 
 There is no test suite. Manual testing requires a Windows machine with multiple monitors. Verify by running the built binary directly:
 
 ```nu
 .\livepaper.exe 'C:\Wallpapers\test.jpg'
+```
+
+Frontend dev server:
+
+```sh
+bun run dev
 ```
 
 ## Frameworks And Runtime
@@ -29,7 +41,7 @@ There is no test suite. Manual testing requires a Windows machine with multiple 
 - Astro `6.3.8`
 - Win32 APIs via `golang.org/x/sys` and `syscall`
 - `ffmpeg` / `ffprobe` / `mpv` for video processing and playback
-- Bun as the default JavaScript runtime for repo scripts
+- Bun as the JavaScript runtime — **do not use `node` or `npm`**, always use `bun`
 
 ## Project Structure
 
@@ -41,7 +53,7 @@ There is no test suite. Manual testing requires a Windows machine with multiple 
 - `src/components/*` / `src/styles/app.css` — UI pieces และ styling
 - `public/wails/runtime.js` — runtime bridge ที่ frontend ใช้เรียก Go service
 - `cmd/livepaper/assets_dev.go` / `assets_prod.go` — dev proxy กับ prod embedded assets
-- `scripts/generate-icons.js` / `install-deps.ps1` — icon generation และ dependency setup
+- `scripts/generate-icons.js` / `install-deps.ps1` — icon generation และ dependency setup (run scripts with `bun`, not `node`)
 - `docs/*.md` — เอกสารอ้างอิงเชิงลึกที่ไม่ควรใส่ซ้ำใน prompt หลัก
 
 ## System Flow

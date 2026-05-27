@@ -69,6 +69,10 @@ func (s *AppService) GetVersion() string {
 	return VERSION
 }
 
+func (s *AppService) GetGPUStats() GPUStats {
+	return readGPUStats()
+}
+
 func (s *AppService) GetMonitors() []MonitorData {
 	_, _, monitors, _, _ := wp.GetMonitors()
 	result := make([]MonitorData, len(monitors))

@@ -62,6 +62,7 @@ func isDev() bool {
 
 func runTrayApp() {
 	svc := &AppService{}
+	go initGPU()
 
 	app := application.New(application.Options{
 		Name:        "livepaper",

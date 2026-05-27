@@ -78,8 +78,9 @@ import Footer from '../components/Footer.astro';
         <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#fbbf24"></span>Nature</button>
       </div>
 
-      <div class="mt-auto border-t border-lp-border p-2 flex flex-col gap-0.5 wails-no-drag">
-        <div class="px-2.5 py-1 text-[10px] text-lp-muted" id="version"></div>
+      <div class="mt-auto border-t border-lp-border flex items-center gap-2 px-2.5 min-w-0 h-9 wails-no-drag">
+        <span class="w-[7px] h-[7px] rounded-full bg-lp-success shrink-0 transition-colors duration-300" id="ab-dot"></span>
+        <span class="status text-[11px] min-w-0" id="status" role="status" aria-live="polite"></span>
       </div>
     </aside>
 
@@ -98,19 +99,6 @@ import Footer from '../components/Footer.astro';
       <div class="flex-1 min-h-[100px] relative wails-drag before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)]">
         <div class="absolute inset-0 flex items-center justify-center p-12 overflow-hidden" id="content">
           <div class="loading">Loading monitors…</div>
-        </div>
-      </div>
-
-      <!-- Gallery / selected wallpapers strip -->
-      <div class="shrink-0 h-[154px] border-t border-lp-border flex flex-col bg-[rgba(19,19,22,0.35)]">
-        <div class="h-[34px] shrink-0 flex items-center justify-between pl-6 pr-5">
-          <span class="text-xs font-semibold">Selected Wallpapers</span>
-          <span class="text-[10px] text-lp-muted ml-1.5" id="gallery-sub"></span>
-        </div>
-        <div class="flex-1 min-h-0 relative before:content-[''] before:absolute before:inset-y-0 before:left-0 before:w-8 before:z-[1] before:pointer-events-none before:bg-gradient-to-r before:from-lp-bg before:to-transparent after:content-[''] after:absolute after:inset-y-0 after:right-0 after:w-8 after:z-[1] after:pointer-events-none after:bg-gradient-to-l after:from-lp-bg after:to-transparent">
-          <div class="gallery-strip" id="thumb-strip">
-            <span class="w-full text-center text-lp-muted text-[11px] px-6" id="gallery-empty">Click a monitor above to assign a wallpaper</span>
-          </div>
         </div>
       </div>
 
@@ -134,10 +122,7 @@ import Footer from '../components/Footer.astro';
   const statusEl      = document.getElementById('status')
   const dotEl         = document.getElementById('ab-dot')
   const settingsModal = document.getElementById('settings-modal')
-  const galleryEmpty  = document.getElementById('gallery-empty')
-  const galleryStrip  = document.getElementById('thumb-strip')
-
-  document.getElementById('tb-settings').addEventListener('click', () => { settingsModal.hidden = false })
+document.getElementById('tb-settings').addEventListener('click', () => { settingsModal.hidden = false })
   document.getElementById('modal-close').addEventListener('click',  () => { settingsModal.hidden = true  })
   settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.hidden = true })
 
@@ -156,12 +141,6 @@ import Footer from '../components/Footer.astro';
     const anyProcessing = Object.values(state).some(s => s.filePath && s.isVideo && !s.ready)
     applyBtn.disabled = !anySelected || anyProcessing
     resetBtn.disabled = !anySelected || anyProcessing
-    updateGalleryEmpty()
-  }
-
-  function updateGalleryEmpty() {
-    const hasCards = Object.values(state).some(s => s.filePath)
-    if (galleryEmpty) galleryEmpty.style.display = hasCards ? 'none' : ''
   }
 
   function resetMonitor(idx) {
@@ -175,8 +154,6 @@ import Footer from '../components/Footer.astro';
     if (bd) { bd.style.display = 'none'; bd.className = 'mon-badge' }
     const mp = document.getElementById(`mp-${idx}`)
     if (mp) mp.classList.remove('active')
-    const gc = document.getElementById(`gc-${idx}`)
-    if (gc) gc.remove()
   }
 
   async function call(method, ...args) {
@@ -197,8 +174,9 @@ import Footer from '../components/Footer.astro';
     const totalW = maxX - minX
     const totalH = maxY - minY
 
-    const availW = contentEl.clientWidth  - 8
-    const availH = contentEl.clientHeight - 8
+    const cs     = getComputedStyle(contentEl)
+    const availW = contentEl.clientWidth  - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+    const availH = contentEl.clientHeight - parseFloat(cs.paddingTop)  - parseFloat(cs.paddingBottom)
     const scale  = Math.min(availW / totalW, availH / totalH, 1)
 
     const stageW = Math.round(totalW * scale)
@@ -255,39 +233,6 @@ import Footer from '../components/Footer.astro';
     return stage
   }
 
-  // ── Gallery card helpers ─────────────────────────────────────────
-  function updateGalleryCard(idx, thumbnail, filePath, isVideo) {
-    let card = document.getElementById(`gc-${idx}`)
-    const mon = monitors.find(m => m.index === idx)
-    const monName = mon ? `Monitor ${mon.index + 1}` : `Monitor ${idx + 1}`
-    const monRes  = mon ? `${mon.width}×${mon.height}` : ''
-    const e = extOf(filePath)
-    const badgeClass = isVideo && e !== 'gif' ? 'video' : e === 'gif' ? 'gif' : 'image'
-    const badgeText  = isVideo && e !== 'gif' ? 'VIDEO' : e === 'gif' ? 'GIF' : 'IMG'
-
-    if (!card) {
-      card = document.createElement('button')
-      card.className = 'gallery-card'
-      card.id = `gc-${idx}`
-      card.addEventListener('click', () => {
-        const s = state[idx]
-        if (s && s.isVideo && !s.ready) return
-        browse(idx, mon?.width || 1920, mon?.height || 1080)
-      })
-      if (galleryStrip) galleryStrip.appendChild(card)
-    }
-
-    card.innerHTML = `
-      <img class="gc-img" src="${thumbnail || ''}" alt="${monName}">
-      <div class="gc-overlay"></div>
-      <span class="gc-badge ${badgeClass}">${badgeText}</span>
-      <div class="gc-info">
-        <p class="gc-name">${monName}</p>
-        <p class="gc-res">${monRes}</p>
-      </div>
-    `
-  }
-
   // ── Card update helpers ──────────────────────────────────────────
   function applyThumb(idx, thumbnail, filePath, isVideo) {
     const block = document.getElementById(`mb-${idx}`)
@@ -305,8 +250,6 @@ import Footer from '../components/Footer.astro';
       else if (e === 'gif')       { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
       else                        { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
     }
-
-    updateGalleryCard(idx, thumbnail, filePath, isVideo)
   }
 
   function setEncoding(idx, active, pct) {
@@ -503,7 +446,6 @@ import Footer from '../components/Footer.astro';
       monitors = await call('GetMonitors')
       const ver = await call('GetVersion')
       const verText = ver ? `v${ver}` : ''
-      document.getElementById('version').textContent = verText
       document.getElementById('tb-version').textContent = verText
       const modalVer = document.getElementById('modal-version')
       if (modalVer) modalVer.textContent = verText || '—'
@@ -537,6 +479,28 @@ import Footer from '../components/Footer.astro';
 
   document.getElementById('tb-min').addEventListener('click',   () => call('WindowMinimise').catch(() => {}))
   document.getElementById('tb-close').addEventListener('click', () => call('WindowHide').catch(() => {}))
+
+  // ── GPU stats polling ─────────────────────────────────────────────
+  const gpuEl = document.getElementById('gpu-stats')
+  async function updateGPUStats() {
+    if (!gpuEl) return
+    try {
+      const s = await call('GetGPUStats')
+      if (!s) return
+      const pct  = Math.round(s.usagePct)
+      const vram = s.usedMB >= 1024
+        ? `${(s.usedMB / 1024).toFixed(1)} GB`
+        : `${s.usedMB} MB`
+      gpuEl.textContent = `GPU · ${pct}% · ${vram} VRAM`
+      gpuEl.classList.remove('hidden')
+    } catch (_) {
+      gpuEl.classList.add('hidden')
+    }
+  }
+  setTimeout(() => {
+    updateGPUStats()
+    setInterval(updateGPUStats, 2000)
+  }, 1500)
 
   init()
 </script>
