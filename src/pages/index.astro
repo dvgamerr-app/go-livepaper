@@ -125,6 +125,66 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
 
   const STORAGE_KEY = 'livepaper_state_v1'
 
+  // ── IndexedDB recent wallpapers ──────────────────────────────────
+  const IDB_NAME    = 'livepaper'
+  const IDB_VERSION = 1
+  const STORE_RECENT = 'recent'
+  const RECENT_LIMIT = 50
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_NAME, IDB_VERSION)
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result
+        if (!db.objectStoreNames.contains(STORE_RECENT)) {
+          const store = db.createObjectStore(STORE_RECENT, { keyPath: 'id', autoIncrement: true })
+          store.createIndex('filePath', 'filePath', { unique: true })
+        }
+      }
+      req.onsuccess  = (e) => resolve(e.target.result)
+      req.onerror    = (e) => reject(e.target.error)
+    })
+  }
+
+  async function upsertRecent(entry) {
+    const db = await openDB()
+    return new Promise((resolve, reject) => {
+      const tx    = db.transaction(STORE_RECENT, 'readwrite')
+      const store = tx.objectStore(STORE_RECENT)
+      const getReq = store.index('filePath').get(entry.filePath)
+      getReq.onsuccess = () => {
+        const existing = getReq.result
+        const record   = { ...entry, appliedAt: Date.now() }
+        if (existing) { record.id = existing.id; store.put(record) }
+        else store.add(record)
+      }
+      tx.oncomplete = () => resolve()
+      tx.onerror    = (e) => reject(e.target.error)
+    })
+  }
+
+  async function pruneRecent() {
+    const db = await openDB()
+    return new Promise((resolve) => {
+      const tx    = db.transaction(STORE_RECENT, 'readwrite')
+      const store = tx.objectStore(STORE_RECENT)
+      store.count().onsuccess = (e) => {
+        const total = e.target.result
+        if (total <= RECENT_LIMIT) return
+        const del = total - RECENT_LIMIT
+        let deleted = 0
+        store.openCursor().onsuccess = (ce) => {
+          const cursor = ce.target.result
+          if (!cursor || deleted >= del) return
+          cursor.delete()
+          deleted++
+          cursor.continue()
+        }
+      }
+      tx.oncomplete = () => resolve()
+    })
+  }
+
   function status(msg, type) {
     statusEl.textContent = msg || 'Running'
     statusEl.className = 'status' + (type ? ` ${type}` : '')
@@ -356,6 +416,18 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
       await call('ApplyWallpapers', list)
       status('Applied!', 'success')
       saveState()
+      // Persist each applied wallpaper to IndexedDB as recent
+      await Promise.all(
+        Object.values(state)
+          .filter(s => s.filePath)
+          .map(s => upsertRecent({
+            filePath:   s.filePath,
+            cachedPath: s.cachedPath,
+            isVideo:    s.isVideo,
+            thumbnail:  s.thumbnail,
+          }).catch(() => {}))
+      )
+      pruneRecent().catch(() => {})
       setTimeout(() => status(''), 3000)
     } catch (e) {
       status(`Failed: ${e}`, 'error')
@@ -484,7 +556,12 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     ro.observe(contentEl)
 
     const hasRestored = await restoreState()
-    if (hasRestored) autoApply()
+    if (hasRestored) {
+      autoApply()
+    } else {
+      // No wallpaper configured — show window so user can set one
+      call('WindowShow').catch(() => {})
+    }
   }
 
   document.getElementById('tb-min').addEventListener('click',   () => call('WindowMinimise').catch(() => {}))

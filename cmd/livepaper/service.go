@@ -75,6 +75,13 @@ func (s *AppService) WindowHide() {
 	}
 }
 
+func (s *AppService) WindowShow() {
+	if s.window != nil {
+		s.window.Show()
+		s.window.Focus()
+	}
+}
+
 func (s *AppService) FileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
