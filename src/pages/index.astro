@@ -402,8 +402,9 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
         state[idx].cachedPath = cached
         state[idx].ready = true
       } catch (e) {
-        status(`Encode error: ${e}`, 'error')
-        state[idx].ready = false
+        resetMonitor(idx)
+        status('Encoding cancelled.', '')
+        return
       }
       setEncoding(idx, false, 100)
       refreshApply()
