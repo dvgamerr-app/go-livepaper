@@ -1,58 +1,120 @@
 ---
----
-<div class="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] wails-no-drag" id="settings-modal" hidden>
-  <div class="bg-[#18181b] border border-lp-border-strong rounded-xl w-[360px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.7)]" role="dialog" aria-modal="true" aria-labelledby="modal-title">
 
-    <div class="flex items-center justify-between px-[18px] py-3.5 pl-[18px] pr-3.5 border-b border-lp-border">
-      <span class="text-[13px] font-semibold text-lp-text" id="modal-title">Settings</span>
-      <button class="w-8 h-8 border-0 bg-transparent text-lp-muted rounded cursor-pointer grid place-items-center transition-colors duration-[120ms] shrink-0 hover:bg-white/[0.06] hover:text-lp-text" id="modal-close" aria-label="Close settings">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+---
+
+<div
+  class="wails-no-drag fixed inset-0 z-[100] flex items-center justify-center bg-black/60"
+  id="settings-modal"
+  hidden
+>
+  <div
+    class="border-lp-border-strong w-[360px] overflow-hidden rounded-xl border bg-[#18181b] shadow-[0_24px_64px_rgba(0,0,0,0.7)]"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+    <div
+      class="border-lp-border flex items-center justify-between border-b px-[18px] py-3.5 pr-3.5 pl-[18px]"
+    >
+      <span class="text-lp-text text-[13px] font-semibold" id="modal-title">Settings</span>
+      <button
+        class="text-lp-muted hover:text-lp-text grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded border-0 bg-transparent transition-colors duration-[120ms] hover:bg-white/[0.06]"
+        id="modal-close"
+        aria-label="Close settings"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
         </svg>
       </button>
     </div>
 
     <div class="py-2">
       <div class="flex items-center justify-between gap-4 px-[18px] py-3">
-        <div class="flex flex-col gap-0.5 min-w-0">
-          <div class="text-[13px] font-medium text-lp-text">Version</div>
-          <div class="text-[11px] text-lp-muted leading-tight" id="modal-version">—</div>
+        <div class="flex min-w-0 flex-col gap-0.5">
+          <div class="text-lp-text text-[13px] font-medium">Version</div>
+          <div class="text-lp-muted text-[11px] leading-tight" id="modal-version">—</div>
         </div>
       </div>
 
-      <div class="h-px bg-lp-border mx-[18px]"></div>
+      <div class="bg-lp-border mx-[18px] h-px"></div>
 
       <div class="flex items-center justify-between gap-4 px-[18px] py-3">
-        <div class="flex flex-col gap-0.5 min-w-0">
-          <div class="text-[13px] font-medium text-lp-text">Temp folder</div>
-          <div class="text-[11px] text-lp-muted leading-tight">Encoded video files are cached in <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;font-size:10px">%TEMP%\livepaper\</code></div>
+        <div class="flex min-w-0 flex-col gap-0.5">
+          <div class="text-lp-text text-[13px] font-medium">Temp folder</div>
+          <div class="text-lp-muted text-[11px] leading-tight">
+            Encoded video files are cached in <code
+              style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;font-size:10px"
+              >%TEMP%\livepaper\</code
+            >
+          </div>
         </div>
       </div>
 
-      <div class="h-px bg-lp-border mx-[18px]"></div>
+      <div class="bg-lp-border mx-[18px] h-px"></div>
 
       <div class="flex items-center justify-between gap-4 px-[18px] py-3">
-        <div class="flex flex-col gap-0.5 min-w-0">
-          <div class="text-[13px] font-medium text-lp-text">Clean Cache</div>
-          <div class="text-[11px] text-lp-muted leading-tight">Remove encoded video files from the temp folder</div>
+        <div class="flex min-w-0 flex-col gap-0.5">
+          <div class="text-lp-text text-[13px] font-medium">Clean Cache</div>
+          <div class="text-lp-muted text-[11px] leading-tight">
+            Remove encoded video files from the temp folder
+          </div>
         </div>
-        <button class="h-9 px-3 inline-flex items-center gap-1.5 bg-transparent border-0 text-lp-muted rounded-md cursor-pointer text-xs font-medium whitespace-nowrap transition-colors duration-150 disabled:opacity-[0.35] disabled:cursor-not-allowed enabled:hover:text-lp-text enabled:hover:bg-white/[0.05]" id="clean-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>
+        <button
+          class="text-lp-muted enabled:hover:text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 enabled:hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-[0.35]"
+          id="clean-btn"
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path>
           </svg>
           Clean Cache
         </button>
       </div>
 
       <div class="flex items-center justify-between gap-4 px-[18px] py-3">
-        <div class="flex flex-col gap-0.5 min-w-0">
-          <div class="text-[13px] font-medium text-lp-text">Reset Wallpapers</div>
-          <div class="text-[11px] text-lp-muted leading-tight">Remove all assigned wallpapers and restore defaults</div>
+        <div class="flex min-w-0 flex-col gap-0.5">
+          <div class="text-lp-text text-[13px] font-medium">Reset Wallpapers</div>
+          <div class="text-lp-muted text-[11px] leading-tight">
+            Remove all assigned wallpapers and restore defaults
+          </div>
         </div>
-        <button class="h-9 px-3 inline-flex items-center gap-1.5 bg-transparent border-0 text-lp-muted rounded-md cursor-pointer text-xs font-medium whitespace-nowrap transition-colors duration-150 disabled:opacity-[0.35] disabled:cursor-not-allowed enabled:hover:text-lp-danger enabled:hover:bg-white/[0.05]" id="reset-btn" disabled>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-            <path d="M3 3v5h5"/>
+        <button
+          class="text-lp-muted enabled:hover:text-lp-danger inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 enabled:hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-[0.35]"
+          id="reset-btn"
+          disabled
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
           </svg>
           Reset
         </button>

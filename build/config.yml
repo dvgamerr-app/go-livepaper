@@ -1,12 +1,12 @@
 version: '3'
 
 info:
-  companyName: "dvgamerr"
-  productName: "livepaper"
-  productIdentifier: "io.dvgamerr.livepaper"
-  description: "Live wallpaper with system tray"
-  copyright: "(c) 2025, dvgamerr"
-  version: "1.0.0"
+  companyName: 'dvgamerr'
+  productName: 'livepaper'
+  productIdentifier: 'io.dvgamerr.livepaper'
+  description: 'Live wallpaper with system tray'
+  copyright: '(c) 2025, dvgamerr'
+  version: '1.0.0'
 
 dev_mode:
   root_path: .
@@ -21,7 +21,7 @@ dev_mode:
       - .DS_Store
       - .gitignore
     watched_extension:
-      - "*.go"
+      - '*.go'
     git_ignore: true
   executes:
     - cmd: powershell -Command "New-Item -ItemType Directory -Force -Path bin | Out-Null"

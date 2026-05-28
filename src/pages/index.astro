@@ -1,100 +1,218 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Titlebar from '../components/Titlebar.astro';
-import DepWarn from '../components/DepWarn.astro';
-import SettingsModal from '../components/SettingsModal.astro';
-import Footer from '../components/Footer.astro';
+import Layout from '../layouts/Layout.astro'
+import Titlebar from '../components/Titlebar.astro'
+import DepWarn from '../components/DepWarn.astro'
+import SettingsModal from '../components/SettingsModal.astro'
+import Footer from '../components/Footer.astro'
 ---
 
 <Layout title="Live Paper">
   <Titlebar />
   <DepWarn />
 
-  <div class="flex-1 flex overflow-hidden wails-no-drag">
+  <div class="wails-no-drag flex flex-1 overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-56 shrink-0 border-r border-lp-border bg-[rgba(19,19,22,0.5)] backdrop-blur-[12px] flex flex-col wails-drag">
-      <div class="p-2.5 pb-1.5 wails-no-drag">
+    <aside
+      class="border-lp-border wails-drag flex w-56 shrink-0 flex-col border-r bg-[rgba(19,19,22,0.5)] backdrop-blur-[12px]"
+    >
+      <div class="wails-no-drag p-2.5 pb-1.5">
         <input
-          class="w-full h-[30px] px-2.5 bg-white/[0.04] border border-lp-border rounded-md text-lp-text text-[11px] outline-none transition-[border-color,background-color] duration-150 placeholder:text-lp-muted focus:border-[rgba(47,138,239,0.5)] focus:bg-white/[0.06]"
-          placeholder="Search library…" tabindex="-1" readonly />
+          class="border-lp-border text-lp-text placeholder:text-lp-muted h-[30px] w-full rounded-md border bg-white/[0.04] px-2.5 text-[11px] transition-[border-color,background-color] duration-150 outline-none focus:border-[rgba(47,138,239,0.5)] focus:bg-white/[0.06]"
+          placeholder="Search library…"
+          tabindex="-1"
+          readonly
+        />
       </div>
 
-      <nav class="px-2 flex flex-col gap-0.5 wails-no-drag">
+      <nav class="wails-no-drag flex flex-col gap-0.5 px-2">
         <!-- Displays — active/functional -->
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-lp-accent-soft text-lp-text text-[12px] font-medium cursor-pointer transition-colors duration-[120ms] text-left whitespace-nowrap overflow-hidden" aria-current="page">
-          <span class="shrink-0 text-lp-accent flex items-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
+        <button
+          class="bg-lp-accent-soft text-lp-text flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
+          aria-current="page"
+        >
+          <span class="text-lp-accent flex shrink-0 items-center">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2" y="3" width="20" height="14" rx="2"></rect><path d="M8 21h8"></path><path
+                d="M12 17v4"></path>
             </svg>
           </span>
           Displays
-          <span class="ml-auto w-1.5 h-1.5 rounded-full bg-lp-accent shrink-0"></span>
+          <span class="bg-lp-accent ml-auto h-1.5 w-1.5 shrink-0 rounded-full"></span>
         </button>
 
         <!-- Placeholder nav items -->
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
-          <span class="shrink-0 text-lp-muted flex items-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+        >
+          <span class="text-lp-muted flex shrink-0 items-center">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2" y="7" width="20" height="14" rx="2"></rect><path
+                d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path>
             </svg>
           </span>
           Playlists
-          <span class="ml-auto text-[10px] px-1.5 py-px rounded bg-white/[0.06] text-lp-muted shrink-0">—</span>
+          <span
+            class="text-lp-muted ml-auto shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[10px]"
+            >—</span
+          >
         </button>
 
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
-          <span class="shrink-0 text-lp-muted flex items-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+        >
+          <span class="text-lp-muted flex shrink-0 items-center">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polygon points="23 7 16 12 23 17 23 7"></polygon><rect
+                x="1"
+                y="5"
+                width="15"
+                height="14"
+                rx="2"></rect>
             </svg>
           </span>
           Live Wallpapers
         </button>
 
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
-          <span class="shrink-0 text-lp-muted flex items-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+        >
+          <span class="text-lp-muted flex shrink-0 items-center">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2"></rect><circle
+                cx="8.5"
+                cy="8.5"
+                r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>
             </svg>
           </span>
           Static
         </button>
 
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1">
-          <span class="shrink-0 text-lp-muted flex items-center">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+        >
+          <span class="text-lp-muted flex shrink-0 items-center">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+              ></path>
             </svg>
           </span>
           Local Folders
         </button>
       </nav>
 
-      <div class="px-[18px] pt-4 pb-1 text-[10px] font-semibold text-lp-muted uppercase tracking-[0.12em] wails-drag">Collections</div>
-      <div class="px-2 flex flex-col gap-0.5 wails-no-drag">
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#34d399"></span>Atmospheric</button>
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#a78bfa"></span>Cyberpunk</button>
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#f472b6"></span>Anime</button>
-        <button class="w-full h-8 flex items-center gap-2 px-2.5 border-0 rounded-md bg-transparent text-lp-muted text-[12px] font-medium cursor-default opacity-[0.38] text-left whitespace-nowrap overflow-hidden" tabindex="-1"><span class="w-2 h-2 rounded-full shrink-0" style="background:#fbbf24"></span>Nature</button>
+      <div
+        class="text-lp-muted wails-drag px-[18px] pt-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase"
+      >
+        Collections
       </div>
-
+      <div class="wails-no-drag flex flex-col gap-0.5 px-2">
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#34d399"
+          ></span>Atmospheric</button
+        >
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#a78bfa"
+          ></span>Cyberpunk</button
+        >
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#f472b6"
+          ></span>Anime</button
+        >
+        <button
+          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
+          tabindex="-1"
+          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#fbbf24"
+          ></span>Nature</button
+        >
+      </div>
     </aside>
 
     <!-- Main panel -->
-    <section class="flex-1 flex flex-col overflow-hidden min-w-0">
-
+    <section class="flex min-w-0 flex-1 flex-col overflow-hidden">
       <!-- Top bar -->
-      <div class="h-[52px] shrink-0 flex items-center justify-between px-6 border-b border-lp-border wails-drag">
+      <div
+        class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
+      >
         <div class="wails-drag">
-          <h1 class="text-sm font-semibold tracking-[-0.01em] leading-tight">Display Workspace</h1>
-          <p class="text-[11px] text-lp-muted mt-px" id="monitor-subtitle">Loading displays…</p>
+          <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Display Workspace</h1>
+          <p class="text-lp-muted mt-px text-[11px]" id="monitor-subtitle">Loading displays…</p>
         </div>
       </div>
 
       <!-- Monitor canvas -->
-      <div class="flex-1 min-h-[100px] relative wails-drag before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)]">
-        <div aria-hidden="true" class="absolute inset-x-0 bottom-0 h-24 opacity-[0.08] pointer-events-none" style="background-image:linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to top, black, transparent)"></div>
-        <div class="absolute inset-0 flex items-center justify-center p-12 overflow-hidden" id="content">
+      <div
+        class="wails-drag relative min-h-[100px] flex-1 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)] before:content-['']"
+      >
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-[0.08]"
+          style="background-image:linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to top, black, transparent)"
+        >
+        </div>
+        <div
+          class="absolute inset-0 flex items-center justify-center overflow-hidden p-12"
+          id="content"
+        >
           <div class="loading">Loading monitors…</div>
         </div>
       </div>
@@ -113,20 +231,26 @@ import Footer from '../components/Footer.astro';
   const state = {}
   let monitors = []
 
-  const contentEl     = document.getElementById('content')
-  const applyBtn      = document.getElementById('apply-btn')
-  const resetBtn      = document.getElementById('reset-btn')
-  const statusEl      = document.getElementById('status')
-  const dotEl         = document.getElementById('ab-dot')
+  const contentEl = document.getElementById('content')
+  const applyBtn = document.getElementById('apply-btn')
+  const resetBtn = document.getElementById('reset-btn')
+  const statusEl = document.getElementById('status')
+  const dotEl = document.getElementById('ab-dot')
   const settingsModal = document.getElementById('settings-modal')
-document.getElementById('tb-settings').addEventListener('click', () => { settingsModal.hidden = false })
-  document.getElementById('modal-close').addEventListener('click',  () => { settingsModal.hidden = true  })
-  settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.hidden = true })
+  document.getElementById('tb-settings').addEventListener('click', () => {
+    settingsModal.hidden = false
+  })
+  document.getElementById('modal-close').addEventListener('click', () => {
+    settingsModal.hidden = true
+  })
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) settingsModal.hidden = true
+  })
 
   const STORAGE_KEY = 'livepaper_state_v1'
 
   // ── IndexedDB recent wallpapers ──────────────────────────────────
-  const IDB_NAME    = 'livepaper'
+  const IDB_NAME = 'livepaper'
   const IDB_VERSION = 1
   const STORE_RECENT = 'recent'
   const RECENT_LIMIT = 50
@@ -141,32 +265,34 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
           store.createIndex('filePath', 'filePath', { unique: true })
         }
       }
-      req.onsuccess  = (e) => resolve(e.target.result)
-      req.onerror    = (e) => reject(e.target.error)
+      req.onsuccess = (e) => resolve(e.target.result)
+      req.onerror = (e) => reject(e.target.error)
     })
   }
 
   async function upsertRecent(entry) {
     const db = await openDB()
     return new Promise((resolve, reject) => {
-      const tx    = db.transaction(STORE_RECENT, 'readwrite')
+      const tx = db.transaction(STORE_RECENT, 'readwrite')
       const store = tx.objectStore(STORE_RECENT)
       const getReq = store.index('filePath').get(entry.filePath)
       getReq.onsuccess = () => {
         const existing = getReq.result
-        const record   = { ...entry, appliedAt: Date.now() }
-        if (existing) { record.id = existing.id; store.put(record) }
-        else store.add(record)
+        const record = { ...entry, appliedAt: Date.now() }
+        if (existing) {
+          record.id = existing.id
+          store.put(record)
+        } else store.add(record)
       }
       tx.oncomplete = () => resolve()
-      tx.onerror    = (e) => reject(e.target.error)
+      tx.onerror = (e) => reject(e.target.error)
     })
   }
 
   async function pruneRecent() {
     const db = await openDB()
     return new Promise((resolve) => {
-      const tx    = db.transaction(STORE_RECENT, 'readwrite')
+      const tx = db.transaction(STORE_RECENT, 'readwrite')
       const store = tx.objectStore(STORE_RECENT)
       store.count().onsuccess = (e) => {
         const total = e.target.result
@@ -189,15 +315,15 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     statusEl.textContent = msg || 'Running'
     statusEl.className = 'status' + (type ? ` ${type}` : '')
     if (dotEl) {
-      if (type === 'error')          dotEl.className = 'ab-dot error'
+      if (type === 'error') dotEl.className = 'ab-dot error'
       else if (type === 'success' || !msg) dotEl.className = 'ab-dot'
-      else                           dotEl.className = 'ab-dot busy'
+      else dotEl.className = 'ab-dot busy'
     }
   }
 
   function refreshApply() {
-    const anySelected   = Object.values(state).some(s => s.filePath)
-    const anyProcessing = Object.values(state).some(s => s.filePath && s.isVideo && !s.ready)
+    const anySelected = Object.values(state).some((s) => s.filePath)
+    const anyProcessing = Object.values(state).some((s) => s.filePath && s.isVideo && !s.ready)
     applyBtn.disabled = !anySelected || anyProcessing
     resetBtn.disabled = !anySelected || anyProcessing
   }
@@ -210,7 +336,10 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     const bg = document.getElementById(`bg-${idx}`)
     if (bg) bg.src = ''
     const bd = document.getElementById(`bd-${idx}`)
-    if (bd) { bd.style.display = 'none'; bd.className = 'mon-badge' }
+    if (bd) {
+      bd.style.display = 'none'
+      bd.className = 'mon-badge'
+    }
     const mp = document.getElementById(`mp-${idx}`)
     if (mp) mp.classList.remove('active')
   }
@@ -226,8 +355,16 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
   function getMonitorViewport() {
     const cs = getComputedStyle(contentEl)
     return {
-      width: Math.max(1, Math.floor(contentEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))),
-      height: Math.max(1, Math.floor(contentEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))),
+      width: Math.max(
+        1,
+        Math.floor(contentEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))
+      ),
+      height: Math.max(
+        1,
+        Math.floor(
+          contentEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+        )
+      ),
       labelHeight: 28,
     }
   }
@@ -236,7 +373,7 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
   function buildStage(layout) {
     const stage = document.createElement('div')
     stage.className = 'vd-stage'
-    stage.style.width  = `${layout.stageWidth}px`
+    stage.style.width = `${layout.stageWidth}px`
     stage.style.height = `${layout.stageHeight}px`
 
     // faint floor grid
@@ -301,7 +438,9 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
         if (s?.filePath) call('CancelEncoding', s.filePath)
       }
       cancelBtn?.addEventListener('click', doCancel)
-      cancelBtn?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') doCancel(e) })
+      cancelBtn?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') doCancel(e)
+      })
 
       const label = document.createElement('p')
       label.className = 'mon-label'
@@ -327,9 +466,16 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
       if (bd) {
         const e = extOf(s.filePath)
         bd.style.display = 'inline'
-        if (s.isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
-        else if (e === 'gif')         { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
-        else                          { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
+        if (s.isVideo && e !== 'gif') {
+          bd.textContent = 'VIDEO'
+          bd.className = 'mon-badge video'
+        } else if (e === 'gif') {
+          bd.textContent = 'GIF'
+          bd.className = 'mon-badge gif'
+        } else {
+          bd.textContent = 'IMG'
+          bd.className = 'mon-badge image'
+        }
       }
       if (s.isVideo && !s.ready) setEncoding(idx, true, 0)
     }
@@ -337,7 +483,12 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
 
   async function renderMonitorLayout() {
     const viewport = getMonitorViewport()
-    const layout = await call('GetMonitorLayout', viewport.width, viewport.height, viewport.labelHeight)
+    const layout = await call(
+      'GetMonitorLayout',
+      viewport.width,
+      viewport.height,
+      viewport.labelHeight
+    )
     monitors = layout?.monitors || []
     contentEl.innerHTML = ''
     contentEl.appendChild(buildStage(layout))
@@ -353,21 +504,28 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     const bg = document.getElementById(`bg-${idx}`)
     if (bg) bg.src = thumbnail || ''
 
-    const e  = extOf(filePath)
+    const e = extOf(filePath)
     const bd = document.getElementById(`bd-${idx}`)
     if (bd) {
       bd.style.display = 'inline'
-      if (isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
-      else if (e === 'gif')       { bd.textContent = 'GIF';   bd.className = 'mon-badge gif'   }
-      else                        { bd.textContent = 'IMG';   bd.className = 'mon-badge image' }
+      if (isVideo && e !== 'gif') {
+        bd.textContent = 'VIDEO'
+        bd.className = 'mon-badge video'
+      } else if (e === 'gif') {
+        bd.textContent = 'GIF'
+        bd.className = 'mon-badge gif'
+      } else {
+        bd.textContent = 'IMG'
+        bd.className = 'mon-badge image'
+      }
     }
   }
 
   function setEncoding(idx, active, pct) {
     const block = document.getElementById(`mb-${idx}`)
-    const mp    = document.getElementById(`mp-${idx}`)
-    const pf    = document.getElementById(`pf-${idx}`)
-    const pl    = document.getElementById(`pl-${idx}`)
+    const mp = document.getElementById(`mp-${idx}`)
+    const pf = document.getElementById(`pf-${idx}`)
+    const pl = document.getElementById(`pl-${idx}`)
     if (!mp) return
     mp.classList.toggle('active', active)
     if (block) block.classList.toggle('encoding', active)
@@ -388,7 +546,7 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     status('')
     if (!filePath) return
 
-    const isVideo   = await call('IsVideoFile', filePath)
+    const isVideo = await call('IsVideoFile', filePath)
     const thumbnail = await call('GetThumbnail', filePath)
 
     state[idx] = { filePath, cachedPath: filePath, isVideo, ready: !isVideo, thumbnail }
@@ -440,13 +598,15 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
       // Persist each applied wallpaper to IndexedDB as recent
       await Promise.all(
         Object.values(state)
-          .filter(s => s.filePath)
-          .map(s => upsertRecent({
-            filePath:   s.filePath,
-            cachedPath: s.cachedPath,
-            isVideo:    s.isVideo,
-            thumbnail:  s.thumbnail,
-          }).catch(() => {}))
+          .filter((s) => s.filePath)
+          .map((s) =>
+            upsertRecent({
+              filePath: s.filePath,
+              cachedPath: s.cachedPath,
+              isVideo: s.isVideo,
+              thumbnail: s.thumbnail,
+            }).catch(() => {})
+          )
       )
       pruneRecent().catch(() => {})
       setTimeout(() => status(''), 3000)
@@ -476,7 +636,9 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     resetBtn.disabled = true
     applyBtn.disabled = true
     status('Resetting…')
-    try { await call('ResetWallpapers') } catch (_) {}
+    try {
+      await call('ResetWallpapers')
+    } catch (_) {}
     for (const idx of Object.keys(state).map(Number)) resetMonitor(idx)
     localStorage.removeItem(STORAGE_KEY)
     status('Reset complete', 'success')
@@ -497,18 +659,20 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
 
   async function restoreState() {
     let saved
-    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') } catch (_) {}
+    try {
+      saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+    } catch (_) {}
     if (!saved) return false
 
     for (const [idx, s] of Object.entries(saved)) {
       const i = parseInt(idx)
-      if (!monitors.find(m => m.index === i)) continue
+      if (!monitors.find((m) => m.index === i)) continue
 
       const exists = await call('FileExists', s.filePath)
       if (!exists) continue
 
       const cachedPath = s.cachedPath || s.filePath
-      if (s.isVideo && !await call('FileExists', cachedPath)) continue
+      if (s.isVideo && !(await call('FileExists', cachedPath))) continue
 
       const thumbnail = await call('GetThumbnail', s.filePath)
       state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: true, thumbnail }
@@ -548,7 +712,7 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
   async function init() {
     try {
       const ver = await call('GetVersion')
-      const verText = ver === 'dev' ? 'preview' : (ver ? `v${ver}` : '')
+      const verText = ver === 'dev' ? 'preview' : ver ? `v${ver}` : ''
       document.getElementById('tb-version').textContent = verText
       const modalVer = document.getElementById('modal-version')
       if (modalVer) modalVer.textContent = verText || '—'
@@ -565,10 +729,12 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
 
     try {
       const deps = await call('CheckDependencies')
-      const missing = Object.entries(deps).filter(([, ok]) => !ok).map(([k]) => k)
+      const missing = Object.entries(deps)
+        .filter(([, ok]) => !ok)
+        .map(([k]) => k)
       if (missing.length > 0) {
         const warnEl = document.getElementById('dep-warn')
-        const msgEl  = document.getElementById('dep-warn-msg')
+        const msgEl = document.getElementById('dep-warn-msg')
         msgEl.innerHTML = `Missing: <strong>${missing.join(', ')}</strong> — video wallpapers won't work. Run <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:3px">scripts\\install-deps.ps1</code> to install.`
         warnEl.style.display = 'flex'
       }
@@ -585,21 +751,23 @@ document.getElementById('tb-settings').addEventListener('click', () => { setting
     }
   }
 
-  document.getElementById('tb-min').addEventListener('click',   () => call('WindowMinimise').catch(() => {}))
-  document.getElementById('tb-close').addEventListener('click', () => call('WindowHide').catch(() => {}))
+  document
+    .getElementById('tb-min')
+    .addEventListener('click', () => call('WindowMinimise').catch(() => {}))
+  document
+    .getElementById('tb-close')
+    .addEventListener('click', () => call('WindowHide').catch(() => {}))
 
   // ── GPU stats polling ─────────────────────────────────────────────
-  const gpuEl  = document.getElementById('gpu-stats')
+  const gpuEl = document.getElementById('gpu-stats')
   const gpuSep = document.getElementById('gpu-sep')
   async function updateGPUStats() {
     if (!gpuEl) return
     try {
       const s = await call('GetGPUStats')
       if (!s) return
-      const pct  = Math.round(s.usagePct)
-      const vram = s.usedMB >= 1024
-        ? `${(s.usedMB / 1024).toFixed(1)} GB`
-        : `${s.usedMB} MB`
+      const pct = Math.round(s.usagePct)
+      const vram = s.usedMB >= 1024 ? `${(s.usedMB / 1024).toFixed(1)} GB` : `${s.usedMB} MB`
       gpuEl.textContent = `GPU · ${pct}% · ${vram} VRAM`
       gpuEl.classList.remove('hidden')
       if (gpuSep) gpuSep.classList.remove('hidden')

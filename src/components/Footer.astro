@@ -1,21 +1,39 @@
 ---
+
 ---
-<footer class="h-14 shrink-0 flex items-center justify-between px-5 border-t border-lp-border bg-[rgba(19,19,22,0.8)] backdrop-blur-[16px] wails-no-drag">
-  <div class="flex items-center gap-2 text-[11px] text-lp-muted min-w-0 flex-1">
-    <div class="flex items-center gap-2 w-18 shrink-0">
+
+<footer
+  class="border-lp-border wails-no-drag flex h-14 shrink-0 items-center justify-between border-t bg-[rgba(19,19,22,0.8)] px-5 backdrop-blur-[16px]"
+>
+  <div class="text-lp-muted flex min-w-0 flex-1 items-center gap-2 text-[11px]">
+    <div class="flex w-18 shrink-0 items-center gap-2">
       <span class="ab-dot" id="ab-dot"></span>
-      <span class="status font-medium truncate" id="status" role="status" aria-live="polite">Running</span>
+      <span class="status truncate font-medium" id="status" role="status" aria-live="polite"
+        >Running</span
+      >
     </div>
-    <span class="mx-1.5 w-px h-3 bg-lp-border shrink-0 hidden" id="gpu-sep"></span>
-    <span id="gpu-stats" class="font-mono tabular-nums hidden"></span>
+    <span class="bg-lp-border mx-1.5 hidden h-3 w-px shrink-0" id="gpu-sep"></span>
+    <span id="gpu-stats" class="hidden font-mono tabular-nums"></span>
   </div>
 
   <div class="flex items-center gap-1.5">
     <button
-      class="h-9 px-[18px] inline-flex items-center gap-1.5 bg-lp-accent text-white border-0 rounded-md cursor-pointer text-xs font-semibold whitespace-nowrap transition-[opacity,background-color] duration-150 shadow-[0_8px_24px_-8px_rgba(47,138,239,0.55)] disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none enabled:hover:bg-[#4a9fff]"
-      id="apply-btn" disabled>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polyline points="20 6 9 17 4 12"/>
+      class="bg-lp-accent inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 px-[18px] text-xs font-semibold whitespace-nowrap text-white shadow-[0_8px_24px_-8px_rgba(47,138,239,0.55)] transition-[opacity,background-color] duration-150 enabled:hover:bg-[#4a9fff] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
+      id="apply-btn"
+      disabled
+    >
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="20 6 9 17 4 12"></polyline>
       </svg>
       Apply Wallpapers
     </button>

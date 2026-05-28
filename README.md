@@ -13,6 +13,7 @@ go install github.com/dvgamerr/go-livepaper/cmd/livepaper@latest
 ```
 
 > **Requirements**
+>
 > - Windows 10 / 11
 > - Go 1.21+
 > - [ffmpeg](https://ffmpeg.org/download.html) in `PATH` — only needed for video wallpapers (default renderer)
@@ -49,15 +50,15 @@ livepaper --clean
 
 ## Features
 
-| Feature | Details |
-|---|---|
-| Multi-monitor | Reads real screen layout from Windows — no manual config |
-| Per-monitor images | One image per monitor; fill-crop keeps aspect ratio |
-| EXIF-aware | Rotates photos to correct orientation before applying |
-| Live video | Loops any video file as a live wallpaper via ffmpeg or mpv |
-| Mixed mode | Static images and video on different monitors simultaneously |
-| Formats | Images: `jpg` `jpeg` `png` · Video: `mp4` `mkv` `avi` `mov` `webm` `m4v` `flv` `gif` |
-| Zero config | No settings file — everything via CLI flags |
+| Feature            | Details                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| Multi-monitor      | Reads real screen layout from Windows — no manual config                             |
+| Per-monitor images | One image per monitor; fill-crop keeps aspect ratio                                  |
+| EXIF-aware         | Rotates photos to correct orientation before applying                                |
+| Live video         | Loops any video file as a live wallpaper via ffmpeg or mpv                           |
+| Mixed mode         | Static images and video on different monitors simultaneously                         |
+| Formats            | Images: `jpg` `jpeg` `png` · Video: `mp4` `mkv` `avi` `mov` `webm` `m4v` `flv` `gif` |
+| Zero config        | No settings file — everything via CLI flags                                          |
 
 ---
 
@@ -67,13 +68,13 @@ livepaper --clean
 livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 ```
 
-| Flag | Short | Description |
-|---|---|---|
-| `--monitor N` | `-m N` | Target monitor by number (1-based). Repeat for each monitor. |
-| `--player mpv` | `-p mpv` | Video renderer: `ffmpeg` (default) or `mpv` |
-| `--clean` | `-c` | Delete all temp wallpaper files from `%TEMP%\livepaper` |
-| `--version` | | Print version |
-| `--help` | `-h` | Print help |
+| Flag           | Short    | Description                                                  |
+| -------------- | -------- | ------------------------------------------------------------ |
+| `--monitor N`  | `-m N`   | Target monitor by number (1-based). Repeat for each monitor. |
+| `--player mpv` | `-p mpv` | Video renderer: `ffmpeg` (default) or `mpv`                  |
+| `--clean`      | `-c`     | Delete all temp wallpaper files from `%TEMP%\livepaper`      |
+| `--version`    |          | Print version                                                |
+| `--help`       | `-h`     | Print help                                                   |
 
 **Monitor matching rules**
 
@@ -116,14 +117,14 @@ go build -ldflags "-X main.VERSION=$(cat VERSION)" -o bin/livepaper.exe ./cmd/li
 
 Two video backends are supported. Choose with `--player`.
 
-| | ffmpeg (default) | mpv |
-|---|---|---|
-| Availability | Must be in `PATH` | Must be in `PATH` |
-| Decode | Software + `hwaccel auto` | Hardware (DXVA2/D3D11VA) |
-| Frame delivery | Raw BGRA pipe → GDI `StretchDIBits` | Native window embed via `--wid` |
-| CPU usage | Higher (GDI blit per frame) | Lower (GPU compositing) |
-| Playback quality | Good | Better (subtitles, HDR, etc.) |
-| Install | [ffmpeg.org](https://ffmpeg.org/download.html) | [mpv.io](https://mpv.io/installation/) |
+|                  | ffmpeg (default)                               | mpv                                    |
+| ---------------- | ---------------------------------------------- | -------------------------------------- |
+| Availability     | Must be in `PATH`                              | Must be in `PATH`                      |
+| Decode           | Software + `hwaccel auto`                      | Hardware (DXVA2/D3D11VA)               |
+| Frame delivery   | Raw BGRA pipe → GDI `StretchDIBits`            | Native window embed via `--wid`        |
+| CPU usage        | Higher (GDI blit per frame)                    | Lower (GPU compositing)                |
+| Playback quality | Good                                           | Better (subtitles, HDR, etc.)          |
+| Install          | [ffmpeg.org](https://ffmpeg.org/download.html) | [mpv.io](https://mpv.io/installation/) |
 
 **When to use mpv** — prefer `--player mpv` when you have a high-resolution or high-framerate video, or when ffmpeg causes visible CPU load. mpv renders directly into the desktop shell layer using its `--wid` embedding flag; no frame piping is needed.
 
