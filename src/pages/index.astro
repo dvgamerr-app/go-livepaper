@@ -201,7 +201,7 @@ import Footer from '../components/Footer.astro'
 
       <!-- Monitor canvas -->
       <div
-        class="wails-drag relative min-h-[100px] flex-1 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)] before:content-['']"
+        class="wails-drag relative flex-1 min-h-[180px] before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)] before:content-['']"
       >
         <div
           aria-hidden="true"
@@ -215,6 +215,33 @@ import Footer from '../components/Footer.astro'
         >
           <div class="loading">Loading monitors…</div>
         </div>
+      </div>
+
+      <!-- Wallpaper Gallery -->
+      <div class="gallery-section wails-no-drag flex flex-col overflow-hidden border-t border-lp-border" id="gallery-section">
+        <!-- Gallery header -->
+        <div class="flex shrink-0 items-center justify-between px-6 py-2.5">
+          <div>
+            <h2 class="text-[13px] font-semibold tracking-tight">Wallpaper Gallery</h2>
+            <p class="text-lp-muted text-[11px]" id="gallery-count">Loading…</p>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="gallery-nav-btn" id="gallery-prev" aria-label="Scroll left">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="gallery-nav-btn" id="gallery-next" aria-label="Scroll right">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+        <!-- Horizontal strip -->
+        <div class="gallery-strip-wrap flex-1 min-h-0">
+          <div class="gallery-strip-fade-l"></div>
+          <div class="gallery-strip-fade-r"></div>
+          <div class="gallery-strip wails-no-drag" id="gallery-strip"></div>
+        </div>
+        <!-- Dots — 1 per image -->
+        <div class="flex items-center justify-center gap-1.5 py-2 shrink-0" id="gallery-dots"></div>
       </div>
 
       <Footer />
@@ -251,19 +278,24 @@ import Footer from '../components/Footer.astro'
 
   // ── IndexedDB recent wallpapers ──────────────────────────────────
   const IDB_NAME = 'livepaper'
-  const IDB_VERSION = 1
+  const IDB_VERSION = 2
   const STORE_RECENT = 'recent'
   const RECENT_LIMIT = 50
+
+  // ── Gallery state ────────────────────────────────────────────────
+  let galleryItems = []
 
   function openDB() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(IDB_NAME, IDB_VERSION)
       req.onupgradeneeded = (e) => {
         const db = e.target.result
-        if (!db.objectStoreNames.contains(STORE_RECENT)) {
-          const store = db.createObjectStore(STORE_RECENT, { keyPath: 'id', autoIncrement: true })
-          store.createIndex('filePath', 'filePath', { unique: true })
+        if (db.objectStoreNames.contains(STORE_RECENT)) {
+          db.deleteObjectStore(STORE_RECENT)
         }
+        const store = db.createObjectStore(STORE_RECENT, { keyPath: 'id', autoIncrement: true })
+        store.createIndex('fileKey', 'fileKey', { unique: true })
+        store.createIndex('filePath', 'filePath', { unique: false })
       }
       req.onsuccess = (e) => resolve(e.target.result)
       req.onerror = (e) => reject(e.target.error)
@@ -275,7 +307,7 @@ import Footer from '../components/Footer.astro'
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_RECENT, 'readwrite')
       const store = tx.objectStore(STORE_RECENT)
-      const getReq = store.index('filePath').get(entry.filePath)
+      const getReq = store.index('fileKey').get(entry.fileKey)
       getReq.onsuccess = () => {
         const existing = getReq.result
         const record = { ...entry, appliedAt: Date.now() }
@@ -308,6 +340,154 @@ import Footer from '../components/Footer.astro'
         }
       }
       tx.oncomplete = () => resolve()
+    })
+  }
+
+  // ── Gallery functions ─────────────────────────────────────────────
+  async function loadGalleryItems() {
+    const db = await openDB()
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_RECENT, 'readonly')
+      const store = tx.objectStore(STORE_RECENT)
+      const items = []
+      store.openCursor(null, 'prev').onsuccess = (e) => {
+        const cursor = e.target.result
+        if (cursor) { items.push(cursor.value); cursor.continue() }
+        else resolve(items)
+      }
+      tx.onerror = () => resolve([])
+    })
+  }
+
+  function getRatioLabel(w, h) {
+    if (!w || !h) return ''
+    const known = [
+      [21, 9], [16, 9], [16, 10], [4, 3], [3, 2], [1, 1],
+      [9, 16], [10, 16], [3, 4], [2, 3], [9, 21],
+    ]
+    const r = w / h
+    let best = null, bestDiff = Infinity
+    for (const [a, b] of known) {
+      const diff = Math.abs(r - a / b)
+      if (diff < bestDiff) { bestDiff = diff; best = [a, b] }
+    }
+    return bestDiff < 0.05 ? `${best[0]}:${best[1]}` : ''
+  }
+
+  function buildGalleryCard(entry, index) {
+    const card = document.createElement('div')
+    card.className = 'gallery-strip-card wails-no-drag'
+    card.draggable = true
+    card.dataset.index = index
+
+    const ext = extOf(entry.filePath)
+    const badgeClass = entry.isVideo && ext !== 'gif' ? 'video' : ext === 'gif' ? 'gif' : 'image'
+    const badgeText = entry.isVideo && ext !== 'gif' ? 'VIDEO' : ext === 'gif' ? 'GIF' : 'IMG'
+    const name = entry.filePath.replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '')
+    const ratioLabel = getRatioLabel(entry.width, entry.height)
+
+    card.innerHTML = `
+      <img class="gc-img" src="${entry.thumbnail || ''}" alt="${name}" draggable="false">
+      <div class="gc-overlay"></div>
+      <span class="gc-badge ${badgeClass}">${badgeText}</span>
+      ${ratioLabel ? `<span class="gc-ratio">${ratioLabel}</span>` : ''}
+      <div class="gc-grip" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+          <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+        </svg>
+      </div>
+      <div class="gc-info"><div class="gc-name">${name}</div></div>
+    `
+
+    const payload = JSON.stringify({
+      filePath: entry.filePath,
+      cachedPath: entry.cachedPath,
+      isVideo: entry.isVideo,
+      thumbnail: entry.thumbnail,
+      width: entry.width || 0,
+      height: entry.height || 0,
+    })
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('application/livepaper', payload)
+      e.dataTransfer.effectAllowed = 'copy'
+      card.classList.add('dragging')
+    })
+    card.addEventListener('dragend', () => card.classList.remove('dragging'))
+
+    // hover → activate matching dot
+    card.addEventListener('mouseenter', () => setActiveDot(index))
+
+    return card
+  }
+
+  function setActiveDot(index) {
+    const dotsEl = document.getElementById('gallery-dots')
+    if (!dotsEl) return
+    dotsEl.querySelectorAll('.gallery-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === index)
+    })
+  }
+
+  function renderGalleryStrip() {
+    const strip = document.getElementById('gallery-strip')
+    const countEl = document.getElementById('gallery-count')
+    const dotsEl = document.getElementById('gallery-dots')
+    const prevBtn = document.getElementById('gallery-prev')
+    const nextBtn = document.getElementById('gallery-next')
+    if (!strip) return
+
+    strip.innerHTML = ''
+
+    if (galleryItems.length === 0) {
+      strip.innerHTML = '<div class="gallery-empty">No recent wallpapers yet — apply one to add it here</div>'
+      if (countEl) countEl.textContent = 'No wallpapers yet'
+      if (dotsEl) dotsEl.innerHTML = ''
+      return
+    }
+
+    galleryItems.forEach((entry, i) => strip.appendChild(buildGalleryCard(entry, i)))
+
+    const n = galleryItems.length
+    if (countEl) countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''} · Drag onto a monitor to assign`
+
+    // build dots — 1 per image
+    if (dotsEl) {
+      dotsEl.innerHTML = ''
+      galleryItems.forEach((_, i) => {
+        const dot = document.createElement('button')
+        dot.className = 'gallery-dot' + (i === 0 ? ' active' : '')
+        dot.setAttribute('aria-label', `Wallpaper ${i + 1}`)
+        dot.addEventListener('click', () => {
+          const cards = strip.querySelectorAll('.gallery-strip-card')
+          if (cards[i]) cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+          setActiveDot(i)
+        })
+        dotsEl.appendChild(dot)
+      })
+    }
+
+    // scroll buttons — move by ~260px per click
+    if (prevBtn) {
+      prevBtn.onclick = () => strip.scrollBy({ left: -260, behavior: 'smooth' })
+    }
+    if (nextBtn) {
+      nextBtn.onclick = () => strip.scrollBy({ left: 260, behavior: 'smooth' })
+    }
+  }
+
+  async function refreshGallery() {
+    galleryItems = await loadGalleryItems()
+    renderGalleryStrip()
+  }
+
+  async function clearRecentHistory() {
+    const db = await openDB()
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_RECENT, 'readwrite')
+      tx.objectStore(STORE_RECENT).clear()
+      tx.oncomplete = () => resolve()
+      tx.onerror = (e) => reject(e.target.error)
     })
   }
 
@@ -422,6 +602,14 @@ import Footer from '../components/Footer.astro'
             </svg>
             Choose File
           </div>
+          <div class="mon-drop-overlay" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Drop to assign
+          </div>
         </div>
       `
 
@@ -440,6 +628,60 @@ import Footer from '../components/Footer.astro'
       cancelBtn?.addEventListener('click', doCancel)
       cancelBtn?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') doCancel(e)
+      })
+
+      // Gallery drag-and-drop onto monitor
+      block.addEventListener('dragover', (e) => {
+        if (!e.dataTransfer.types.includes('application/livepaper')) return
+        const s = state[m.index]
+        if (s?.isVideo && !s?.ready) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'copy'
+        block.classList.add('drop-over')
+      })
+      block.addEventListener('dragleave', (e) => {
+        if (!block.contains(e.relatedTarget)) block.classList.remove('drop-over')
+      })
+      block.addEventListener('drop', async (e) => {
+        e.preventDefault()
+        block.classList.remove('drop-over')
+        const s = state[m.index]
+        if (s?.isVideo && !s?.ready) return
+        let entry
+        try { entry = JSON.parse(e.dataTransfer.getData('application/livepaper')) } catch { return }
+
+        const isNonGifVideo = entry.isVideo && extOf(entry.filePath) !== 'gif'
+        const resolutionMismatch = isNonGifVideo && entry.width && entry.height &&
+          (entry.width !== m.width || entry.height !== m.height)
+
+        if (resolutionMismatch) {
+          state[m.index] = { filePath: entry.filePath, cachedPath: entry.filePath, isVideo: true, ready: false, thumbnail: entry.thumbnail }
+          applyThumb(m.index, entry.thumbnail, entry.filePath, true)
+          refreshApply()
+          setEncoding(m.index, true, 0)
+          try {
+            const cached = await call('PreprocessVideo', entry.filePath, m.width, m.height)
+            state[m.index].cachedPath = cached
+            state[m.index].ready = true
+          } catch (_) {
+            resetMonitor(m.index)
+            status('Encoding cancelled.', '')
+            return
+          }
+          setEncoding(m.index, false, 100)
+          refreshApply()
+          return
+        }
+
+        state[m.index] = {
+          filePath: entry.filePath,
+          cachedPath: entry.cachedPath || entry.filePath,
+          isVideo: entry.isVideo,
+          ready: true,
+          thumbnail: entry.thumbnail,
+        }
+        applyThumb(m.index, entry.thumbnail, entry.filePath, entry.isVideo)
+        refreshApply()
       })
 
       const label = document.createElement('p')
@@ -597,18 +839,27 @@ import Footer from '../components/Footer.astro'
       saveState()
       // Persist each applied wallpaper to IndexedDB as recent
       await Promise.all(
-        Object.values(state)
-          .filter((s) => s.filePath)
-          .map((s) =>
-            upsertRecent({
+        Object.entries(state)
+          .filter(([, s]) => s.filePath)
+          .map(([idx, s]) => {
+            const monitor = monitors.find((mo) => mo.index === parseInt(idx))
+            const w = monitor?.width || 0
+            const h = monitor?.height || 0
+            const isNonGifVideo = s.isVideo && extOf(s.filePath) !== 'gif'
+            const fileKey = isNonGifVideo ? `${s.filePath}|${w}x${h}` : s.filePath
+            return upsertRecent({
+              fileKey,
               filePath: s.filePath,
               cachedPath: s.cachedPath,
               isVideo: s.isVideo,
               thumbnail: s.thumbnail,
+              width: w,
+              height: h,
             }).catch(() => {})
-          )
+          })
       )
       pruneRecent().catch(() => {})
+      refreshGallery().catch(() => {})
       setTimeout(() => status(''), 3000)
     } catch (e) {
       status(`Failed: ${e}`, 'error')
@@ -623,6 +874,9 @@ import Footer from '../components/Footer.astro'
     status('Cleaning cache…')
     try {
       await call('CleanTempFiles')
+      await clearRecentHistory()
+      galleryItems = []
+      renderGalleryStrip()
       status('Cache cleaned', 'success')
       setTimeout(() => status(''), 3000)
     } catch (e) {
@@ -641,6 +895,9 @@ import Footer from '../components/Footer.astro'
     } catch (_) {}
     for (const idx of Object.keys(state).map(Number)) resetMonitor(idx)
     localStorage.removeItem(STORAGE_KEY)
+    await clearRecentHistory().catch(() => {})
+    galleryItems = []
+    renderGalleryStrip()
     status('Reset complete', 'success')
     setTimeout(() => status(''), 3000)
     refreshApply()
@@ -721,7 +978,7 @@ import Footer from '../components/Footer.astro'
 
       const n = monitors.length
       document.getElementById('monitor-subtitle').textContent =
-        `${n} display${n !== 1 ? 's' : ''} connected · Click a monitor to assign a wallpaper`
+        `${n} display${n !== 1 ? 's' : ''} connected · Click to browse or drag from gallery`
     } catch (e) {
       contentEl.innerHTML = `<div class="loading" style="color:var(--lp-danger)">Failed to load monitors: ${e}</div>`
       return
@@ -749,6 +1006,8 @@ import Footer from '../components/Footer.astro'
       // No wallpaper configured — show window so user can set one
       call('WindowShow').catch(() => {})
     }
+
+    await refreshGallery()
   }
 
   document
@@ -780,6 +1039,14 @@ import Footer from '../components/Footer.astro'
     updateGPUStats()
     setInterval(updateGPUStats, 2000)
   }, 1500)
+
+  // ── Gallery wheel → horizontal scroll ────────────────────────────
+  document.getElementById('gallery-strip')?.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault()
+      e.currentTarget.scrollLeft += e.deltaY * 3
+    }
+  }, { passive: false })
 
   init()
 </script>
