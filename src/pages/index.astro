@@ -54,6 +54,8 @@ import Footer from '../components/Footer.astro'
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
         >
           <span class="text-lp-muted flex shrink-0 items-center">
             <svg
@@ -81,6 +83,8 @@ import Footer from '../components/Footer.astro'
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
         >
           <span class="text-lp-muted flex shrink-0 items-center">
             <svg
@@ -108,6 +112,8 @@ import Footer from '../components/Footer.astro'
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
         >
           <span class="text-lp-muted flex shrink-0 items-center">
             <svg
@@ -133,6 +139,8 @@ import Footer from '../components/Footer.astro'
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
         >
           <span class="text-lp-muted flex shrink-0 items-center">
             <svg
@@ -163,27 +171,56 @@ import Footer from '../components/Footer.astro'
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
           ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#34d399"
           ></span>Atmospheric</button
         >
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
           ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#a78bfa"
           ></span>Cyberpunk</button
         >
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
           ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#f472b6"
           ></span>Anime</button
         >
         <button
           class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
           tabindex="-1"
+          title="Coming soon"
+          aria-disabled="true"
           ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#fbbf24"
           ></span>Nature</button
         >
+      </div>
+
+      <!-- User profile -->
+      <div class="border-lp-border mt-auto border-t p-3">
+        <div class="flex items-center gap-2 px-1">
+          <div
+            class="size-7 shrink-0 rounded-full"
+            style="background: linear-gradient(135deg, var(--lp-accent) 0%, #a855f7 100%)"
+            aria-hidden="true"
+          ></div>
+          <div class="min-w-0 flex-1 leading-tight">
+            <p class="text-lp-text truncate text-[11px] font-medium">Personal</p>
+            <p class="text-lp-muted truncate text-[10px]">Free Lifetime</p>
+          </div>
+          <button
+            id="sidebar-login-btn"
+            class="wails-no-drag shrink-0 cursor-pointer rounded border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-white/50 transition-[background-color,border-color,color] duration-150 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white/75"
+          >
+            Sign in
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -948,7 +985,7 @@ import Footer from '../components/Footer.astro'
     status('Restoring…')
     try {
       await call('ApplyWallpapers', list)
-      status('Rrestored', 'success')
+      status('Restored', 'success')
       setTimeout(() => status(''), 3000)
     } catch (e) {
       status(`failed: ${e}`, 'error')

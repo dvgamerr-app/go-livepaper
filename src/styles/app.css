@@ -510,7 +510,7 @@
   background: var(--lp-card);
   cursor: grab;
   position: relative;
-  opacity: 0.6;
+  opacity: 0.75;
   transition:
     border-color 0.2s,
     box-shadow 0.2s,
@@ -607,6 +607,7 @@
 
 /* ── Gallery dots (1 per image) ───────────────────────────────────── */
 .gallery-dot {
+  position: relative;
   width: 4px;
   height: 4px;
   border-radius: 99px;
@@ -616,6 +617,12 @@
   transition: width 0.2s, background 0.2s;
   padding: 0;
   --wails-draggable: no-drag;
+}
+/* extend hit area without changing visual size */
+.gallery-dot::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
 }
 .gallery-dot.active {
   width: 20px;

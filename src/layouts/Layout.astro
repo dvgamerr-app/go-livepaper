@@ -18,5 +18,10 @@ const { title = 'Live Paper' } = Astro.props
   </head>
   <body>
     <slot />
+    <script>
+      if (import.meta.env.PROD) {
+        document.addEventListener('contextmenu', (e) => e.preventDefault())
+      }
+    </script>
   </body>
 </html>
