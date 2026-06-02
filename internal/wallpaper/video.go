@@ -43,9 +43,19 @@ const wmClose uintptr = 0x0010
 var (
 	sessionMu    sync.Mutex
 	sessionStop  chan struct{} // closed to signal spawnMpv goroutines to exit
-	sessionCmds  []*exec.Cmd  // running mpv processes
-	sessionHwnds []uintptr    // desktop windows to destroy on stop
+	sessionCmds  []*exec.Cmd   // running mpv processes
+	sessionHwnds []uintptr     // desktop windows to destroy on stop
+	sessionPipes []string      // mpv IPC pipe names for playback control
+	extraMpvArgs []string      // extra mpv flags from settings (GPU adapter, cache cap)
 )
+
+// SetExtraMpvArgs sets additional mpv command-line flags applied to every video
+// wallpaper spawned afterwards (e.g. GPU adapter selection, demuxer cache cap).
+func SetExtraMpvArgs(args []string) {
+	sessionMu.Lock()
+	extraMpvArgs = args
+	sessionMu.Unlock()
+}
 
 // stopSession kills all running mpv processes, signals goroutines to stop, and
 // posts WM_CLOSE to every desktop window so their message loops exit.
@@ -65,6 +75,7 @@ func stopSession() {
 		postMessageW.Call(h, wmClose, 0, 0)
 	}
 	sessionHwnds = nil
+	sessionPipes = nil
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -214,6 +225,13 @@ func fadeInWindow(hwnd uintptr) {
 // closed (typically from stopSession → cmd.Process.Kill → cmd.Run returns).
 func spawnMpv(videoPath string, hwnd uintptr, stop <-chan struct{}) {
 	wid := strconv.FormatUint(uint64(hwnd), 10)
+	pipe := mpvPipeName(hwnd)
+
+	sessionMu.Lock()
+	sessionPipes = append(sessionPipes, pipe)
+	extra := append([]string(nil), extraMpvArgs...)
+	sessionMu.Unlock()
+
 	for {
 		select {
 		case <-stop:
@@ -221,16 +239,19 @@ func spawnMpv(videoPath string, hwnd uintptr, stop <-chan struct{}) {
 		default:
 		}
 
-		cmd := exec.Command("mpv",
-			"--wid="+wid,
+		mpvArgs := []string{
+			"--wid=" + wid,
 			"--loop=inf",
 			"--no-border",
 			"--no-osc",
 			"--no-terminal",
 			"--keepaspect=no",
 			"--hwdec=auto",
-			videoPath,
-		)
+			"--input-ipc-server=" + pipe,
+		}
+		mpvArgs = append(mpvArgs, extra...)
+		mpvArgs = append(mpvArgs, videoPath)
+		cmd := exec.Command("mpv", mpvArgs...)
 		ConfigureBackgroundCommand(cmd)
 
 		sessionMu.Lock()

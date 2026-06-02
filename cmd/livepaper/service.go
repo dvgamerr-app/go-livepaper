@@ -5,25 +5,27 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	_ "golang.org/x/image/webp"
 	"image"
 	"image/draw"
-	"image/jpeg"
 	_ "image/gif"
+	"image/jpeg"
 	_ "image/png"
-	_ "golang.org/x/image/webp"
 	"io"
 	"log"
 	"math"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
+	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
 	"github.com/nfnt/resize"
 	"github.com/pkg/browser"
-	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -66,6 +68,104 @@ type AppService struct {
 	encoding sync.Map // key: filePath → *exec.Cmd
 }
 
+// ── Video encoder selection ─────────────────────────────────────────────────
+
+var (
+	encOnce sync.Once
+	encSet  map[string]bool
+)
+
+// availableEncoders probes ffmpeg once for the hardware H.264 encoders present
+// on this machine and caches the result.
+func availableEncoders() map[string]bool {
+	encOnce.Do(func() {
+		encSet = map[string]bool{}
+		cmd := exec.Command("ffmpeg", "-hide_banner", "-encoders")
+		wp.ConfigureBackgroundCommand(cmd)
+		out, err := cmd.Output()
+		if err != nil {
+			return
+		}
+		text := string(out)
+		for _, e := range []string{"h264_nvenc", "h264_qsv", "h264_amf"} {
+			if strings.Contains(text, e) {
+				encSet[e] = true
+			}
+		}
+	})
+	return encSet
+}
+
+// pickHWEncoder chooses the best available hardware encoder, preferring the one
+// matching the selected GPU adapter's vendor.
+func pickHWEncoder(adapter string) string {
+	avail := availableEncoders()
+	a := strings.ToLower(adapter)
+	var pref []string
+	switch {
+	case strings.Contains(a, "nvidia"), strings.Contains(a, "geforce"),
+		strings.Contains(a, "rtx"), strings.Contains(a, "gtx"):
+		pref = []string{"h264_nvenc", "h264_qsv", "h264_amf"}
+	case strings.Contains(a, "intel"):
+		pref = []string{"h264_qsv", "h264_nvenc", "h264_amf"}
+	case strings.Contains(a, "amd"), strings.Contains(a, "radeon"):
+		pref = []string{"h264_amf", "h264_nvenc", "h264_qsv"}
+	default:
+		pref = []string{"h264_nvenc", "h264_qsv", "h264_amf"}
+	}
+	for _, e := range pref {
+		if avail[e] {
+			return e
+		}
+	}
+	return ""
+}
+
+// encoderArgs returns the ffmpeg -c:v arguments honoring the GPU-acceleration
+// setting, falling back to CPU libx264 when hardware encode is off or absent.
+func encoderArgs() []string {
+	s := getSettings()
+	if s.GPUAcceleration {
+		switch pickHWEncoder(s.GPUAdapter) {
+		case "h264_nvenc":
+			return []string{"-c:v", "h264_nvenc", "-preset", "p4", "-rc", "vbr", "-cq", "23", "-b:v", "0"}
+		case "h264_qsv":
+			return []string{"-c:v", "h264_qsv", "-global_quality", "23"}
+		case "h264_amf":
+			return []string{"-c:v", "h264_amf", "-quality", "balanced", "-rc", "cqp", "-qp_i", "23", "-qp_p", "23"}
+		}
+	}
+	return []string{"-c:v", "libx264", "-crf", "23", "-preset", "fast"}
+}
+
+// mpvArgsFromSettings derives mpv flags for GPU adapter selection and a soft
+// memory cap from the current settings.
+func mpvArgsFromSettings() []string {
+	s := getSettings()
+	var args []string
+	if s.GPUAdapter != "" {
+		args = append(args, "--d3d11-adapter="+s.GPUAdapter)
+	}
+	if s.VRAMCapMB > 0 {
+		args = append(args, fmt.Sprintf("--demuxer-max-bytes=%dMiB", s.VRAMCapMB))
+		args = append(args, fmt.Sprintf("--demuxer-max-back-bytes=%dMiB", maxInt(s.VRAMCapMB/2, 32)))
+	}
+	return args
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// ToggleVideoPause flips manual pause on all running video wallpapers and
+// returns the new paused state. Used by the play/pause hotkey and UI.
+func (s *AppService) ToggleVideoPause() bool {
+	return toggleManualPause()
+}
+
 func (s *AppService) CancelEncoding(filePath string) {
 	if v, ok := s.encoding.Load(filePath); ok {
 		if cmd := v.(*exec.Cmd); cmd.Process != nil {
@@ -100,6 +200,91 @@ func (s *AppService) OpenExternal(url string) error {
 func (s *AppService) FileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func extFromContentType(ct string) string {
+	switch {
+	case strings.Contains(ct, "png"):
+		return ".png"
+	case strings.Contains(ct, "webp"):
+		return ".webp"
+	case strings.Contains(ct, "gif"):
+		return ".gif"
+	case strings.Contains(ct, "mp4"), strings.Contains(ct, "video/mp4"):
+		return ".mp4"
+	case strings.Contains(ct, "webm"):
+		return ".webm"
+	case strings.Contains(ct, "x-matroska"), strings.Contains(ct, "mkv"):
+		return ".mkv"
+	case strings.Contains(ct, "quicktime"):
+		return ".mov"
+	default:
+		return ".jpg"
+	}
+}
+
+func sanitizeName(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteRune('_')
+		}
+	}
+	if b.Len() == 0 {
+		return "wallpaper"
+	}
+	return b.String()
+}
+
+// DownloadToTemp fetches a community wallpaper from the backend (with the user's
+// bearer token) into the temp folder and returns the local path so the normal
+// apply flow can use it. Returns "premium_required" when the server gates it.
+func (s *AppService) DownloadToTemp(url, token, id string) (string, error) {
+	dir := filepath.Join(os.TempDir(), "livepaper", "discover")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	client := &http.Client{Timeout: 120 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusPaymentRequired:
+		return "", fmt.Errorf("premium_required")
+	case http.StatusUnauthorized:
+		return "", fmt.Errorf("unauthorized")
+	default:
+		return "", fmt.Errorf("download failed: %d", resp.StatusCode)
+	}
+
+	out := filepath.Join(dir, sanitizeName(id)+extFromContentType(resp.Header.Get("Content-Type")))
+	f, err := os.Create(out)
+	if err != nil {
+		return "", err
+	}
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		os.Remove(out)
+		return "", err
+	}
+	f.Close()
+	return out, nil
 }
 
 func (s *AppService) GetVersion() string {
@@ -279,15 +464,18 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 
 	durationUs := getVideoDurationUs(filePath)
 
-	cmd := exec.Command("ffmpeg",
+	ffArgs := []string{
 		"-i", filePath,
 		"-vf", fmt.Sprintf("scale=%d:%d:force_original_aspect_ratio=increase,crop=%d:%d", w, h, w, h),
-		"-c:v", "libx264", "-crf", "23", "-preset", "fast",
+	}
+	ffArgs = append(ffArgs, encoderArgs()...)
+	ffArgs = append(ffArgs,
 		"-movflags", "+faststart", "-r", "30", "-an",
 		"-progress", "pipe:1",
 		"-nostats",
 		"-y", out,
 	)
+	cmd := exec.Command("ffmpeg", ffArgs...)
 	wp.ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	stdout, err := cmd.StdoutPipe()
@@ -352,15 +540,18 @@ func (s *AppService) preprocessGIF(filePath string) (string, error) {
 
 	// Preserve original GIF fps and size. H.264 requires even dimensions,
 	// so round each axis down to the nearest even pixel if needed.
-	cmd := exec.Command("ffmpeg",
+	ffArgs := []string{
 		"-i", filePath,
 		"-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-		"-c:v", "libx264", "-crf", "23", "-preset", "fast",
+	}
+	ffArgs = append(ffArgs, encoderArgs()...)
+	ffArgs = append(ffArgs,
 		"-movflags", "+faststart", "-an",
 		"-progress", "pipe:1",
 		"-nostats",
 		"-y", out,
 	)
+	cmd := exec.Command("ffmpeg", ffArgs...)
 	wp.ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	stdout, err := cmd.StdoutPipe()
@@ -422,9 +613,9 @@ func (s *AppService) CheckDependencies() map[string]bool {
 		return err == nil
 	}
 	return map[string]bool{
-		"ffmpeg": check("ffmpeg"),
+		"ffmpeg":  check("ffmpeg"),
 		"ffprobe": check("ffprobe"),
-		"mpv":    check("mpv"),
+		"mpv":     check("mpv"),
 	}
 }
 
@@ -508,6 +699,7 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 	}
 
 	if len(vTargets) > 0 {
+		wp.SetExtraMpvArgs(mpvArgsFromSettings())
 		go func() {
 			if err := wp.RunVideoWallpapers(vTargets); err != nil {
 				log.Printf("video wallpapers: %v", err)

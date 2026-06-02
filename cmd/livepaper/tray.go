@@ -64,6 +64,9 @@ func runTrayApp() {
 	svc := &AppService{}
 	go initGPU()
 
+	settings := loadSettings()
+	syncLaunchAtLogin(settings.LaunchAtLogin)
+
 	app := application.New(application.Options{
 		Name:        "livepaper",
 		Description: "Live wallpaper",
@@ -87,8 +90,12 @@ func runTrayApp() {
 		MinWidth:     900,
 		MinHeight:    580,
 		Frameless:    true,
-		Hidden:       !isDev(),
+		Hidden:       !isDev() && settings.StartMinimized,
 		HideOnEscape: !isDev(),
+		Windows: application.WindowsWindow{
+			Theme:        application.Dark,
+			BackdropType: backdropType(settings.WindowTheme),
+		},
 	}
 
 	if savedState != nil {
@@ -179,8 +186,36 @@ func runTrayApp() {
 		window.Focus()
 	})
 
+	// Global hotkeys + power/focus-aware playback control.
+	startHotkeyManager(app, window)
+	startPowerFocusWatcher()
+
+	// Apply the DWM backdrop material once the native window exists.
+	go func() {
+		for i := 0; i < 100; i++ {
+			if findMainWindow() != 0 {
+				applyWindowTheme(getSettings().WindowTheme)
+				return
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}()
+
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// backdropType maps a saved window-theme name to the Wails backdrop type used
+// at window creation.
+func backdropType(theme string) application.BackdropType {
+	switch theme {
+	case "acrylic":
+		return application.Acrylic
+	case "solid":
+		return application.None
+	default:
+		return application.Mica
 	}
 }
 
