@@ -1,0 +1,423 @@
+---
+// Full tabbed Settings panel. Markup only — all behavior is wired in the inline
+// module script in index.astro via [data-setting] / [data-hotkey] / [data-stab].
+const tabs = [
+  { id: 'general', label: 'General' },
+  { id: 'performance', label: 'Performance' },
+  { id: 'startup', label: 'Startup' },
+  { id: 'hotkeys', label: 'Hotkeys' },
+  { id: 'about', label: 'About' },
+]
+---
+
+<div id="settings-panel" class="hidden flex-1 flex-col overflow-hidden">
+  <!-- Top bar -->
+  <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center gap-3 border-b px-4">
+    <button
+      id="settings-back-btn"
+      class="wails-no-drag text-lp-muted hover:text-lp-text grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded border-0 bg-transparent transition-colors duration-[120ms] hover:bg-white/[0.06]"
+      aria-label="Back to displays"
+    >
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <div class="wails-drag">
+      <h1 class="text-sm font-semibold tracking-[-0.01em]">Settings</h1>
+      <p class="text-lp-muted mt-px text-[11px]">
+        Fine-tune the engine, hotkeys, and startup behavior
+      </p>
+    </div>
+  </div>
+
+  <div class="wails-no-drag flex flex-1 overflow-hidden">
+    <!-- Tabs -->
+    <nav
+      class="border-lp-border bg-lp-surface/30 flex w-44 shrink-0 flex-col gap-0.5 border-r p-3"
+      aria-label="Settings sections"
+    >
+      {
+        tabs.map((t, i) => (
+          <button
+            class={`settings-tab flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md border-0 px-3 text-left text-[12.5px] font-medium transition-colors ${i === 0 ? 'bg-lp-accent-soft text-lp-text' : 'text-lp-muted hover:text-lp-text bg-transparent hover:bg-white/[0.04]'}`}
+            data-stab={t.id}
+            aria-selected={i === 0 ? 'true' : 'false'}
+          >
+            {t.label}
+            <span
+              class="dot bg-lp-accent ml-auto h-1.5 w-1.5 rounded-full"
+              style={i === 0 ? '' : 'display:none'}
+            />
+          </button>
+        ))
+      }
+    </nav>
+
+    <!-- Panels -->
+    <div class="lp-scroll max-w-3xl flex-1 overflow-y-auto p-6">
+      <!-- ── General ── -->
+      <section data-spanel="general">
+        <h3 class="setting-section-title">General</h3>
+        <div class="setting-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Language</p>
+              <p class="setting-desc">Interface language.</p>
+            </div>
+            <select data-setting="language" class="setting-select" aria-label="Interface language">
+              <option value="en-US">English (US)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Show notifications</p>
+              <p class="setting-desc">Show a toast when the wallpaper changes.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="showNotifications"
+              class="lp-toggle"
+              aria-label="Show notifications"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Telemetry</p>
+              <p class="setting-desc">Share anonymized usage to improve Live Paper.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="telemetry"
+              class="lp-toggle"
+              aria-label="Telemetry"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+        </div>
+
+        <h3 class="setting-section-title mt-6">Storage</h3>
+        <div class="setting-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Temp folder</p>
+              <p class="setting-desc">
+                Encoded video files are cached in <code class="setting-code"
+                  >%TEMP%\livepaper\</code>
+              </p>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Clean cache</p>
+              <p class="setting-desc">Remove encoded video files from the temp folder.</p>
+            </div>
+            <button
+              class="text-lp-muted enabled:hover:text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.08] bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 enabled:hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-[0.35]"
+              id="clean-btn"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"
+                ></path>
+              </svg>
+              Clean Cache
+            </button>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Reset wallpapers</p>
+              <p class="setting-desc">Remove all assigned wallpapers and restore defaults.</p>
+            </div>
+            <button
+              class="text-lp-muted enabled:hover:text-lp-danger inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-transparent bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,border-color] duration-150 enabled:hover:border-[rgba(255,85,85,0.3)] enabled:hover:bg-[rgba(255,85,85,0.06)] disabled:cursor-not-allowed disabled:opacity-[0.35]"
+              id="reset-btn"
+              disabled
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path
+                  d="M3 3v5h5"></path>
+              </svg>
+              Reset
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Performance ── -->
+      <section data-spanel="performance" hidden>
+        <h3 class="setting-section-title">Rendering</h3>
+        <div class="setting-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">GPU acceleration</p>
+              <p class="setting-desc">Use a hardware encoder for faster video processing.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="gpuAcceleration"
+              class="lp-toggle"
+              aria-label="GPU acceleration"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Memory cap</p>
+              <p class="setting-desc">Limit the decode buffer used by the playback engine.</p>
+            </div>
+            <div class="flex w-56 items-center gap-3">
+              <input
+                type="range"
+                min="64"
+                max="1024"
+                step="32"
+                data-setting="vramCapMB"
+                class="accent-lp-accent flex-1"
+                aria-label="Memory cap in megabytes"
+              />
+              <span class="text-lp-muted w-16 text-right font-mono text-[11px]" id="vram-cap-label"
+                >256 MB</span
+              >
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Render adapter</p>
+              <p class="setting-desc">Choose which GPU renders live wallpapers.</p>
+            </div>
+            <select
+              data-setting="gpuAdapter"
+              class="setting-select"
+              id="gpu-adapter-select"
+              aria-label="Render adapter"
+            >
+              <option value="">Auto</option>
+            </select>
+          </div>
+        </div>
+
+        <h3 class="setting-section-title mt-6">Behavior</h3>
+        <div class="setting-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Pause on game detection</p>
+              <p class="setting-desc">Pause playback when a fullscreen app is in focus.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="pauseOnGame"
+              class="lp-toggle"
+              aria-label="Pause on game detection"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Pause on battery saver</p>
+              <p class="setting-desc">Stop video playback when Windows enters battery saver.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="pauseOnBattery"
+              class="lp-toggle"
+              aria-label="Pause on battery saver"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Reduce motion on focus</p>
+              <p class="setting-desc">Slow playback while another app is in the foreground.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="reduceMotionOnFocus"
+              class="lp-toggle"
+              aria-label="Reduce motion on focus"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+        </div>
+
+        <h3 class="setting-section-title mt-6">Appearance</h3>
+        <div class="setting-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Window theme</p>
+              <p class="setting-desc">Background material for the Live Paper window.</p>
+            </div>
+            <div class="flex gap-1.5" role="group" aria-label="Window theme">
+              <button type="button" class="theme-seg" data-setting="windowTheme" data-value="mica"
+                >Mica</button
+              >
+              <button
+                type="button"
+                class="theme-seg"
+                data-setting="windowTheme"
+                data-value="acrylic">Acrylic</button
+              >
+              <button type="button" class="theme-seg" data-setting="windowTheme" data-value="solid"
+                >Solid</button
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Startup ── -->
+      <section data-spanel="startup" hidden>
+        <h3 class="setting-section-title">Startup</h3>
+        <div class="setting-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Launch at login</p>
+              <p class="setting-desc">Start Live Paper when Windows boots.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="launchAtLogin"
+              class="lp-toggle"
+              aria-label="Launch at login"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Start minimized to tray</p>
+              <p class="setting-desc">Hide the window on launch and run from the tray.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="startMinimized"
+              class="lp-toggle"
+              aria-label="Start minimized to tray"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Restore last wallpapers</p>
+              <p class="setting-desc">Re-apply the last active wallpapers on launch.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked="false"
+              data-setting="restoreLastPlaylist"
+              class="lp-toggle"
+              aria-label="Restore last wallpapers"><span class="lp-toggle-knob"></span></button
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Hotkeys ── -->
+      <section data-spanel="hotkeys" hidden>
+        <h3 class="setting-section-title">Global hotkeys</h3>
+        <p class="text-lp-muted mb-3 text-[11px]">
+          Click a shortcut to rebind it. Hotkeys work while Live Paper is running.
+        </p>
+        <div class="setting-group" id="hotkeys-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Next wallpaper</p>
+              <p class="setting-desc">Cycle the gallery forward onto the primary display.</p>
+            </div>
+            <button type="button" class="lp-kbd" data-hotkey="next">—</button>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Previous wallpaper</p>
+              <p class="setting-desc">Cycle the gallery backward onto the primary display.</p>
+            </div>
+            <button type="button" class="lp-kbd" data-hotkey="prev">—</button>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Pause / Resume</p>
+              <p class="setting-desc">Toggle playback of all video wallpapers.</p>
+            </div>
+            <button type="button" class="lp-kbd" data-hotkey="playpause">—</button>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Open Live Paper</p>
+              <p class="setting-desc">Bring the Live Paper window to the front.</p>
+            </div>
+            <button type="button" class="lp-kbd" data-hotkey="open">—</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── About ── -->
+      <section data-spanel="about" hidden>
+        <h3 class="setting-section-title">About</h3>
+        <div class="setting-group">
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Version</p>
+              <p class="setting-desc">Live Paper desktop build.</p>
+            </div>
+            <span class="text-lp-muted font-mono text-[11px]" id="modal-version">—</span>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">Engine</p>
+              <p class="setting-desc">mpv playback · ffmpeg HW transcode.</p>
+            </div>
+            <span class="text-lp-muted text-[11px]">v2</span>
+          </div>
+          <div class="setting-item">
+            <div class="min-w-0">
+              <p class="setting-label">License</p>
+              <p class="setting-desc" id="about-license-desc">
+                Free — all local features, unlimited.
+              </p>
+            </div>
+            <span class="text-lp-success text-[11px] font-medium" id="about-license"
+              >Free Lifetime</span
+            >
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

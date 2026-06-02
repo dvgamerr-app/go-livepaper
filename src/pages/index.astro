@@ -4,6 +4,9 @@ import Titlebar from '../components/Titlebar.astro'
 import DepWarn from '../components/DepWarn.astro'
 import LoginModal from '../components/LoginModal.astro'
 import Footer from '../components/Footer.astro'
+import SettingsView from '../components/SettingsView.astro'
+import DiscoverView from '../components/DiscoverView.astro'
+import BillingView from '../components/BillingView.astro'
 ---
 
 <Layout title="Live Paper">
@@ -27,10 +30,10 @@ import Footer from '../components/Footer.astro'
       <nav class="wails-no-drag flex flex-col gap-0.5 px-2">
         <!-- Displays — active/functional -->
         <button
-          class="bg-lp-accent-soft text-lp-text flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
-          aria-current="page"
+          class="nav-item active flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
+          data-view="displays"
         >
-          <span class="text-lp-accent flex shrink-0 items-center">
+          <span class="nav-icon">
             <svg
               width="14"
               height="14"
@@ -47,7 +50,60 @@ import Footer from '../components/Footer.astro'
             </svg>
           </span>
           Displays
-          <span class="bg-lp-accent ml-auto h-1.5 w-1.5 shrink-0 rounded-full"></span>
+          <span class="nav-dot"></span>
+        </button>
+
+        <!-- Discover — community wallpapers -->
+        <button
+          class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
+          data-view="discover"
+        >
+          <span class="nav-icon">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10"></circle><polygon
+                points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+          </span>
+          Discover
+          <span class="nav-dot"></span>
+        </button>
+
+        <!-- Billing — subscription -->
+        <button
+          class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
+          data-view="billing"
+        >
+          <span class="nav-icon">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="1" y="4" width="22" height="16" rx="2"></rect><line
+                x1="1"
+                y1="10"
+                x2="23"
+                y2="10"></line>
+            </svg>
+          </span>
+          Billing
+          <span class="nav-dot"></span>
         </button>
 
         <!-- Placeholder nav items -->
@@ -207,16 +263,28 @@ import Footer from '../components/Footer.astro'
         <!-- Dropdown — opens upward, visible only when logged in -->
         <div
           id="user-dropdown"
-          class="absolute bottom-[calc(100%+2px)] left-2.5 right-2.5 overflow-hidden rounded-lg border border-white/[0.08] bg-[#1c1c1f] shadow-[0_-8px_32px_rgba(0,0,0,0.6)]"
+          class="absolute right-2.5 bottom-[calc(100%+2px)] left-2.5 overflow-hidden rounded-lg border border-white/[0.08] bg-[#1c1c1f] shadow-[0_-8px_32px_rgba(0,0,0,0.6)]"
           hidden
         >
           <button
             id="dd-settings"
             class="flex w-full cursor-pointer items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left text-[12px] text-white/70 transition-colors duration-[120ms] hover:bg-white/[0.06] hover:text-white/90"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-              <circle cx="12" cy="12" r="3"/>
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+              ></path>
+              <circle cx="12" cy="12" r="3"></circle>
             </svg>
             Settings
           </button>
@@ -225,10 +293,20 @@ import Footer from '../components/Footer.astro'
             id="dd-signout"
             class="flex w-full cursor-pointer items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left text-[12px] text-white/70 transition-colors duration-[120ms] hover:bg-red-500/[0.08] hover:text-red-400"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
             </svg>
             Sign out
           </button>
@@ -244,7 +322,7 @@ import Footer from '../components/Footer.astro'
             style="background: linear-gradient(135deg, var(--lp-accent) 0%, #a855f7 100%)"
             aria-hidden="true"
           >
-            <img id="sidebar-avatar-img" class="hidden size-full object-cover" src="" alt="">
+            <img id="sidebar-avatar-img" class="hidden size-full object-cover" src="" alt="" />
           </div>
           <div class="min-w-0 flex-1 leading-tight">
             <p class="text-lp-text truncate text-[11px] font-medium" id="sidebar-name">Personal</p>
@@ -263,7 +341,17 @@ import Footer from '../components/Footer.astro'
             class="hidden shrink-0 cursor-pointer text-white/30 transition-colors duration-[120ms] hover:text-white/60"
             aria-label="Account options"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
               <polyline points="18 15 12 9 6 15"></polyline>
             </svg>
           </span>
@@ -275,139 +363,94 @@ import Footer from '../components/Footer.astro'
     <section class="flex min-w-0 flex-1 flex-col overflow-hidden">
       <!-- ── Normal content ──────────────────────────────────── -->
       <div id="main-content" class="flex flex-1 flex-col overflow-hidden">
-      <!-- Top bar -->
-      <div
-        class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
-      >
-        <div class="wails-drag">
-          <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Display Workspace</h1>
-          <p class="text-lp-muted mt-px text-[11px]" id="monitor-subtitle">Loading displays…</p>
-        </div>
-      </div>
-
-      <!-- Monitor canvas -->
-      <div
-        class="wails-drag relative flex-1 min-h-[180px] before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)] before:content-['']"
-      >
+        <!-- Top bar -->
         <div
-          aria-hidden="true"
-          class="pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-[0.08]"
-          style="background-image:linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to top, black, transparent)"
+          class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
         >
-        </div>
-        <div
-          class="absolute inset-0 flex items-center justify-center overflow-hidden p-12"
-          id="content"
-        >
-          <div class="loading">Loading monitors…</div>
-        </div>
-      </div>
-
-      <!-- Wallpaper Gallery -->
-      <div class="gallery-section wails-no-drag flex flex-col overflow-hidden border-t border-lp-border" id="gallery-section">
-        <!-- Gallery header -->
-        <div class="flex shrink-0 items-center justify-between px-6 py-2.5">
-          <div>
-            <h2 class="text-[13px] font-semibold tracking-tight">Wallpaper Gallery</h2>
-            <p class="text-lp-muted text-[11px]" id="gallery-count">Loading…</p>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button class="gallery-nav-btn" id="gallery-prev" aria-label="Scroll left">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <button class="gallery-nav-btn" id="gallery-next" aria-label="Scroll right">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
+          <div class="wails-drag">
+            <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">
+              Display Workspace
+            </h1>
+            <p class="text-lp-muted mt-px text-[11px]" id="monitor-subtitle">Loading displays…</p>
           </div>
         </div>
-        <!-- Horizontal strip -->
-        <div class="gallery-strip-wrap flex-1 min-h-0">
-          <div class="gallery-strip-fade-l"></div>
-          <div class="gallery-strip-fade-r"></div>
-          <div class="gallery-strip wails-no-drag" id="gallery-strip"></div>
-        </div>
-        <!-- Dots — 1 per image -->
-        <div class="flex items-center justify-center gap-1.5 py-2 shrink-0" id="gallery-dots"></div>
-      </div>
 
-      <Footer />
+        <!-- Monitor canvas -->
+        <div
+          class="wails-drag relative min-h-[180px] flex-1 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)] before:content-['']"
+        >
+          <div
+            aria-hidden="true"
+            class="pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-[0.08]"
+            style="background-image:linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to top, black, transparent)"
+          >
+          </div>
+          <div
+            class="absolute inset-0 flex items-center justify-center overflow-hidden p-12"
+            id="content"
+          >
+            <div class="loading">Loading monitors…</div>
+          </div>
+        </div>
+
+        <!-- Wallpaper Gallery -->
+        <div
+          class="gallery-section wails-no-drag border-lp-border flex flex-col overflow-hidden border-t"
+          id="gallery-section"
+        >
+          <!-- Gallery header -->
+          <div class="flex shrink-0 items-center justify-between px-6 py-2.5">
+            <div>
+              <h2 class="text-[13px] font-semibold tracking-tight">Wallpaper Gallery</h2>
+              <p class="text-lp-muted text-[11px]" id="gallery-count">Loading…</p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button class="gallery-nav-btn" id="gallery-prev" aria-label="Scroll left">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg
+                >
+              </button>
+              <button class="gallery-nav-btn" id="gallery-next" aria-label="Scroll right">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg
+                >
+              </button>
+            </div>
+          </div>
+          <!-- Horizontal strip -->
+          <div class="gallery-strip-wrap min-h-0 flex-1">
+            <div class="gallery-strip-fade-l"></div>
+            <div class="gallery-strip-fade-r"></div>
+            <div class="gallery-strip wails-no-drag" id="gallery-strip"></div>
+          </div>
+          <!-- Dots — 1 per image -->
+          <div class="flex shrink-0 items-center justify-center gap-1.5 py-2" id="gallery-dots">
+          </div>
+        </div>
+
+        <Footer />
       </div><!-- /#main-content -->
 
-      <!-- ── Settings panel (replaces main content when open) ── -->
-      <div id="settings-panel" class="hidden flex-1 flex-col overflow-hidden">
-        <!-- Settings top bar -->
-        <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center gap-3 border-b px-4">
-          <button
-            id="settings-back-btn"
-            class="wails-no-drag text-lp-muted hover:text-lp-text grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded border-0 bg-transparent transition-colors duration-[120ms] hover:bg-white/[0.06]"
-            aria-label="Back"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-          <h1 class="text-sm font-semibold tracking-[-0.01em]">Settings</h1>
-        </div>
-
-        <!-- Settings content -->
-        <div class="flex-1 overflow-auto">
-          <div class="py-2">
-            <div class="flex items-center justify-between gap-4 px-6 py-3">
-              <div class="flex min-w-0 flex-col gap-0.5">
-                <div class="text-lp-text text-[13px] font-medium">Version</div>
-                <div class="text-lp-muted text-[11px] leading-tight" id="modal-version">—</div>
-              </div>
-            </div>
-
-            <div class="bg-lp-border mx-6 h-px"></div>
-
-            <div class="flex items-center justify-between gap-4 px-6 py-3">
-              <div class="flex min-w-0 flex-col gap-0.5">
-                <div class="text-lp-text text-[13px] font-medium">Temp folder</div>
-                <div class="text-lp-muted text-[11px] leading-tight">
-                  Encoded video files are cached in <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;font-size:10px">%TEMP%\livepaper\</code>
-                </div>
-              </div>
-            </div>
-
-            <div class="bg-lp-border mx-6 h-px"></div>
-
-            <div class="flex items-center justify-between gap-4 px-6 py-3">
-              <div class="flex min-w-0 flex-col gap-0.5">
-                <div class="text-lp-text text-[13px] font-medium">Clean Cache</div>
-                <div class="text-lp-muted text-[11px] leading-tight">Remove encoded video files from the temp folder</div>
-              </div>
-              <button
-                class="text-lp-muted enabled:hover:text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 enabled:hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-[0.35]"
-                id="clean-btn"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path>
-                </svg>
-                Clean Cache
-              </button>
-            </div>
-
-            <div class="flex items-center justify-between gap-4 px-6 py-3">
-              <div class="flex min-w-0 flex-col gap-0.5">
-                <div class="text-lp-text text-[13px] font-medium">Reset Wallpapers</div>
-                <div class="text-lp-muted text-[11px] leading-tight">Remove all assigned wallpapers and restore defaults</div>
-              </div>
-              <button
-                class="text-lp-muted enabled:hover:text-lp-danger inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-transparent bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,border-color] duration-150 enabled:hover:border-[rgba(255,85,85,0.3)] enabled:hover:bg-[rgba(255,85,85,0.06)] disabled:cursor-not-allowed disabled:opacity-[0.35]"
-                id="reset-btn"
-                disabled
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                  <path d="M3 3v5h5"></path>
-                </svg>
-                Reset
-              </button>
-            </div>
-          </div>
-        </div>
-      </div><!-- /#settings-panel -->
+      <!-- ── Alternate views (replace main content when open) ── -->
+      <SettingsView />
+      <DiscoverView />
+      <BillingView />
     </section>
   </div>
 
@@ -422,9 +465,11 @@ import Footer from '../components/Footer.astro'
       role="dialog"
       aria-modal="true"
     >
-      <div class="px-5 pb-5 pt-5">
+      <div class="px-5 pt-5 pb-5">
         <p class="text-lp-text mb-1 text-[13px] font-semibold">Sign out of Live Paper?</p>
-        <p class="text-lp-muted mb-4 text-[11px] leading-relaxed">You'll need to sign in again to access your account.</p>
+        <p class="text-lp-muted mb-4 text-[11px] leading-relaxed">
+          You'll need to sign in again to access your account.
+        </p>
         <div class="flex items-center justify-end gap-2">
           <button
             id="signout-cancel-btn"
@@ -444,6 +489,9 @@ import Footer from '../components/Footer.astro'
   </div>
 
   <LoginModal />
+
+  <!-- Toast container (system-notification mirror) -->
+  <div id="lp-toast" aria-live="polite"></div>
 </Layout>
 
 <script type="module" is:inline>
@@ -459,21 +507,45 @@ import Footer from '../components/Footer.astro'
   const statusEl = document.getElementById('status')
   const dotEl = document.getElementById('ab-dot')
 
-  function openSettings() {
-    document.getElementById('main-content').classList.add('hidden')
-    const panel = document.getElementById('settings-panel')
-    panel.classList.remove('hidden')
-    panel.classList.add('flex')
+  // ── View router (Displays / Discover / Billing / Settings) ───────
+  let currentUser = null
+  let appSettings = null
+  let appVersion = ''
+  let galleryCursor = -1
+  const VIEW_PANELS = {
+    displays: 'main-content',
+    settings: 'settings-panel',
+    discover: 'discover-panel',
+    billing: 'billing-panel',
   }
-  function closeSettings() {
-    const panel = document.getElementById('settings-panel')
-    panel.classList.add('hidden')
-    panel.classList.remove('flex')
-    document.getElementById('main-content').classList.remove('hidden')
+  let currentView = 'displays'
+
+  function showView(name) {
+    if (!VIEW_PANELS[name]) return
+    for (const [v, pid] of Object.entries(VIEW_PANELS)) {
+      const el = document.getElementById(pid)
+      if (!el) continue
+      const on = v === name
+      el.classList.toggle('hidden', !on)
+      el.classList.toggle('flex', on)
+      el.classList.toggle('lp-view', on)
+    }
+    document.querySelectorAll('.nav-item[data-view]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.view === name)
+    })
+    currentView = name
+    if (name === 'discover') onShowDiscover()
+    if (name === 'billing') onShowBilling()
+  }
+  function openSettings() {
+    showView('settings')
   }
 
   document.getElementById('tb-settings').addEventListener('click', openSettings)
-  document.getElementById('settings-back-btn').addEventListener('click', closeSettings)
+  document.getElementById('settings-back-btn').addEventListener('click', () => showView('displays'))
+  document.querySelectorAll('.nav-item[data-view]').forEach((b) => {
+    b.addEventListener('click', () => showView(b.dataset.view))
+  })
 
   const STORAGE_KEY = 'livepaper_state_v1'
 
@@ -553,8 +625,10 @@ import Footer from '../components/Footer.astro'
       const items = []
       store.openCursor(null, 'prev').onsuccess = (e) => {
         const cursor = e.target.result
-        if (cursor) { items.push(cursor.value); cursor.continue() }
-        else resolve(items)
+        if (cursor) {
+          items.push(cursor.value)
+          cursor.continue()
+        } else resolve(items)
       }
       tx.onerror = () => resolve([])
     })
@@ -563,14 +637,27 @@ import Footer from '../components/Footer.astro'
   function getRatioLabel(w, h) {
     if (!w || !h) return ''
     const known = [
-      [21, 9], [16, 9], [16, 10], [4, 3], [3, 2], [1, 1],
-      [9, 16], [10, 16], [3, 4], [2, 3], [9, 21],
+      [21, 9],
+      [16, 9],
+      [16, 10],
+      [4, 3],
+      [3, 2],
+      [1, 1],
+      [9, 16],
+      [10, 16],
+      [3, 4],
+      [2, 3],
+      [9, 21],
     ]
     const r = w / h
-    let best = null, bestDiff = Infinity
+    let best = null,
+      bestDiff = Infinity
     for (const [a, b] of known) {
       const diff = Math.abs(r - a / b)
-      if (diff < bestDiff) { bestDiff = diff; best = [a, b] }
+      if (diff < bestDiff) {
+        bestDiff = diff
+        best = [a, b]
+      }
     }
     return bestDiff < 0.05 ? `${best[0]}:${best[1]}` : ''
   }
@@ -584,7 +671,11 @@ import Footer from '../components/Footer.astro'
     const ext = extOf(entry.filePath)
     const badgeClass = entry.isVideo && ext !== 'gif' ? 'video' : ext === 'gif' ? 'gif' : 'image'
     const badgeText = entry.isVideo && ext !== 'gif' ? 'VIDEO' : ext === 'gif' ? 'GIF' : 'IMG'
-    const name = entry.filePath.replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '')
+    const name = entry.filePath
+      .replace(/\\/g, '/')
+      .split('/')
+      .pop()
+      .replace(/\.[^.]+$/, '')
     const ratioLabel = getRatioLabel(entry.width, entry.height)
 
     card.innerHTML = `
@@ -641,7 +732,8 @@ import Footer from '../components/Footer.astro'
     strip.innerHTML = ''
 
     if (galleryItems.length === 0) {
-      strip.innerHTML = '<div class="gallery-empty">No recent wallpapers yet — apply one to add it here</div>'
+      strip.innerHTML =
+        '<div class="gallery-empty">No recent wallpapers yet — apply one to add it here</div>'
       if (countEl) countEl.textContent = 'No wallpapers yet'
       if (dotsEl) dotsEl.innerHTML = ''
       return
@@ -650,7 +742,8 @@ import Footer from '../components/Footer.astro'
     galleryItems.forEach((entry, i) => strip.appendChild(buildGalleryCard(entry, i)))
 
     const n = galleryItems.length
-    if (countEl) countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''} · Drag onto a monitor to assign`
+    if (countEl)
+      countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''} · Drag onto a monitor to assign`
 
     // build dots — 1 per image
     if (dotsEl) {
@@ -661,7 +754,8 @@ import Footer from '../components/Footer.astro'
         dot.setAttribute('aria-label', `Wallpaper ${i + 1}`)
         dot.addEventListener('click', () => {
           const cards = strip.querySelectorAll('.gallery-strip-card')
-          if (cards[i]) cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+          if (cards[i])
+            cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
           setActiveDot(i)
         })
         dotsEl.appendChild(dot)
@@ -700,6 +794,7 @@ import Footer from '../components/Footer.astro'
       else if (type === 'success' || !msg) dotEl.className = 'ab-dot'
       else dotEl.className = 'ab-dot busy'
     }
+    if (msg && (type === 'success' || type === 'error')) maybeToast(msg, type)
   }
 
   function refreshApply() {
@@ -849,14 +944,27 @@ import Footer from '../components/Footer.astro'
         const s = state[m.index]
         if (s?.isVideo && !s?.ready) return
         let entry
-        try { entry = JSON.parse(e.dataTransfer.getData('application/livepaper')) } catch { return }
+        try {
+          entry = JSON.parse(e.dataTransfer.getData('application/livepaper'))
+        } catch {
+          return
+        }
 
         const isNonGifVideo = entry.isVideo && extOf(entry.filePath) !== 'gif'
-        const resolutionMismatch = isNonGifVideo && entry.width && entry.height &&
+        const resolutionMismatch =
+          isNonGifVideo &&
+          entry.width &&
+          entry.height &&
           (entry.width !== m.width || entry.height !== m.height)
 
         if (resolutionMismatch) {
-          state[m.index] = { filePath: entry.filePath, cachedPath: entry.filePath, isVideo: true, ready: false, thumbnail: entry.thumbnail }
+          state[m.index] = {
+            filePath: entry.filePath,
+            cachedPath: entry.filePath,
+            isVideo: true,
+            ready: false,
+            thumbnail: entry.thumbnail,
+          }
           applyThumb(m.index, entry.thumbnail, entry.filePath, true)
           refreshApply()
           setEncoding(m.index, true, 0)
@@ -1200,11 +1308,18 @@ import Footer from '../components/Footer.astro'
 
     ro.observe(contentEl)
 
-    const hasRestored = await restoreState()
+    if (!appSettings) {
+      try {
+        appSettings = await call('GetSettings')
+      } catch (_) {}
+    }
+    const restoreEnabled = !appSettings || appSettings.restoreLastPlaylist !== false
+
+    const hasRestored = restoreEnabled ? await restoreState() : false
     if (hasRestored) {
       autoApply()
     } else {
-      // No wallpaper configured — show window so user can set one
+      // No wallpaper to restore — show window so user can set one
       call('WindowShow').catch(() => {})
     }
 
@@ -1242,43 +1357,66 @@ import Footer from '../components/Footer.astro'
   }, 1500)
 
   // ── Gallery wheel → horizontal scroll ────────────────────────────
-  document.getElementById('gallery-strip')?.addEventListener('wheel', (e) => {
-    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-      e.preventDefault()
-      e.currentTarget.scrollLeft += e.deltaY * 3
-    }
-  }, { passive: false })
+  document.getElementById('gallery-strip')?.addEventListener(
+    'wheel',
+    (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault()
+        e.currentTarget.scrollLeft += e.deltaY * 3
+      }
+    },
+    { passive: false }
+  )
 
   init()
 
   // ── Auth ─────────────────────────────────────────────────────────
   const API_BASE = 'https://sso.dvgamerr.app'
   const TOKEN_KEY = 'livepaper_auth_token'
-  const USER_KEY  = 'livepaper_auth_user'
+  const USER_KEY = 'livepaper_auth_user'
 
-  function getToken() { return localStorage.getItem(TOKEN_KEY) }
-  function setToken(t) { localStorage.setItem(TOKEN_KEY, t) }
-  function clearToken() { localStorage.removeItem(TOKEN_KEY) }
+  function getToken() {
+    return localStorage.getItem(TOKEN_KEY)
+  }
+  function setToken(t) {
+    localStorage.setItem(TOKEN_KEY, t)
+  }
+  function clearToken() {
+    localStorage.removeItem(TOKEN_KEY)
+  }
 
   function getCachedUser() {
-    try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null') } catch { return null }
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || 'null')
+    } catch {
+      return null
+    }
   }
-  function setCachedUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)) }
-  function clearCachedUser() { localStorage.removeItem(USER_KEY) }
+  function setCachedUser(u) {
+    localStorage.setItem(USER_KEY, JSON.stringify(u))
+  }
+  function clearCachedUser() {
+    localStorage.removeItem(USER_KEY)
+  }
 
   function authHeaders() {
     const t = getToken()
-    return t ? { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
+    return t
+      ? { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }
+      : { 'Content-Type': 'application/json' }
   }
 
   async function gravatarUrl(email) {
     const e = email.trim().toLowerCase()
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(e))
-    const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+    const hash = Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
     return `https://www.gravatar.com/avatar/${hash}?s=56&d=mp`
   }
 
   async function updateProfileUI(user) {
+    currentUser = user || null
     const nameEl = document.getElementById('sidebar-name')
     const tierEl = document.getElementById('sidebar-tier')
     const loginBtn = document.getElementById('sidebar-login-btn')
@@ -1302,8 +1440,12 @@ import Footer from '../components/Footer.astro'
       if (tierEl) tierEl.textContent = 'Free Lifetime'
       if (loginBtn) loginBtn.classList.remove('hidden')
       if (chevron) chevron.classList.add('hidden')
-      if (avatarImg) { avatarImg.src = ''; avatarImg.classList.add('hidden') }
+      if (avatarImg) {
+        avatarImg.src = ''
+        avatarImg.classList.add('hidden')
+      }
     }
+    refreshAuthDependentUI()
   }
 
   async function checkSession() {
@@ -1330,14 +1472,14 @@ import Footer from '../components/Footer.astro'
   }
 
   // ── Login modal elements ─────────────────────────────────────────
-  const loginModal    = document.getElementById('login-modal')
+  const loginModal = document.getElementById('login-modal')
   const loginCloseBtn = document.getElementById('login-modal-close')
   const sidebarLoginBtn = document.getElementById('sidebar-login-btn')
-  const ssoButtons    = document.getElementById('sso-buttons')
-  const ssoWaitingEl  = document.getElementById('sso-waiting-state')
-  const ssoErrorEl    = document.getElementById('sso-error')
-  const ssoErrorText  = document.getElementById('sso-error-text')
-  const ssoWaitLabel  = document.getElementById('sso-waiting-label')
+  const ssoButtons = document.getElementById('sso-buttons')
+  const ssoWaitingEl = document.getElementById('sso-waiting-state')
+  const ssoErrorEl = document.getElementById('sso-error')
+  const ssoErrorText = document.getElementById('sso-error-text')
+  const ssoWaitLabel = document.getElementById('sso-waiting-label')
 
   function showSSOError(msg) {
     if (!ssoErrorEl || !ssoErrorText) return
@@ -1407,7 +1549,9 @@ import Footer from '../components/Footer.astro'
     const btn = document.getElementById('signout-confirm-btn')
     btn.disabled = true
     btn.textContent = '…'
-    try { await fetch(`${API_BASE}/api/auth/sign-out`, { method: 'POST', headers: authHeaders() }) } catch (_) {}
+    try {
+      await fetch(`${API_BASE}/api/auth/sign-out`, { method: 'POST', headers: authHeaders() })
+    } catch (_) {}
     clearToken()
     await updateProfileUI(null)
     document.getElementById('signout-confirm-modal').hidden = true
@@ -1416,7 +1560,9 @@ import Footer from '../components/Footer.astro'
   })
 
   loginCloseBtn?.addEventListener('click', closeLoginModal)
-  loginModal?.addEventListener('click', (e) => { if (e.target === loginModal) closeLoginModal() })
+  loginModal?.addEventListener('click', (e) => {
+    if (e.target === loginModal) closeLoginModal()
+  })
   document.getElementById('sso-cancel')?.addEventListener('click', () => {
     stopPoll()
     setWaiting(false)
@@ -1429,8 +1575,14 @@ import Footer from '../components/Footer.astro'
   let pollPauseUntil = 0
 
   function stopPoll() {
-    if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
-    if (pollTimeout) { clearTimeout(pollTimeout); pollTimeout = null }
+    if (pollTimer) {
+      clearInterval(pollTimer)
+      pollTimer = null
+    }
+    if (pollTimeout) {
+      clearTimeout(pollTimeout)
+      pollTimeout = null
+    }
     activeState = null
   }
 
@@ -1445,7 +1597,8 @@ import Footer from '../components/Footer.astro'
     // Open in system default browser via Go backend
     call('OpenExternal', url).catch(() => {})
 
-    if (ssoWaitLabel) ssoWaitLabel.textContent = `Waiting for ${provider === 'github' ? 'GitHub' : 'Google'}…`
+    if (ssoWaitLabel)
+      ssoWaitLabel.textContent = `Waiting for ${provider === 'github' ? 'GitHub' : 'Google'}…`
     setWaiting(true)
 
     const capturedState = activeState
@@ -1483,6 +1636,584 @@ import Footer from '../components/Footer.astro'
 
   document.getElementById('sso-github')?.addEventListener('click', () => startSSO('github'))
   document.getElementById('sso-google')?.addEventListener('click', () => startSSO('google'))
+
+  // ══ Settings · Discover · Billing ══════════════════════════════════
+  const GH_REPO_DEFAULT = 'dvgamerr/go-livepaper'
+
+  function debounce(fn, ms) {
+    let t
+    return (...a) => {
+      clearTimeout(t)
+      t = setTimeout(() => fn(...a), ms)
+    }
+  }
+  function escapeHtml(s) {
+    return String(s).replace(
+      /[&<>"]/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]
+    )
+  }
+
+  // ── Toast / notifications ────────────────────────────────────────
+  function lpToast(msg, type) {
+    const wrap = document.getElementById('lp-toast')
+    if (!wrap) return
+    const el = document.createElement('div')
+    el.className = 'lp-toast' + (type ? ` ${type}` : '')
+    el.innerHTML = `<span class="dot"></span><span></span>`
+    el.lastElementChild.textContent = msg
+    wrap.appendChild(el)
+    requestAnimationFrame(() => el.classList.add('show'))
+    setTimeout(() => {
+      el.classList.remove('show')
+      setTimeout(() => el.remove(), 300)
+    }, 2600)
+  }
+  function maybeToast(msg, type) {
+    if (appSettings && appSettings.showNotifications) lpToast(msg, type)
+  }
+
+  // ── Telemetry ────────────────────────────────────────────────────
+  async function track(name, props) {
+    if (!appSettings || !appSettings.telemetry) return
+    try {
+      await fetch(`${API_BASE}/api/telemetry`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          appVersion,
+          events: [{ name, props: props || {}, ts: Date.now() }],
+        }),
+      })
+    } catch (_) {}
+  }
+
+  // ── Window theme (CSS material mirror of the DWM backdrop) ───────
+  function applyWindowThemeCss(theme) {
+    document.documentElement.dataset.windowTheme = theme || 'mica'
+  }
+
+  // ── Settings binding ─────────────────────────────────────────────
+  function setToggle(el, on) {
+    el.classList.toggle('on', !!on)
+    el.setAttribute('aria-checked', on ? 'true' : 'false')
+  }
+  const saveSettingsDebounced = debounce(() => {
+    if (appSettings) call('SaveSettings', appSettings).catch(() => {})
+  }, 250)
+
+  function renderSettings() {
+    if (!appSettings) return
+    document
+      .querySelectorAll('.lp-toggle[data-setting]')
+      .forEach((b) => setToggle(b, appSettings[b.dataset.setting]))
+    document.querySelectorAll('select[data-setting]').forEach((sel) => {
+      if (appSettings[sel.dataset.setting] != null) sel.value = appSettings[sel.dataset.setting]
+    })
+    const vram = document.querySelector('input[type=range][data-setting="vramCapMB"]')
+    if (vram) {
+      vram.value = appSettings.vramCapMB
+      const lbl = document.getElementById('vram-cap-label')
+      if (lbl) lbl.textContent = `${appSettings.vramCapMB} MB`
+    }
+    document
+      .querySelectorAll('.theme-seg[data-setting="windowTheme"]')
+      .forEach((s) => s.classList.toggle('active', s.dataset.value === appSettings.windowTheme))
+    document.querySelectorAll('.lp-kbd[data-hotkey]').forEach((b) => {
+      b.textContent = (appSettings.hotkeys && appSettings.hotkeys[b.dataset.hotkey]) || '—'
+    })
+  }
+
+  function bindSettingsControls() {
+    document.querySelectorAll('.lp-toggle[data-setting]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.setting
+        appSettings[key] = !appSettings[key]
+        setToggle(btn, appSettings[key])
+        if (key === 'telemetry' && appSettings.telemetry) track('telemetry_enabled')
+        saveSettingsDebounced()
+      })
+    })
+    document.querySelectorAll('select[data-setting]').forEach((sel) => {
+      sel.addEventListener('change', () => {
+        appSettings[sel.dataset.setting] = sel.value
+        saveSettingsDebounced()
+      })
+    })
+    const vram = document.querySelector('input[type=range][data-setting="vramCapMB"]')
+    if (vram) {
+      vram.addEventListener('input', () => {
+        appSettings.vramCapMB = parseInt(vram.value, 10)
+        const lbl = document.getElementById('vram-cap-label')
+        if (lbl) lbl.textContent = `${appSettings.vramCapMB} MB`
+        saveSettingsDebounced()
+      })
+    }
+    document.querySelectorAll('.theme-seg[data-setting="windowTheme"]').forEach((seg) => {
+      seg.addEventListener('click', () => {
+        appSettings.windowTheme = seg.dataset.value
+        document
+          .querySelectorAll('.theme-seg[data-setting="windowTheme"]')
+          .forEach((s) => s.classList.toggle('active', s.dataset.value === appSettings.windowTheme))
+        applyWindowThemeCss(appSettings.windowTheme)
+        saveSettingsDebounced()
+      })
+    })
+    document.querySelectorAll('.lp-kbd[data-hotkey]').forEach((btn) => {
+      btn.addEventListener('click', () => startHotkeyCapture(btn))
+    })
+  }
+
+  // settings tab switching
+  document.querySelectorAll('.settings-tab[data-stab]').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.stab
+      document.querySelectorAll('.settings-tab[data-stab]').forEach((t) => {
+        const on = t === tab
+        t.classList.toggle('bg-lp-accent-soft', on)
+        t.classList.toggle('bg-transparent', !on)
+        t.classList.toggle('text-lp-text', on)
+        t.classList.toggle('text-lp-muted', !on)
+        t.setAttribute('aria-selected', on ? 'true' : 'false')
+        const dot = t.querySelector('.dot')
+        if (dot) dot.style.display = on ? '' : 'none'
+      })
+      document.querySelectorAll('[data-spanel]').forEach((p) => {
+        p.hidden = p.dataset.spanel !== id
+      })
+    })
+  })
+
+  // hotkey capture
+  let capturing = null
+  function startHotkeyCapture(btn) {
+    if (capturing) {
+      capturing.btn.classList.remove('capturing')
+      renderSettings()
+    }
+    capturing = { btn, action: btn.dataset.hotkey }
+    btn.classList.add('capturing')
+    btn.textContent = 'Press keys…'
+  }
+  function displayKey(e) {
+    const k = e.key
+    if (k === 'Control' || k === 'Shift' || k === 'Alt' || k === 'Meta') return null
+    if (k === ' ') return 'Space'
+    if (k === 'ArrowUp') return 'Up'
+    if (k === 'ArrowDown') return 'Down'
+    if (k === 'ArrowLeft') return 'Left'
+    if (k === 'ArrowRight') return 'Right'
+    if (k.length === 1) return k.toUpperCase()
+    return k
+  }
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      if (!capturing) return
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.key === 'Escape') {
+        capturing.btn.classList.remove('capturing')
+        capturing = null
+        renderSettings()
+        return
+      }
+      const k = displayKey(e)
+      if (!k) return
+      const parts = []
+      if (e.ctrlKey) parts.push('Ctrl')
+      if (e.shiftKey) parts.push('Shift')
+      if (e.altKey) parts.push('Alt')
+      if (e.metaKey) parts.push('Win')
+      parts.push(k)
+      const combo = parts.join(' + ')
+      if (!appSettings.hotkeys) appSettings.hotkeys = {}
+      appSettings.hotkeys[capturing.action] = combo
+      capturing.btn.textContent = combo
+      capturing.btn.classList.remove('capturing')
+      capturing = null
+      call('SaveSettings', appSettings).catch(() => {})
+    },
+    true
+  )
+
+  async function initSettings() {
+    try {
+      appVersion = await call('GetVersion')
+    } catch (_) {}
+    try {
+      appSettings = await call('GetSettings')
+    } catch (_) {
+      appSettings = null
+    }
+    if (!appSettings) return
+    applyWindowThemeCss(appSettings.windowTheme)
+    try {
+      const adapters = await call('GetGPUAdapters')
+      const sel = document.getElementById('gpu-adapter-select')
+      if (sel && Array.isArray(adapters)) {
+        for (const a of adapters) {
+          const o = document.createElement('option')
+          o.value = a
+          o.textContent = a
+          sel.appendChild(o)
+        }
+      }
+    } catch (_) {}
+    renderSettings()
+    bindSettingsControls()
+    refreshAuthDependentUI()
+    track('app_open')
+  }
+
+  // ── Discover ─────────────────────────────────────────────────────
+  let discoverItems = []
+  let discoverLoaded = false
+
+  function isPremium() {
+    return !!(currentUser && currentUser.subscriptionTier === 'premium')
+  }
+
+  function refreshDiscoverLock() {
+    const lock = document.getElementById('discover-lock')
+    if (lock) {
+      const prem = isPremium()
+      lock.classList.toggle('hidden', prem)
+      lock.classList.toggle('flex', !prem)
+    }
+    document.querySelectorAll('.dc-apply').forEach((b) => {
+      const unlocked = isPremium()
+      b.classList.toggle('unlocked', unlocked)
+      b.classList.toggle('locked', !unlocked)
+      b.title = unlocked ? 'Apply to primary display' : 'Subscribe to apply'
+    })
+  }
+
+  async function onShowDiscover() {
+    refreshDiscoverLock()
+    if (!discoverLoaded) await loadDiscover()
+  }
+  async function loadDiscover() {
+    const grid = document.getElementById('discover-grid')
+    if (!grid) return
+    grid.innerHTML = '<div class="discover-empty">Loading community wallpapers…</div>'
+    try {
+      const res = await fetch(`${API_BASE}/api/wallpapers?limit=60`)
+      const data = await res.json()
+      discoverItems = (data && data.items) || []
+    } catch (_) {
+      discoverItems = []
+    }
+    discoverLoaded = true
+    renderDiscover(document.getElementById('discover-search')?.value || '')
+  }
+  function renderDiscover(filter) {
+    const grid = document.getElementById('discover-grid')
+    if (!grid) return
+    const q = (filter || '').trim().toLowerCase()
+    const items = q
+      ? discoverItems.filter((i) => (i.title || '').toLowerCase().includes(q))
+      : discoverItems
+    if (!items.length) {
+      grid.innerHTML = `<div class="discover-empty">${discoverItems.length ? 'No matches for your search.' : 'No community wallpapers yet — check back soon.'}</div>`
+      return
+    }
+    grid.innerHTML = ''
+    for (const it of items) {
+      const tier = it.tier || 'free'
+      const badgeClass = tier === 'top' ? 'top' : tier === 'premium' ? 'video' : 'image'
+      const card = document.createElement('div')
+      card.className = 'discover-card'
+      card.innerHTML = `
+        <img alt="" loading="lazy" draggable="false">
+        <div class="dc-grad"></div>
+        <span class="dc-badge ${badgeClass}">${tier.toUpperCase()}</span>
+        <button class="dc-apply" type="button">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Apply
+        </button>
+        <div class="dc-info"><div class="dc-title"></div></div>`
+      card.querySelector('img').src = it.thumbnailUrl || ''
+      card.querySelector('.dc-title').textContent = it.title || 'Untitled'
+      const ab = card.querySelector('.dc-apply')
+      ab.setAttribute('aria-label', `Apply ${it.title || 'wallpaper'}`)
+      ab.addEventListener('click', (e) => {
+        e.stopPropagation()
+        onDiscoverApply(it)
+      })
+      grid.appendChild(card)
+    }
+    refreshDiscoverLock()
+  }
+
+  async function onDiscoverApply(it) {
+    if (!getToken()) {
+      lpToast('Sign in to apply community wallpapers', 'error')
+      showView('billing')
+      return
+    }
+    if (!isPremium()) {
+      showView('billing')
+      return
+    }
+    const target = monitors.find((m) => m.primary) || monitors[0]
+    if (!target) {
+      lpToast('No display detected', 'error')
+      return
+    }
+    status('Downloading…')
+    let path
+    try {
+      path = await call('DownloadToTemp', it.downloadUrl, getToken(), it.id)
+    } catch (e) {
+      if (String(e).includes('premium_required')) {
+        showView('billing')
+        status('')
+      } else status('Download failed', 'error')
+      return
+    }
+    const isVideo = await call('IsVideoFile', path)
+    const thumbnail = await call('GetThumbnail', path)
+    let cached = path
+    if (isVideo && extOf(path) !== 'gif') {
+      status('Encoding…')
+      try {
+        cached = await call('PreprocessVideo', path, target.width, target.height)
+      } catch (_) {
+        status('Encoding cancelled.')
+        return
+      }
+    }
+    status('Applying…')
+    try {
+      await call('ApplyWallpapers', [{ monitorIndex: target.index, filePath: cached }])
+      state[target.index] = { filePath: path, cachedPath: cached, isVideo, ready: true, thumbnail }
+      showView('displays')
+      applyThumb(target.index, thumbnail, path, isVideo)
+      refreshApply()
+      saveState()
+      await upsertRecent({
+        fileKey: path,
+        filePath: path,
+        cachedPath: cached,
+        isVideo,
+        thumbnail,
+        width: target.width,
+        height: target.height,
+      }).catch(() => {})
+      pruneRecent().catch(() => {})
+      await refreshGallery().catch(() => {})
+      status('Applied!', 'success')
+      track('discover_apply', { id: it.id })
+      setTimeout(() => status(''), 3000)
+    } catch (e) {
+      status(`Failed: ${e}`, 'error')
+    }
+  }
+
+  document
+    .getElementById('discover-search')
+    ?.addEventListener('input', (e) => renderDiscover(e.target.value))
+  document.getElementById('discover-refresh')?.addEventListener('click', () => {
+    discoverLoaded = false
+    loadDiscover()
+  })
+  document
+    .getElementById('discover-unlock-btn')
+    ?.addEventListener('click', () => showView('billing'))
+
+  // ── Billing ──────────────────────────────────────────────────────
+  let billingPricing = null
+
+  async function onShowBilling() {
+    const signin = document.getElementById('billing-signin')
+    const free = document.getElementById('billing-free')
+    const active = document.getElementById('billing-active')
+    if (!signin || !free || !active) return
+    if (!getToken()) {
+      signin.classList.remove('hidden')
+      signin.classList.add('flex')
+      free.classList.add('hidden')
+      active.classList.add('hidden')
+      return
+    }
+    signin.classList.add('hidden')
+    signin.classList.remove('flex')
+    let st = null
+    try {
+      st = await (await fetch(`${API_BASE}/api/billing/status`, { headers: authHeaders() })).json()
+    } catch (_) {}
+    if (st && st.tier === 'premium' && st.subscription && st.subscription.status === 'active') {
+      renderBillingActive(st.subscription)
+    } else {
+      await renderBillingFree()
+    }
+  }
+  function renderBillingActive(sub) {
+    document.getElementById('billing-active').classList.remove('hidden')
+    document.getElementById('billing-free').classList.add('hidden')
+    document.getElementById('billing-active-plan').textContent =
+      sub.plan === 'monthly' ? 'Monthly' : sub.plan || 'Monthly'
+    document.getElementById('billing-active-price').textContent = `$${sub.priceUsd}`
+    document.getElementById('billing-active-renew').textContent = sub.currentPeriodEnd
+      ? new Date(sub.currentPeriodEnd).toLocaleDateString()
+      : '—'
+    document.getElementById('billing-active-starred').classList.toggle('hidden', !sub.starred)
+  }
+  async function renderBillingFree() {
+    document.getElementById('billing-free').classList.remove('hidden')
+    document.getElementById('billing-active').classList.add('hidden')
+    let pr = null
+    try {
+      pr = await (await fetch(`${API_BASE}/api/billing/pricing`, { headers: authHeaders() })).json()
+    } catch (_) {}
+    billingPricing = pr
+    applyPricingUI(pr)
+  }
+  function applyPricingUI(pr) {
+    const repo = (pr && pr.repo) || GH_REPO_DEFAULT
+    const repoEl = document.getElementById('billing-repo')
+    if (repoEl) repoEl.textContent = repo
+    const price = pr ? pr.priceUsd : 9
+    const base = pr ? pr.baseUsd : 9
+    const starred = pr ? pr.starred : false
+    document.getElementById('billing-price').textContent = `$${price}`
+    document.getElementById('billing-subscribe-price').textContent = `$${price}`
+    const strike = document.getElementById('billing-price-strike')
+    strike.classList.toggle('hidden', !starred)
+    strike.textContent = `$${base}`
+    const note = document.getElementById('billing-price-note')
+    const statusEl2 = document.getElementById('billing-star-status')
+    if (starred) {
+      note.textContent = 'GitHub-star discount applied 🎉'
+      statusEl2.innerHTML = `You starred <span class="font-mono">${escapeHtml(repo)}</span> — enjoy $${price}/mo.`
+    } else {
+      note.textContent = 'Apply any community wallpaper.'
+      statusEl2.innerHTML = `Star <span class="font-mono">${escapeHtml(repo)}</span> on GitHub to drop the price from $${base} to $4.`
+    }
+  }
+
+  document.getElementById('billing-signin-btn')?.addEventListener('click', () => openLoginModal())
+  document.getElementById('billing-star-btn')?.addEventListener('click', () => {
+    const repo = (billingPricing && billingPricing.repo) || GH_REPO_DEFAULT
+    call('OpenExternal', `https://github.com/${repo}`).catch(() => {})
+  })
+  document.getElementById('billing-recheck-btn')?.addEventListener('click', async () => {
+    try {
+      const r = await (
+        await fetch(`${API_BASE}/api/billing/star-check`, {
+          method: 'POST',
+          headers: authHeaders(),
+        })
+      ).json()
+      if (billingPricing) {
+        billingPricing.starred = r.starred
+        billingPricing.priceUsd = r.priceUsd
+      }
+      applyPricingUI(billingPricing || { priceUsd: r.priceUsd, baseUsd: 9, starred: r.starred })
+      lpToast(
+        r.starred ? 'Star confirmed — $4/mo unlocked' : 'No star found yet — star the repo first',
+        r.starred ? 'success' : 'error'
+      )
+    } catch (_) {
+      lpToast('Could not verify star', 'error')
+    }
+  })
+  document.getElementById('billing-subscribe-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('billing-subscribe-btn')
+    btn.disabled = true
+    try {
+      const r = await (
+        await fetch(`${API_BASE}/api/billing/subscribe`, { method: 'POST', headers: authHeaders() })
+      ).json()
+      if (r && r.ok) {
+        lpToast('Community access active 🎉', 'success')
+        track('subscribe', { priceUsd: r.subscription && r.subscription.priceUsd })
+        await checkSession()
+        onShowBilling()
+      } else {
+        lpToast('Subscription failed', 'error')
+      }
+    } catch (_) {
+      lpToast('Subscription failed', 'error')
+    }
+    btn.disabled = false
+  })
+  document.getElementById('billing-cancel-btn')?.addEventListener('click', async () => {
+    try {
+      await fetch(`${API_BASE}/api/billing/cancel`, { method: 'POST', headers: authHeaders() })
+      lpToast('Subscription canceled', '')
+      await checkSession()
+      onShowBilling()
+    } catch (_) {
+      lpToast('Cancel failed', 'error')
+    }
+  })
+
+  // ── Auth-dependent UI (license, gating, billing refresh) ─────────
+  function refreshAuthDependentUI() {
+    const lic = document.getElementById('about-license')
+    const licDesc = document.getElementById('about-license-desc')
+    if (lic) {
+      const prem = isPremium()
+      lic.textContent = prem ? 'Community' : 'Free Lifetime'
+      if (licDesc)
+        licDesc.textContent = prem
+          ? 'Community access — apply community wallpapers.'
+          : 'Free — all local features, unlimited.'
+    }
+    refreshDiscoverLock()
+    if (currentView === 'billing') onShowBilling()
+  }
+
+  // ── Hotkeys (events emitted from Go) ─────────────────────────────
+  async function cycleGallery(dir) {
+    if (!galleryItems || !galleryItems.length) {
+      lpToast('Gallery is empty', 'error')
+      return
+    }
+    galleryCursor = (galleryCursor + dir + galleryItems.length) % galleryItems.length
+    const entry = galleryItems[galleryCursor]
+    const target = monitors.find((m) => m.primary) || monitors[0]
+    if (!target || !entry) return
+    status('Applying…')
+    try {
+      let cached = entry.cachedPath || entry.filePath
+      const isNonGifVideo = entry.isVideo && extOf(entry.filePath) !== 'gif'
+      if (isNonGifVideo && (entry.width !== target.width || entry.height !== target.height)) {
+        cached = await call('PreprocessVideo', entry.filePath, target.width, target.height)
+      }
+      await call('ApplyWallpapers', [{ monitorIndex: target.index, filePath: cached }])
+      state[target.index] = {
+        filePath: entry.filePath,
+        cachedPath: cached,
+        isVideo: entry.isVideo,
+        ready: true,
+        thumbnail: entry.thumbnail,
+      }
+      applyThumb(target.index, entry.thumbnail, entry.filePath, entry.isVideo)
+      refreshApply()
+      saveState()
+      status('Applied!', 'success')
+      setTimeout(() => status(''), 2000)
+    } catch (e) {
+      status(`Failed: ${e}`, 'error')
+    }
+  }
+
+  Events.On('hotkey:next', () => cycleGallery(1))
+  Events.On('hotkey:prev', () => cycleGallery(-1))
+  Events.On('hotkey:open', () => showView('displays'))
+  Events.On('video:paused', (evt) => {
+    const p = evt && evt.data && evt.data.paused
+    status(p ? 'Paused' : 'Resumed', '')
+    setTimeout(() => status(''), 1500)
+  })
+
+  // telemetry on apply (attempt)
+  applyBtn.addEventListener('click', () => track('wallpaper_applied'))
+
+  initSettings()
 
   checkSession()
 </script>

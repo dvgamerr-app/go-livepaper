@@ -446,7 +446,7 @@
   --wails-draggable: no-drag;
 }
 .gallery-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ── Horizontal strip ─────────────────────────────────────────────── */
@@ -573,9 +573,15 @@
   border-radius: 3px;
   color: #fff;
 }
-.gc-badge.image { background: rgba(52, 211, 153, 0.9); }
-.gc-badge.video { background: rgba(249, 115, 22, 0.9); }
-.gc-badge.gif   { background: rgba(168, 85, 247, 0.9); }
+.gc-badge.image {
+  background: rgba(52, 211, 153, 0.9);
+}
+.gc-badge.video {
+  background: rgba(249, 115, 22, 0.9);
+}
+.gc-badge.gif {
+  background: rgba(168, 85, 247, 0.9);
+}
 .gc-ratio {
   position: absolute;
   top: 5px;
@@ -614,7 +620,9 @@
   background: rgba(255, 255, 255, 0.2);
   border: none;
   cursor: pointer;
-  transition: width 0.2s, background 0.2s;
+  transition:
+    width 0.2s,
+    background 0.2s;
   padding: 0;
   --wails-draggable: no-drag;
 }
@@ -670,4 +678,375 @@
   box-shadow:
     0 0 0 2px var(--lp-accent),
     0 25px 60px -20px rgba(47, 138, 239, 0.8) !important;
+}
+
+/* ── Sidebar nav items ────────────────────────────────────────────── */
+.nav-item {
+  color: var(--lp-muted);
+}
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--lp-text);
+}
+.nav-item.active {
+  background: var(--lp-accent-soft);
+  color: var(--lp-text);
+}
+.nav-icon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--lp-muted);
+}
+.nav-item.active .nav-icon {
+  color: var(--lp-accent);
+}
+.nav-dot {
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  flex-shrink: 0;
+  display: none;
+}
+.nav-item.active .nav-dot {
+  display: block;
+}
+
+/* ── Thin scrollbar ───────────────────────────────────────────────── */
+.lp-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+.lp-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.lp-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+}
+.lp-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ── Settings controls ────────────────────────────────────────────── */
+.setting-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--lp-muted);
+  margin-bottom: 12px;
+}
+.setting-group {
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  background: rgba(19, 19, 22, 0.4);
+  overflow: hidden;
+}
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 16px;
+}
+.setting-item + .setting-item {
+  border-top: 1px solid var(--lp-border);
+}
+.setting-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--lp-text);
+}
+.setting-desc {
+  font-size: 11px;
+  color: var(--lp-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.setting-code {
+  background: rgba(255, 255, 255, 0.07);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: monospace;
+}
+.setting-select {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--lp-border);
+  color: var(--lp-text);
+  outline: none;
+  cursor: pointer;
+  max-width: 180px;
+}
+.setting-select:focus {
+  border-color: rgba(47, 138, 239, 0.5);
+}
+
+/* Toggle switch */
+.lp-toggle {
+  width: 38px;
+  height: 22px;
+  border-radius: 99px;
+  border: 0;
+  padding: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s;
+  --wails-draggable: no-drag;
+}
+.lp-toggle-knob {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.18s;
+}
+.lp-toggle.on {
+  background: var(--lp-accent);
+}
+.lp-toggle.on .lp-toggle-knob {
+  transform: translateX(16px);
+}
+.lp-toggle:focus-visible {
+  box-shadow: 0 0 0 2px rgba(47, 138, 239, 0.6);
+}
+
+/* Window-theme segmented control */
+.theme-seg {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--lp-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--lp-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  --wails-draggable: no-drag;
+}
+.theme-seg:hover {
+  color: var(--lp-text);
+}
+.theme-seg.active {
+  background: var(--lp-accent-soft);
+  border-color: rgba(47, 138, 239, 0.4);
+  color: var(--lp-text);
+}
+
+/* Hotkey binding button */
+.lp-kbd {
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--lp-border);
+  color: var(--lp-text);
+  font-size: 11px;
+  font-family: monospace;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  --wails-draggable: no-drag;
+}
+.lp-kbd:hover {
+  border-color: rgba(47, 138, 239, 0.4);
+}
+.lp-kbd.capturing {
+  border-color: var(--lp-accent);
+  background: var(--lp-accent-soft);
+  color: var(--lp-accent);
+}
+
+/* ── Discover grid cards ──────────────────────────────────────────── */
+.discover-card {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--lp-border);
+  background: var(--lp-card);
+}
+.discover-card:hover {
+  border-color: var(--lp-border-strong);
+}
+.discover-card img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s;
+}
+.discover-card:hover img {
+  transform: scale(1.05);
+}
+.discover-card .dc-grad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent 55%);
+  pointer-events: none;
+}
+.discover-card .dc-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #fff;
+}
+.discover-card .dc-badge.video {
+  background: rgba(249, 115, 22, 0.92);
+}
+.discover-card .dc-badge.image {
+  background: rgba(52, 211, 153, 0.92);
+}
+.discover-card .dc-badge.top {
+  background: rgba(168, 85, 247, 0.92);
+}
+.discover-card .dc-info {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 10px 12px;
+}
+.discover-card .dc-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.discover-card .dc-apply {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
+}
+.discover-card:hover .dc-apply {
+  opacity: 1;
+}
+.discover-card .dc-apply.unlocked:hover {
+  background: var(--lp-accent);
+}
+.discover-card .dc-apply.locked {
+  background: rgba(245, 158, 11, 0.85);
+}
+.discover-card .dc-apply.locked:hover {
+  background: var(--lp-warn);
+}
+.discover-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--lp-muted);
+  font-size: 12px;
+}
+
+/* ── Window-theme materials (mirror DWM backdrop) ─────────────────── */
+html[data-window-theme='mica'] body {
+  background-image: radial-gradient(120% 80% at 50% 0%, rgba(47, 138, 239, 0.06), transparent 60%);
+}
+html[data-window-theme='acrylic'] body {
+  background-image:
+    radial-gradient(120% 80% at 18% 0%, rgba(47, 138, 239, 0.11), transparent 55%),
+    radial-gradient(120% 80% at 92% 100%, rgba(168, 85, 247, 0.09), transparent 55%);
+}
+html[data-window-theme='solid'] body {
+  background-image: none;
+}
+
+/* ── Toasts (system-notification mirror) ──────────────────────────── */
+#lp-toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.lp-toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(28, 28, 31, 0.96);
+  border: 1px solid var(--lp-border-strong);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  color: var(--lp-text);
+  font-size: 12px;
+  font-weight: 500;
+  transform: translateX(120%);
+  opacity: 0;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s;
+}
+.lp-toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+.lp-toast .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--lp-accent);
+}
+.lp-toast.success .dot {
+  background: var(--lp-success);
+}
+.lp-toast.error .dot {
+  background: var(--lp-danger);
+}
+
+/* ── View transition ──────────────────────────────────────────────── */
+.lp-view {
+  animation: lp-view-in 0.18s ease;
+}
+@keyframes lp-view-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
