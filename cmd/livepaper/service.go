@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/nfnt/resize"
+	"github.com/pkg/browser"
 	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -90,6 +91,10 @@ func (s *AppService) WindowShow() {
 		s.window.Show()
 		s.window.Focus()
 	}
+}
+
+func (s *AppService) OpenExternal(url string) error {
+	return browser.OpenURL(url)
 }
 
 func (s *AppService) FileExists(path string) bool {

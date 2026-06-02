@@ -2,7 +2,6 @@
 import Layout from '../layouts/Layout.astro'
 import Titlebar from '../components/Titlebar.astro'
 import DepWarn from '../components/DepWarn.astro'
-import SettingsModal from '../components/SettingsModal.astro'
 import LoginModal from '../components/LoginModal.astro'
 import Footer from '../components/Footer.astro'
 ---
@@ -204,30 +203,78 @@ import Footer from '../components/Footer.astro'
       </div>
 
       <!-- User profile -->
-      <div class="border-lp-border mt-auto border-t p-3">
-        <div class="flex items-center gap-2 px-1">
+      <div class="border-lp-border relative mt-auto border-t p-2.5" id="user-profile-section">
+        <!-- Dropdown — opens upward, visible only when logged in -->
+        <div
+          id="user-dropdown"
+          class="absolute bottom-[calc(100%+2px)] left-2.5 right-2.5 overflow-hidden rounded-lg border border-white/[0.08] bg-[#1c1c1f] shadow-[0_-8px_32px_rgba(0,0,0,0.6)]"
+          hidden
+        >
+          <button
+            id="dd-settings"
+            class="flex w-full cursor-pointer items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left text-[12px] text-white/70 transition-colors duration-[120ms] hover:bg-white/[0.06] hover:text-white/90"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Settings
+          </button>
+          <div class="mx-3 h-px bg-white/[0.06]"></div>
+          <button
+            id="dd-signout"
+            class="flex w-full cursor-pointer items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left text-[12px] text-white/70 transition-colors duration-[120ms] hover:bg-red-500/[0.08] hover:text-red-400"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign out
+          </button>
+        </div>
+
+        <div
+          id="user-profile-row"
+          class="wails-no-drag flex items-center gap-2 rounded-md px-1 py-1 transition-colors duration-[120ms]"
+        >
           <div
             id="sidebar-avatar"
-            class="size-7 shrink-0 rounded-full"
+            class="size-7 shrink-0 overflow-hidden rounded-full"
             style="background: linear-gradient(135deg, var(--lp-accent) 0%, #a855f7 100%)"
             aria-hidden="true"
-          ></div>
+          >
+            <img id="sidebar-avatar-img" class="hidden size-full object-cover" src="" alt="">
+          </div>
           <div class="min-w-0 flex-1 leading-tight">
             <p class="text-lp-text truncate text-[11px] font-medium" id="sidebar-name">Personal</p>
             <p class="text-lp-muted truncate text-[10px]" id="sidebar-tier">Free Lifetime</p>
           </div>
+          <!-- Shown when NOT logged in -->
           <button
             id="sidebar-login-btn"
-            class="wails-no-drag shrink-0 cursor-pointer rounded border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-white/50 transition-[background-color,border-color,color] duration-150 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white/75"
+            class="shrink-0 cursor-pointer rounded border border-white/[0.08] bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-white/50 transition-[background-color,border-color,color] duration-150 hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-white/75"
           >
             Sign in
           </button>
+          <!-- Shown when logged in — chevron toggles dropdown -->
+          <span
+            id="user-chevron"
+            class="hidden shrink-0 cursor-pointer text-white/30 transition-colors duration-[120ms] hover:text-white/60"
+            aria-label="Account options"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+          </span>
         </div>
       </div>
     </aside>
 
     <!-- Main panel -->
     <section class="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <!-- ── Normal content ──────────────────────────────────── -->
+      <div id="main-content" class="flex flex-1 flex-col overflow-hidden">
       <!-- Top bar -->
       <div
         class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
@@ -284,10 +331,118 @@ import Footer from '../components/Footer.astro'
       </div>
 
       <Footer />
+      </div><!-- /#main-content -->
+
+      <!-- ── Settings panel (replaces main content when open) ── -->
+      <div id="settings-panel" class="hidden flex-1 flex-col overflow-hidden">
+        <!-- Settings top bar -->
+        <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center gap-3 border-b px-4">
+          <button
+            id="settings-back-btn"
+            class="wails-no-drag text-lp-muted hover:text-lp-text grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded border-0 bg-transparent transition-colors duration-[120ms] hover:bg-white/[0.06]"
+            aria-label="Back"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <h1 class="text-sm font-semibold tracking-[-0.01em]">Settings</h1>
+        </div>
+
+        <!-- Settings content -->
+        <div class="flex-1 overflow-auto">
+          <div class="py-2">
+            <div class="flex items-center justify-between gap-4 px-6 py-3">
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <div class="text-lp-text text-[13px] font-medium">Version</div>
+                <div class="text-lp-muted text-[11px] leading-tight" id="modal-version">—</div>
+              </div>
+            </div>
+
+            <div class="bg-lp-border mx-6 h-px"></div>
+
+            <div class="flex items-center justify-between gap-4 px-6 py-3">
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <div class="text-lp-text text-[13px] font-medium">Temp folder</div>
+                <div class="text-lp-muted text-[11px] leading-tight">
+                  Encoded video files are cached in <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px;font-size:10px">%TEMP%\livepaper\</code>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-lp-border mx-6 h-px"></div>
+
+            <div class="flex items-center justify-between gap-4 px-6 py-3">
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <div class="text-lp-text text-[13px] font-medium">Clean Cache</div>
+                <div class="text-lp-muted text-[11px] leading-tight">Remove encoded video files from the temp folder</div>
+              </div>
+              <button
+                class="text-lp-muted enabled:hover:text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 enabled:hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-[0.35]"
+                id="clean-btn"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path>
+                </svg>
+                Clean Cache
+              </button>
+            </div>
+
+            <div class="flex items-center justify-between gap-4 px-6 py-3">
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <div class="text-lp-text text-[13px] font-medium">Reset Wallpapers</div>
+                <div class="text-lp-muted text-[11px] leading-tight">Remove all assigned wallpapers and restore defaults</div>
+              </div>
+              <button
+                class="text-lp-muted enabled:hover:text-lp-danger inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-transparent bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-[color,background-color,border-color] duration-150 enabled:hover:border-[rgba(255,85,85,0.3)] enabled:hover:bg-[rgba(255,85,85,0.06)] disabled:cursor-not-allowed disabled:opacity-[0.35]"
+                id="reset-btn"
+                disabled
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                </svg>
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div><!-- /#settings-panel -->
     </section>
   </div>
 
-  <SettingsModal />
+  <!-- Sign-out confirm modal -->
+  <div
+    id="signout-confirm-modal"
+    class="wails-no-drag fixed inset-0 z-[200] flex items-center justify-center bg-black/60"
+    hidden
+  >
+    <div
+      class="border-lp-border-strong w-[300px] overflow-hidden rounded-xl border bg-[#18181b] shadow-[0_24px_64px_rgba(0,0,0,0.7)]"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="px-5 pb-5 pt-5">
+        <p class="text-lp-text mb-1 text-[13px] font-semibold">Sign out of Live Paper?</p>
+        <p class="text-lp-muted mb-4 text-[11px] leading-relaxed">You'll need to sign in again to access your account.</p>
+        <div class="flex items-center justify-end gap-2">
+          <button
+            id="signout-cancel-btn"
+            class="text-lp-muted hover:text-lp-text cursor-pointer rounded-md border border-white/[0.08] bg-transparent px-3 py-1.5 text-[12px] transition-colors duration-[120ms] hover:bg-white/[0.04]"
+          >
+            Cancel
+          </button>
+          <button
+            id="signout-confirm-btn"
+            class="cursor-pointer rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] text-red-400 transition-colors duration-[120ms] hover:bg-red-500/20 hover:text-red-300"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <LoginModal />
 </Layout>
 
@@ -303,16 +458,22 @@ import Footer from '../components/Footer.astro'
   const resetBtn = document.getElementById('reset-btn')
   const statusEl = document.getElementById('status')
   const dotEl = document.getElementById('ab-dot')
-  const settingsModal = document.getElementById('settings-modal')
-  document.getElementById('tb-settings').addEventListener('click', () => {
-    settingsModal.hidden = false
-  })
-  document.getElementById('modal-close').addEventListener('click', () => {
-    settingsModal.hidden = true
-  })
-  settingsModal.addEventListener('click', (e) => {
-    if (e.target === settingsModal) settingsModal.hidden = true
-  })
+
+  function openSettings() {
+    document.getElementById('main-content').classList.add('hidden')
+    const panel = document.getElementById('settings-panel')
+    panel.classList.remove('hidden')
+    panel.classList.add('flex')
+  }
+  function closeSettings() {
+    const panel = document.getElementById('settings-panel')
+    panel.classList.add('hidden')
+    panel.classList.remove('flex')
+    document.getElementById('main-content').classList.remove('hidden')
+  }
+
+  document.getElementById('tb-settings').addEventListener('click', openSettings)
+  document.getElementById('settings-back-btn').addEventListener('click', closeSettings)
 
   const STORAGE_KEY = 'livepaper_state_v1'
 
@@ -1091,42 +1252,80 @@ import Footer from '../components/Footer.astro'
   init()
 
   // ── Auth ─────────────────────────────────────────────────────────
-  const API_BASE = 'https://cf.dvgamerr.app'
+  const API_BASE = 'https://sso.dvgamerr.app'
   const TOKEN_KEY = 'livepaper_auth_token'
+  const USER_KEY  = 'livepaper_auth_user'
 
   function getToken() { return localStorage.getItem(TOKEN_KEY) }
   function setToken(t) { localStorage.setItem(TOKEN_KEY, t) }
   function clearToken() { localStorage.removeItem(TOKEN_KEY) }
+
+  function getCachedUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null') } catch { return null }
+  }
+  function setCachedUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)) }
+  function clearCachedUser() { localStorage.removeItem(USER_KEY) }
 
   function authHeaders() {
     const t = getToken()
     return t ? { 'Authorization': `Bearer ${t}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
   }
 
-  function updateProfileUI(user) {
+  async function gravatarUrl(email) {
+    const e = email.trim().toLowerCase()
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(e))
+    const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+    return `https://www.gravatar.com/avatar/${hash}?s=56&d=mp`
+  }
+
+  async function updateProfileUI(user) {
     const nameEl = document.getElementById('sidebar-name')
     const tierEl = document.getElementById('sidebar-tier')
     const loginBtn = document.getElementById('sidebar-login-btn')
+    const chevron = document.getElementById('user-chevron')
+    const avatarImg = document.getElementById('sidebar-avatar-img')
     if (user) {
+      setCachedUser(user)
       if (nameEl) nameEl.textContent = user.name || user.email
       if (tierEl) tierEl.textContent = user.subscriptionTier === 'premium' ? 'Premium' : 'Free'
-      if (loginBtn) loginBtn.textContent = 'Sign out'
+      if (loginBtn) loginBtn.classList.add('hidden')
+      if (chevron) chevron.classList.remove('hidden')
+      if (avatarImg && user.email) {
+        avatarImg.src = await gravatarUrl(user.email)
+        avatarImg.classList.remove('hidden')
+        avatarImg.onerror = () => avatarImg.classList.add('hidden')
+      }
     } else {
+      clearCachedUser()
+      closeDropdown()
       if (nameEl) nameEl.textContent = 'Personal'
       if (tierEl) tierEl.textContent = 'Free Lifetime'
-      if (loginBtn) loginBtn.textContent = 'Sign in'
+      if (loginBtn) loginBtn.classList.remove('hidden')
+      if (chevron) chevron.classList.add('hidden')
+      if (avatarImg) { avatarImg.src = ''; avatarImg.classList.add('hidden') }
     }
   }
 
   async function checkSession() {
-    if (!getToken()) return updateProfileUI(null)
+    if (!getToken()) {
+      clearCachedUser()
+      return updateProfileUI(null)
+    }
+    // Restore cached user immediately so UI shows right away
+    const cached = getCachedUser()
+    if (cached) await updateProfileUI(cached)
+
     try {
       const res = await fetch(`${API_BASE}/api/auth/get-session`, { headers: authHeaders() })
       const data = await res.json()
-      updateProfileUI(data?.user || null)
-      if (!data?.user) clearToken()
+      if (data?.user) {
+        await updateProfileUI(data.user)
+      } else {
+        clearToken()
+        await updateProfileUI(null)
+      }
     } catch (_) {
-      updateProfileUI(null)
+      // Network error — keep cached user shown, don't clear
     }
   }
 
@@ -1166,14 +1365,54 @@ import Footer from '../components/Footer.astro'
     setWaiting(false)
   }
 
-  sidebarLoginBtn?.addEventListener('click', async () => {
-    if (getToken()) {
-      try { await fetch(`${API_BASE}/api/auth/sign-out`, { method: 'POST', headers: authHeaders() }) } catch (_) {}
-      clearToken()
-      updateProfileUI(null)
-    } else {
-      openLoginModal()
-    }
+  // Sign-in button (visible only when not logged in)
+  sidebarLoginBtn?.addEventListener('click', openLoginModal)
+
+  // ── User dropdown ─────────────────────────────────────────────────
+  const userDropdown = document.getElementById('user-dropdown')
+
+  function closeDropdown() {
+    if (userDropdown) userDropdown.hidden = true
+  }
+
+  document.getElementById('user-profile-row')?.addEventListener('click', (e) => {
+    const lb = document.getElementById('sidebar-login-btn')
+    if (lb && (e.target === lb || lb.contains(e.target))) return
+    if (!getToken()) return
+    if (userDropdown) userDropdown.hidden = !userDropdown.hidden
+  })
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const section = document.getElementById('user-profile-section')
+    if (section && !section.contains(e.target)) closeDropdown()
+  })
+
+  document.getElementById('dd-settings')?.addEventListener('click', () => {
+    closeDropdown()
+    openSettings()
+  })
+
+  document.getElementById('dd-signout')?.addEventListener('click', () => {
+    closeDropdown()
+    document.getElementById('signout-confirm-modal').hidden = false
+  })
+
+  // ── Sign-out confirm modal ────────────────────────────────────────
+  document.getElementById('signout-cancel-btn')?.addEventListener('click', () => {
+    document.getElementById('signout-confirm-modal').hidden = true
+  })
+
+  document.getElementById('signout-confirm-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('signout-confirm-btn')
+    btn.disabled = true
+    btn.textContent = '…'
+    try { await fetch(`${API_BASE}/api/auth/sign-out`, { method: 'POST', headers: authHeaders() }) } catch (_) {}
+    clearToken()
+    await updateProfileUI(null)
+    document.getElementById('signout-confirm-modal').hidden = true
+    btn.disabled = false
+    btn.textContent = 'Sign out'
   })
 
   loginCloseBtn?.addEventListener('click', closeLoginModal)
@@ -1187,6 +1426,7 @@ import Footer from '../components/Footer.astro'
   let pollTimer = null
   let pollTimeout = null
   let activeState = null
+  let pollPauseUntil = 0
 
   function stopPoll() {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
@@ -1202,8 +1442,8 @@ import Footer from '../components/Footer.astro'
     const callbackURL = encodeURIComponent(`${API_BASE}/auth-callback?state=${activeState}`)
     const url = `${API_BASE}/api/auth/sign-in/social?provider=${provider}&callbackURL=${callbackURL}`
 
-    // Open in system browser (Wails routes external URLs to system browser)
-    window.open(url, '_blank')
+    // Open in system default browser via Go backend
+    call('OpenExternal', url).catch(() => {})
 
     if (ssoWaitLabel) ssoWaitLabel.textContent = `Waiting for ${provider === 'github' ? 'GitHub' : 'Google'}…`
     setWaiting(true)
@@ -1211,17 +1451,26 @@ import Footer from '../components/Footer.astro'
     const capturedState = activeState
 
     pollTimer = setInterval(async () => {
+      if (Date.now() < pollPauseUntil) return
       try {
         const res = await fetch(`${API_BASE}/api/auth/exchange?state=${capturedState}`)
         if (res.ok) {
           const { token, user } = await res.json()
           stopPoll()
           setToken(token)
-          updateProfileUI(user)
+          await updateProfileUI(user)
           closeLoginModal()
+        } else if (res.status === 429) {
+          pollPauseUntil = Date.now() + 10_000
+        } else if (res.status >= 400 && res.status < 500 && res.status !== 404) {
+          stopPoll()
+          setWaiting(false)
+          showSSOError('Sign-in failed — please try again.')
         }
+        // 404 = not yet exchanged, keep polling
+        // 5xx = transient server error, keep polling
       } catch (_) {}
-    }, 2000)
+    }, 4000)
 
     pollTimeout = setTimeout(() => {
       if (activeState === capturedState) {
