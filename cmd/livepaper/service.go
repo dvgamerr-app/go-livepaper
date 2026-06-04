@@ -143,6 +143,16 @@ func encoderArgs() []string {
 func mpvArgsFromSettings() []string {
 	s := getSettings()
 	var args []string
+	// Hardware decoding flag. Appended after the spawner's default "--hwdec=auto"
+	// so this value wins (mpv: last flag takes effect). When off, also switch to
+	// lightweight render settings to reduce GPU rendering load noticeably.
+	if s.GPUAcceleration {
+		args = append(args, "--hwdec=auto")
+	} else {
+		args = append(args, "--hwdec=no",
+			"--scale=bilinear", "--cscale=bilinear", "--dscale=bilinear",
+			"--video-sync=audio", "--tone-mapping=clip")
+	}
 	if s.GPUAdapter != "" {
 		args = append(args, "--d3d11-adapter="+s.GPUAdapter)
 	}
