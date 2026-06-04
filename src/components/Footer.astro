@@ -17,25 +17,59 @@
   </div>
 
   <div class="flex items-center gap-1.5">
+    <!-- Pending mode: shown when unsaved wallpaper changes exist -->
+    <div id="footer-pending-actions" class="hidden items-center gap-1.5">
+      <button
+        id="discard-btn"
+        class="text-lp-muted hover:text-lp-text inline-flex h-10 cursor-pointer items-center rounded-md border border-white/[0.08] bg-transparent px-[18px] text-xs font-medium whitespace-nowrap transition-colors duration-[120ms] hover:bg-white/[0.04]"
+      >
+        Discard
+      </button>
+      <button
+        class="bg-lp-accent inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-md border-0 px-[18px] text-xs font-semibold whitespace-nowrap text-white shadow-[0_8px_24px_-8px_rgba(47,138,239,0.55)] transition-[opacity,background-color] duration-150 enabled:hover:bg-[#4a9fff] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
+        id="apply-btn"
+        disabled
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Apply Wallpapers
+      </button>
+    </div>
+    <!-- Applied mode: default, shown after apply/discard -->
     <button
-      class="bg-lp-accent inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-md border-0 px-[18px] text-xs font-semibold whitespace-nowrap text-white shadow-[0_8px_24px_-8px_rgba(47,138,239,0.55)] transition-[opacity,background-color] duration-150 enabled:hover:bg-[#4a9fff] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
-      id="apply-btn"
-      disabled
+      id="pause-wallpaper-btn"
+      type="button"
+      class="lp-pause-action"
+      aria-pressed="false"
+      style="height:40px;padding:0 18px;font-size:12px"
     >
       <svg
+        id="pause-wallpaper-icon"
         width="14"
         height="14"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        stroke-width="2.5"
+        stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
         aria-hidden="true"
       >
-        <polyline points="20 6 9 17 4 12"></polyline>
+        <rect x="6" y="4" width="4" height="16"></rect>
+        <rect x="14" y="4" width="4" height="16"></rect>
       </svg>
-      Apply Wallpapers
+      <span id="pause-wallpaper-label">Pause</span>
     </button>
   </div>
 </footer>

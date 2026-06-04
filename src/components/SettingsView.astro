@@ -90,9 +90,15 @@ const communityFeatures = [
               <p class="setting-label">Language</p>
               <p class="setting-desc">Interface language.</p>
             </div>
-            <select data-setting="language" class="setting-select" aria-label="Interface language">
-              <option value="en-US">English (US)</option>
-            </select>
+            <div class="lp-select" data-setting="language" aria-label="Interface language">
+              <button type="button" class="lp-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="lp-select-val">English (US)</span>
+                <svg class="lp-select-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="lp-select-dropdown" role="listbox" hidden>
+                <button type="button" class="lp-select-item selected" data-value="en-US" role="option" aria-selected="true">English (US)</button>
+              </div>
+            </div>
           </div>
           <div class="setting-item">
             <div class="min-w-0">
@@ -234,14 +240,15 @@ const communityFeatures = [
               <p class="setting-label">Render adapter</p>
               <p class="setting-desc">Choose which GPU renders live wallpapers.</p>
             </div>
-            <select
-              data-setting="gpuAdapter"
-              class="setting-select"
-              id="gpu-adapter-select"
-              aria-label="Render adapter"
-            >
-              <option value="">Auto</option>
-            </select>
+            <div class="lp-select" data-setting="gpuAdapter" id="gpu-adapter-select" aria-label="Render adapter">
+              <button type="button" class="lp-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="lp-select-val">Auto</span>
+                <svg class="lp-select-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </button>
+              <div class="lp-select-dropdown" role="listbox" hidden>
+                <button type="button" class="lp-select-item selected" data-value="" role="option" aria-selected="true">Auto</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -299,18 +306,9 @@ const communityFeatures = [
               <p class="setting-desc">Background material for the Live Paper window.</p>
             </div>
             <div class="flex gap-1.5" role="group" aria-label="Window theme">
-              <button type="button" class="theme-seg" data-setting="windowTheme" data-value="mica"
-                >Mica</button
-              >
-              <button
-                type="button"
-                class="theme-seg"
-                data-setting="windowTheme"
-                data-value="acrylic">Acrylic</button
-              >
-              <button type="button" class="theme-seg" data-setting="windowTheme" data-value="solid"
-                >Solid</button
-              >
+              <button type="button" class="theme-card" data-setting="windowTheme" data-value="mica">Warm</button>
+              <button type="button" class="theme-card" data-setting="windowTheme" data-value="acrylic">Acrylic</button>
+              <button type="button" class="theme-card" data-setting="windowTheme" data-value="solid">Solid</button>
             </div>
           </div>
         </div>

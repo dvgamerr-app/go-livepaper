@@ -837,8 +837,119 @@
   box-shadow: 0 0 0 2px rgba(47, 138, 239, 0.6);
 }
 
-/* Window-theme segmented control */
-.theme-seg {
+/* ── Custom dropdown (lp-select) ──────────────────────────────────── */
+.lp-select {
+  position: relative;
+  display: inline-block;
+  min-width: 140px;
+  max-width: 200px;
+  --wails-draggable: no-drag;
+}
+.lp-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--lp-border);
+  color: var(--lp-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.lp-select-trigger:focus-visible {
+  outline: none;
+  border-color: rgba(47, 138, 239, 0.5);
+}
+.lp-select.open .lp-select-trigger {
+  border-color: rgba(47, 138, 239, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+.lp-select-val {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lp-select-caret {
+  flex-shrink: 0;
+  color: var(--lp-muted);
+  transition: transform 0.15s;
+}
+.lp-select.open .lp-select-caret {
+  transform: rotate(180deg);
+}
+.lp-select-dropdown {
+  position: fixed;
+  z-index: 1000;
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+.lp-select-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--lp-text);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.lp-select-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.lp-select-item.selected {
+  color: var(--lp-accent);
+  background: var(--lp-accent-soft);
+}
+.lp-select-item + .lp-select-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ── Pause wallpaper action button ────────────────────────────────── */
+.lp-pause-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--lp-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--lp-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  --wails-draggable: no-drag;
+}
+.lp-pause-action:hover {
+  color: var(--lp-text);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.lp-pause-action.paused {
+  color: var(--lp-accent);
+  border-color: rgba(47, 138, 239, 0.35);
+  background: var(--lp-accent-soft);
+}
+
+/* ── Window-theme text buttons ────────────────────────────────────── */
+.theme-card {
   height: 32px;
   padding: 0 12px;
   border-radius: 6px;
@@ -851,10 +962,11 @@
   transition: all 0.15s;
   --wails-draggable: no-drag;
 }
-.theme-seg:hover {
+.theme-card:hover {
   color: var(--lp-text);
+  background: rgba(255, 255, 255, 0.04);
 }
-.theme-seg.active {
+.theme-card.active {
   background: var(--lp-accent-soft);
   border-color: rgba(47, 138, 239, 0.4);
   color: var(--lp-text);
@@ -993,7 +1105,7 @@
 
 /* ── Window-theme materials (mirror DWM backdrop) ─────────────────── */
 html[data-window-theme='mica'] body {
-  background-image: radial-gradient(120% 80% at 50% 0%, rgba(47, 138, 239, 0.06), transparent 60%);
+  background-image: radial-gradient(120% 80% at 65% 0%, rgba(245, 158, 11, 0.09), transparent 55%);
 }
 html[data-window-theme='acrylic'] body {
   background-image:
@@ -1002,55 +1114,6 @@ html[data-window-theme='acrylic'] body {
 }
 html[data-window-theme='solid'] body {
   background-image: none;
-}
-
-/* ── Toasts (system-notification mirror) ──────────────────────────── */
-#lp-toast {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 300;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  pointer-events: none;
-}
-.lp-toast {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 200px;
-  max-width: 320px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: rgba(28, 28, 31, 0.96);
-  border: 1px solid var(--lp-border-strong);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-  color: var(--lp-text);
-  font-size: 12px;
-  font-weight: 500;
-  transform: translateX(120%);
-  opacity: 0;
-  transition:
-    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.25s;
-}
-.lp-toast.show {
-  transform: translateX(0);
-  opacity: 1;
-}
-.lp-toast .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--lp-accent);
-}
-.lp-toast.success .dot {
-  background: var(--lp-success);
-}
-.lp-toast.error .dot {
-  background: var(--lp-danger);
 }
 
 /* ── View transition ──────────────────────────────────────────────── */
