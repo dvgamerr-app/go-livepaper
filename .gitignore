@@ -84,3 +84,4 @@ dist/
 # Keep the Go embed placeholder but ignore Astro build output in dist
 cmd/livepaper/dist/*
 !cmd/livepaper/dist/index.html
+bin/data/

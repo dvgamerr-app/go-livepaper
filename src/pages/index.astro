@@ -528,6 +528,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   // Open Settings and activate a specific tab (e.g. "billing", "connections").
   function openSettingsTab(tabId) {
     showView('settings')
+    prefetchConnections()
     const tab = document.querySelector(`.settings-tab[data-stab="${tabId}"]`)
     if (tab) tab.click()
   }
@@ -2076,25 +2077,39 @@ import DiscoverView from '../components/DiscoverView.astro'
   // ── Discover ─────────────────────────────────────────────────────
   let discoverItems = []
   let discoverLoaded = false
+  let discoverActiveFilter = 'all'
+
+  const DC_SVG_LOCK = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+  const DC_SVG_DL   = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
+  const DC_SVG_STAR = `<svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+
+  function fmtCount(n) {
+    if (!n) return '0'
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M'
+    if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k'
+    return String(n)
+  }
 
   function isPremium() {
     return !!(currentUser && currentUser.subscriptionTier === 'premium')
   }
 
   function refreshDiscoverLock() {
-    const lock = document.getElementById('discover-lock')
     const prem = isPremium()
-    if (lock) {
-      lock.classList.toggle('hidden', prem)
-      lock.classList.toggle('flex', !prem)
-    }
-    document.querySelectorAll('.dc-apply').forEach((b) => {
+    document.querySelectorAll('.dc-feat-lock-note').forEach((el) =>
+      el.classList.toggle('hidden', prem)
+    )
+    document.querySelectorAll('.dc-download').forEach((b) => {
       b.classList.toggle('unlocked', prem)
       b.classList.toggle('locked', !prem)
-      b.title = prem ? 'Apply to primary display' : 'Subscribe to apply'
+      b.innerHTML = prem ? DC_SVG_DL : DC_SVG_LOCK
+    })
+    document.querySelectorAll('.dc-feat-btn').forEach((b) => {
+      b.classList.toggle('unlocked', prem)
+      b.classList.toggle('locked', !prem)
       b.innerHTML = prem
-        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>Apply`
-        : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Unlock`
+        ? `${DC_SVG_DL} Apply Wallpaper`
+        : `${DC_SVG_LOCK} Unlock to Apply`
     })
   }
 
@@ -2102,6 +2117,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     refreshDiscoverLock()
     if (!discoverLoaded) await loadDiscover()
   }
+
   async function loadDiscover() {
     const grid = document.getElementById('discover-grid')
     if (!grid) return
@@ -2114,49 +2130,258 @@ import DiscoverView from '../components/DiscoverView.astro'
       discoverItems = []
     }
     discoverLoaded = true
+    renderDiscoverPills()
+    if (discoverItems.length > 0) renderDiscoverFeatured(discoverItems[0])
     renderDiscover(document.getElementById('discover-search')?.value || '')
   }
-  function renderDiscover(filter) {
+
+  function renderDiscoverPills() {
+    const container = document.getElementById('discover-pills')
+    if (!container) return
+
+    const allTags = [...new Set(discoverItems.flatMap((i) => i.tags || []))]
+    const staticFilters = [
+      { id: 'all', label: 'All', icon: '' },
+      { id: 'trending', label: 'Trending', icon: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>` },
+      { id: 'new', label: 'New', icon: '' },
+    ]
+    const pills = [...staticFilters, ...allTags.map((t) => ({ id: t, label: t, icon: '' }))]
+
+    container.innerHTML = ''
+    for (const p of pills) {
+      const btn = document.createElement('button')
+      btn.className = 'discover-pill' + (p.id === discoverActiveFilter ? ' active' : '')
+      btn.dataset.filter = p.id
+      btn.innerHTML = p.icon + p.label
+      btn.addEventListener('click', () => {
+        discoverActiveFilter = p.id
+        container.querySelectorAll('.discover-pill').forEach((el) =>
+          el.classList.toggle('active', el.dataset.filter === p.id)
+        )
+        renderDiscover(document.getElementById('discover-search')?.value || '')
+      })
+      container.appendChild(btn)
+    }
+    container.classList.remove('hidden')
+  }
+
+  function renderDiscoverFeatured(it) {
+    const container = document.getElementById('discover-featured')
+    if (!container) return
+    const isLocked = !isPremium()
+    const dlText = it.downloadCount ? fmtCount(it.downloadCount) + ' downloads' : 'Community wallpaper'
+    const ratingText = it.avgRating != null ? ` · ★ ${Number(it.avgRating).toFixed(1)}` : ''
+    container.innerHTML = `
+      <div class="dc-featured">
+        <img alt="${it.title || ''}">
+        <div class="dc-feat-grad"></div>
+        <div class="dc-feat-content">
+          <span class="dc-feat-label">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            Featured this week
+          </span>
+          <h2 class="dc-feat-title"></h2>
+          <p class="dc-feat-sub">${dlText}${ratingText}</p>
+          <p class="dc-feat-lock-note${isLocked ? '' : ' hidden'}">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Browsing is free · apply from <strong>$4/mo</strong>
+          </p>
+          <button class="dc-feat-btn ${isLocked ? 'locked' : 'unlocked'}">
+            ${isLocked ? DC_SVG_LOCK + ' Unlock to Apply' : DC_SVG_DL + ' Apply Wallpaper'}
+          </button>
+        </div>
+      </div>`
+    container.querySelector('img').src = it.thumbnailUrl || ''
+    container.querySelector('.dc-feat-title').textContent = it.title || 'Untitled'
+    container.querySelector('.dc-feat-btn').addEventListener('click', () => onDiscoverApply(it))
+    container.classList.remove('hidden')
+  }
+
+  function renderDiscover(search) {
     const grid = document.getElementById('discover-grid')
     if (!grid) return
-    const q = (filter || '').trim().toLowerCase()
-    const items = q
-      ? discoverItems.filter((i) => (i.title || '').toLowerCase().includes(q))
-      : discoverItems
+    const q = (search || '').trim().toLowerCase()
+
+    let items = [...discoverItems]
+
+    if (discoverActiveFilter === 'trending') {
+      items.sort((a, b) => (b.downloadCount || 0) - (a.downloadCount || 0))
+    } else if (discoverActiveFilter !== 'all' && discoverActiveFilter !== 'new') {
+      items = items.filter((i) => (i.tags || []).includes(discoverActiveFilter))
+    }
+
+    if (q) {
+      items = items.filter((i) => {
+        const titleMatch = (i.title || '').toLowerCase().includes(q)
+        const tagMatch = (i.tags || []).some((t) => t.toLowerCase().includes(q))
+        return titleMatch || tagMatch
+      })
+    }
+
     if (!items.length) {
       grid.innerHTML = `<div class="discover-empty">${discoverItems.length ? 'No matches for your search.' : 'No community wallpapers yet — check back soon.'}</div>`
       return
     }
+
     grid.innerHTML = ''
-    for (const it of items) {
+    const prem = isPremium()
+
+    items.forEach((it, idx) => {
       const isVideo = (it.contentType || '').startsWith('video/')
-      const badgeClass = isVideo ? 'video' : 'image'
-      const badgeText = resolutionBadgeText(it.width, it.height) || (isVideo ? 'VIDEO' : 'IMG')
+      const isFeatured = idx === 0 && !q && discoverActiveFilter !== 'trending'
       const card = document.createElement('div')
-      card.className = 'discover-card'
-      const isLocked = !isPremium()
+      card.className = 'discover-card' + (isFeatured ? ' featured' : '')
+
+      const badgeHtml = isVideo
+        ? `<span class="dc-badge video"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="5" width="14" height="14" rx="2"/></svg>Video</span>`
+        : `<span class="dc-badge image"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Img</span>`
+
+      const avgRating = it.avgRating != null ? Number(it.avgRating).toFixed(1) : null
+      const ratingTitle = avgRating
+        ? `Rating: ${avgRating}/5 (${it.ratingCount} vote${it.ratingCount === 1 ? '' : 's'}) — click to rate`
+        : 'No ratings yet — click to rate'
+      const ratingContent = avgRating ? `${DC_SVG_STAR}${avgRating}` : DC_SVG_STAR
+
       card.innerHTML = `
         <img alt="" loading="lazy" draggable="false">
         <div class="dc-grad"></div>
-        <span class="dc-badge ${badgeClass}">${badgeText}</span>
-        <button class="dc-apply ${isLocked ? 'locked' : 'unlocked'}" type="button" title="${isLocked ? 'Subscribe to apply' : 'Apply to primary display'}">
-          ${isLocked
-            ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Unlock`
-            : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>Apply`
-          }
+        ${badgeHtml}
+        <button class="dc-download ${prem ? 'unlocked' : 'locked'}" type="button" aria-label="${prem ? 'Apply wallpaper' : 'Subscribe to apply'}">
+          ${prem ? DC_SVG_DL : DC_SVG_LOCK}
         </button>
-        <div class="dc-info"><div class="dc-title"></div></div>`
+        <div class="dc-info">
+          <div class="dc-title${isFeatured ? ' large' : ''}"></div>
+          <div class="dc-meta">
+            <span class="dc-author"><span class="dc-avatar"></span>community</span>
+            <span class="dc-stats">
+              <button class="dc-stat-rating" title="${ratingTitle}">${ratingContent}</button>
+              <span class="dc-stat-dl">${DC_SVG_DL}${fmtCount(it.downloadCount)}</span>
+            </span>
+          </div>
+        </div>`
+
       card.querySelector('img').src = it.thumbnailUrl || ''
       card.querySelector('.dc-title').textContent = it.title || 'Untitled'
-      const ab = card.querySelector('.dc-apply')
-      ab.setAttribute('aria-label', `Apply ${it.title || 'wallpaper'}`)
-      ab.addEventListener('click', (e) => {
+
+      card.querySelector('.dc-download').addEventListener('click', (e) => {
         e.stopPropagation()
         onDiscoverApply(it)
       })
+
+      card.querySelector('.dc-stat-rating').addEventListener('click', (e) => {
+        e.stopPropagation()
+        onDiscoverRate(card, it)
+      })
+
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('.dc-download, .dc-stat-rating, .dc-rate-picker')) {
+          onDiscoverPreview(it)
+        }
+      })
+
       grid.appendChild(card)
+    })
+  }
+
+  function onDiscoverRate(card, it) {
+    if (!getToken()) {
+      openLoginModal()
+      return
     }
-    refreshDiscoverLock()
+    if (card.querySelector('.dc-rate-picker')) return
+    const picker = document.createElement('div')
+    picker.className = 'dc-rate-picker'
+    picker.innerHTML = `
+      <div class="dc-rp-label">Rate this wallpaper</div>
+      <div class="dc-rp-stars">
+        ${[1,2,3,4,5].map((s) => `<button class="dc-rp-star" data-score="${s}" title="${s} star${s > 1 ? 's' : ''}">★</button>`).join('')}
+      </div>`
+
+    const stars = picker.querySelectorAll('.dc-rp-star')
+    stars.forEach((star) => {
+      star.addEventListener('mouseenter', () => {
+        const n = Number(star.dataset.score)
+        stars.forEach((s) => s.classList.toggle('active', Number(s.dataset.score) <= n))
+      })
+      star.addEventListener('mouseleave', () => {
+        stars.forEach((s) => s.classList.remove('active'))
+      })
+      star.addEventListener('click', async (e) => {
+        e.stopPropagation()
+        picker.remove()
+        try {
+          const res = await fetch(`${API_BASE}/api/wallpapers/${it.id}/rate`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', authorization: `Bearer ${getToken()}` },
+            body: JSON.stringify({ score: Number(star.dataset.score) }),
+          })
+          if (res.ok) {
+            const data = await res.json()
+            it.avgRating = data.avgRating
+            it.ratingCount = data.ratingCount
+            const ratingBtn = card.querySelector('.dc-stat-rating')
+            if (ratingBtn) {
+              const avg = data.avgRating != null ? Number(data.avgRating).toFixed(1) : '–'
+              ratingBtn.innerHTML = `${DC_SVG_STAR}${avg}`
+              ratingBtn.title = `Rating: ${avg}/5 (${data.ratingCount} vote${data.ratingCount === 1 ? '' : 's'}) — click to rate`
+            }
+          }
+        } catch (_) {}
+      })
+    })
+
+    const closePicker = (e) => {
+      if (!picker.contains(e.target)) {
+        picker.remove()
+        document.removeEventListener('click', closePicker)
+      }
+    }
+    card.appendChild(picker)
+    setTimeout(() => document.addEventListener('click', closePicker), 0)
+  }
+
+  function onDiscoverPreview(it) {
+    if (document.querySelector('.dc-lightbox')) return
+    const isLocked = !isPremium()
+    const avgRating = it.avgRating != null ? Number(it.avgRating).toFixed(1) : null
+    const tags = (it.tags || [])
+    const tagsHtml = tags.map((t) => `<span class="dc-lb-tag">${t}</span>`).join('')
+
+    const lb = document.createElement('div')
+    lb.className = 'dc-lightbox'
+    lb.innerHTML = `
+      <div class="dc-lb-backdrop"></div>
+      <div class="dc-lb-panel">
+        <button class="dc-lb-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="dc-lb-img-wrap">
+          <img alt="" draggable="false">
+        </div>
+        <div class="dc-lb-info">
+          <div class="dc-lb-title"></div>
+          <div class="dc-lb-meta">
+            ${avgRating ? `<span class="dc-lb-rating">${DC_SVG_STAR}${avgRating} <span style="opacity:.55">(${it.ratingCount})</span></span>` : ''}
+            ${tags.length ? `<span class="dc-lb-tags">${tagsHtml}</span>` : ''}
+          </div>
+          <button class="dc-lb-apply dc-download ${isLocked ? 'locked' : 'unlocked'}" style="position:static;opacity:1;width:auto;height:32px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+            ${isLocked ? DC_SVG_LOCK + ' Unlock to Apply' : DC_SVG_DL + ' Apply Wallpaper'}
+          </button>
+        </div>
+      </div>`
+
+    lb.querySelector('img').src = it.thumbnailUrl || ''
+    lb.querySelector('.dc-lb-title').textContent = it.title || 'Untitled'
+
+    const close = () => { lb.remove(); document.removeEventListener('keydown', onKey) }
+    const onKey = (e) => { if (e.key === 'Escape') close() }
+
+    lb.querySelector('.dc-lb-backdrop').addEventListener('click', close)
+    lb.querySelector('.dc-lb-close').addEventListener('click', close)
+    lb.querySelector('.dc-lb-apply').addEventListener('click', () => { close(); onDiscoverApply(it) })
+
+    document.body.appendChild(lb)
+    document.addEventListener('keydown', onKey)
   }
 
   async function onDiscoverApply(it) {
@@ -2280,11 +2505,13 @@ import DiscoverView from '../components/DiscoverView.astro'
     ?.addEventListener('input', (e) => renderDiscover(e.target.value))
   document.getElementById('discover-refresh')?.addEventListener('click', () => {
     discoverLoaded = false
+    discoverActiveFilter = 'all'
+    document.getElementById('discover-featured')?.classList.add('hidden')
+    const pills = document.getElementById('discover-pills')
+    if (pills) pills.classList.add('hidden')
     loadDiscover()
   })
-  document
-    .getElementById('discover-unlock-btn')
-    ?.addEventListener('click', () => (getToken() ? openSettingsTab('billing') : openLoginModal()))
+
 
   // ── Connections shared data ───────────────────────────────────────
   // Single promise shared between the Connections and Billing tabs.
@@ -2343,7 +2570,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   async function renderBillingFree() {
     document.getElementById('billing-free').classList.remove('hidden')
     document.getElementById('billing-active').classList.add('hidden')
-    prefetchConnections()
+    if (!connectionsPromise) prefetchConnections()
     const c = await (connectionsPromise || Promise.resolve(null))
     const starred = c?.starred || false
     const repo = c?.repo || GH_REPO_DEFAULT
