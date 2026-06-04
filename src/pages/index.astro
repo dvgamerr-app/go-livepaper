@@ -523,6 +523,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   }
   function openSettings() {
     showView('settings')
+    prefetchConnections()
   }
   // Open Settings and activate a specific tab (e.g. "billing", "connections").
   function openSettingsTab(tabId) {
@@ -2272,6 +2273,22 @@ import DiscoverView from '../components/DiscoverView.astro'
     .getElementById('discover-unlock-btn')
     ?.addEventListener('click', () => (getToken() ? openSettingsTab('billing') : openLoginModal()))
 
+  // ── Connections shared data ───────────────────────────────────────
+  // Single promise shared between the Connections and Billing tabs.
+  // Prefetched the moment Settings opens so both tabs render instantly.
+  let connectionsPromise = null
+
+  function prefetchConnections() {
+    if (!getToken() || connectionsPromise) return
+    connectionsPromise = fetch(`${API_BASE}/api/connections`, { headers: authHeaders() })
+      .then((r) => r.json())
+      .catch(() => null)
+  }
+
+  function invalidateConnections() {
+    connectionsPromise = null
+  }
+
   // ── Billing ──────────────────────────────────────────────────────
   let billingPricing = null
 
@@ -2313,10 +2330,11 @@ import DiscoverView from '../components/DiscoverView.astro'
   async function renderBillingFree() {
     document.getElementById('billing-free').classList.remove('hidden')
     document.getElementById('billing-active').classList.add('hidden')
-    let pr = null
-    try {
-      pr = await (await fetch(`${API_BASE}/api/billing/pricing`, { headers: authHeaders() })).json()
-    } catch (_) {}
+    prefetchConnections()
+    const c = await (connectionsPromise || Promise.resolve(null))
+    const starred = c?.starred || false
+    const repo = c?.repo || GH_REPO_DEFAULT
+    const pr = { baseUsd: 9, priceUsd: starred ? 4 : 9, starred, repo }
     billingPricing = pr
     applyPricingUI(pr)
   }
@@ -2371,6 +2389,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     call('OpenExternal', `https://github.com/${repo}`).catch(() => {})
   })
   document.getElementById('billing-recheck-btn')?.addEventListener('click', async () => {
+    invalidateConnections()
     try {
       const r = await (
         await fetch(`${API_BASE}/api/billing/star-check`, {
@@ -2456,10 +2475,8 @@ import DiscoverView from '../components/DiscoverView.astro'
     signin.classList.add('hidden')
     signin.classList.remove('flex')
     content.classList.remove('hidden')
-    let c = null
-    try {
-      c = await (await fetch(`${API_BASE}/api/connections`, { headers: authHeaders() })).json()
-    } catch (_) {}
+    prefetchConnections()
+    const c = await (connectionsPromise || Promise.resolve(null))
     renderConnections(c)
   }
   function renderConnections(c) {
@@ -2521,6 +2538,8 @@ import DiscoverView from '../components/DiscoverView.astro'
     startSSO('github', {
       silent: true,
       onSuccess: async () => {
+        invalidateConnections()
+        prefetchConnections()
         await onShowConnections()
         if (btn) btn.disabled = false
         status('GitHub connected', 'success')
@@ -2539,6 +2558,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   document.getElementById('conn-recheck-btn')?.addEventListener('click', async () => {
     const btn = document.getElementById('conn-recheck-btn')
     if (btn) { btn.disabled = true; btn.textContent = 'Checking…' }
+    invalidateConnections()
     try {
       const r = await (
         await fetch(`${API_BASE}/api/billing/star-check`, { method: 'POST', headers: authHeaders() })
