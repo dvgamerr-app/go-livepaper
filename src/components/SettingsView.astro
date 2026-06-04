@@ -566,9 +566,11 @@ const communityFeatures = [
         <!-- Free / upsell -->
         <div id="billing-free" class="hidden">
           <div
+            id="billing-star-card"
             class="border-lp-border bg-lp-surface/40 mb-5 flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center"
           >
             <span
+              id="billing-star-icon-wrap"
               class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(250,204,21,0.14)] text-[#facc15]"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
@@ -578,13 +580,13 @@ const communityFeatures = [
               >
             </span>
             <div class="min-w-0 flex-1">
-              <p class="text-lp-text text-[12.5px] font-semibold">Star the repo, save $5/mo</p>
+              <p class="text-lp-text text-[12.5px] font-semibold" id="billing-star-title">Star the repo, save $5/mo</p>
               <p class="text-lp-muted text-[11px] leading-snug" id="billing-star-status">
                 Star <span class="font-mono" id="billing-repo">dvgamerr/go-livepaper</span> on GitHub
                 to drop the price from $9 to $4.
               </p>
             </div>
-            <div class="flex shrink-0 items-center gap-2">
+            <div id="billing-star-btns" class="flex shrink-0 items-center gap-2">
               <button
                 id="billing-star-btn"
                 class="text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-white/[0.04] px-3 text-[12px] font-medium transition-colors hover:bg-white/[0.08]"

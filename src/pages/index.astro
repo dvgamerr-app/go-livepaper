@@ -1658,7 +1658,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     activeState = null
   }
 
-  async function startSSO(provider) {
+  async function startSSO(provider, { onSuccess, onFail, silent = false } = {}) {
     stopPoll()
     showSSOError('')
 
@@ -1669,9 +1669,11 @@ import DiscoverView from '../components/DiscoverView.astro'
     // Open in system default browser via Go backend
     call('OpenExternal', url).catch(() => {})
 
-    if (ssoWaitLabel)
-      ssoWaitLabel.textContent = `Waiting for ${provider === 'github' ? 'GitHub' : 'Google'}…`
-    setWaiting(true)
+    if (!silent) {
+      if (ssoWaitLabel)
+        ssoWaitLabel.textContent = `Waiting for ${provider === 'github' ? 'GitHub' : 'Google'}…`
+      setWaiting(true)
+    }
 
     const capturedState = activeState
 
@@ -1684,13 +1686,17 @@ import DiscoverView from '../components/DiscoverView.astro'
           stopPoll()
           setToken(token)
           await updateProfileUI(user)
-          closeLoginModal()
+          if (!silent) closeLoginModal()
+          if (onSuccess) await onSuccess(user)
         } else if (res.status === 429) {
           pollPauseUntil = Date.now() + 10_000
         } else if (res.status >= 400 && res.status < 500 && res.status !== 404) {
           stopPoll()
-          setWaiting(false)
-          showSSOError('Sign-in failed — please try again.')
+          if (!silent) {
+            setWaiting(false)
+            showSSOError('Sign-in failed — please try again.')
+          }
+          if (onFail) onFail('failed')
         }
         // 404 = not yet exchanged, keep polling
         // 5xx = transient server error, keep polling
@@ -1700,8 +1706,11 @@ import DiscoverView from '../components/DiscoverView.astro'
     pollTimeout = setTimeout(() => {
       if (activeState === capturedState) {
         stopPoll()
-        setWaiting(false)
-        showSSOError('Sign-in timed out — please try again.')
+        if (!silent) {
+          setWaiting(false)
+          showSSOError('Sign-in timed out — please try again.')
+        }
+        if (onFail) onFail('timeout')
       }
     }, 180_000)
   }
@@ -2061,16 +2070,18 @@ import DiscoverView from '../components/DiscoverView.astro'
 
   function refreshDiscoverLock() {
     const lock = document.getElementById('discover-lock')
+    const prem = isPremium()
     if (lock) {
-      const prem = isPremium()
       lock.classList.toggle('hidden', prem)
       lock.classList.toggle('flex', !prem)
     }
     document.querySelectorAll('.dc-apply').forEach((b) => {
-      const unlocked = isPremium()
-      b.classList.toggle('unlocked', unlocked)
-      b.classList.toggle('locked', !unlocked)
-      b.title = unlocked ? 'Apply to primary display' : 'Subscribe to apply'
+      b.classList.toggle('unlocked', prem)
+      b.classList.toggle('locked', !prem)
+      b.title = prem ? 'Apply to primary display' : 'Subscribe to apply'
+      b.innerHTML = prem
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>Apply`
+        : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Unlock`
     })
   }
 
@@ -2109,13 +2120,16 @@ import DiscoverView from '../components/DiscoverView.astro'
       const badgeClass = tier === 'top' ? 'top' : tier === 'premium' ? 'video' : 'image'
       const card = document.createElement('div')
       card.className = 'discover-card'
+      const isLocked = !isPremium()
       card.innerHTML = `
         <img alt="" loading="lazy" draggable="false">
         <div class="dc-grad"></div>
         <span class="dc-badge ${badgeClass}">${tier.toUpperCase()}</span>
-        <button class="dc-apply" type="button">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          Apply
+        <button class="dc-apply ${isLocked ? 'locked' : 'unlocked'}" type="button" title="${isLocked ? 'Subscribe to apply' : 'Apply to primary display'}">
+          ${isLocked
+            ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Unlock`
+            : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>Apply`
+          }
         </button>
         <div class="dc-info"><div class="dc-title"></div></div>`
       card.querySelector('img').src = it.thumbnailUrl || ''
@@ -2133,8 +2147,7 @@ import DiscoverView from '../components/DiscoverView.astro'
 
   async function onDiscoverApply(it) {
     if (!getToken()) {
-      status('Sign in to apply community wallpapers', 'error')
-      openSettingsTab('billing')
+      openLoginModal()
       return
     }
     if (!isPremium()) {
@@ -2257,7 +2270,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   })
   document
     .getElementById('discover-unlock-btn')
-    ?.addEventListener('click', () => openSettingsTab('billing'))
+    ?.addEventListener('click', () => (getToken() ? openSettingsTab('billing') : openLoginModal()))
 
   // ── Billing ──────────────────────────────────────────────────────
   let billingPricing = null
@@ -2321,12 +2334,34 @@ import DiscoverView from '../components/DiscoverView.astro'
     strike.textContent = `$${base}`
     const note = document.getElementById('billing-price-note')
     const statusEl2 = document.getElementById('billing-star-status')
+
+    // Star card visual state
+    const starCard = document.getElementById('billing-star-card')
+    const starIconWrap = document.getElementById('billing-star-icon-wrap')
+    const starTitle = document.getElementById('billing-star-title')
+    const starBtns = document.getElementById('billing-star-btns')
     if (starred) {
-      note.textContent = 'GitHub-star discount applied 🎉'
+      note.textContent = 'GitHub-star discount applied'
       statusEl2.innerHTML = `You starred <span class="font-mono">${escapeHtml(repo)}</span> — enjoy $${price}/mo.`
+      starCard?.classList.remove('border-lp-border', 'bg-lp-surface/40')
+      starCard?.classList.add('border-[rgba(52,211,153,0.3)]', 'bg-[rgba(52,211,153,0.07)]')
+      if (starIconWrap) {
+        starIconWrap.className = 'grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(52,211,153,0.15)] text-lp-success'
+        starIconWrap.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+      }
+      if (starTitle) { starTitle.textContent = 'Starred — $4/mo unlocked'; starTitle.className = 'text-lp-success text-[12.5px] font-semibold' }
+      starBtns?.classList.add('hidden')
     } else {
       note.textContent = 'Apply any community wallpaper.'
       statusEl2.innerHTML = `Star <span class="font-mono">${escapeHtml(repo)}</span> on GitHub to drop the price from $${base} to $4.`
+      starCard?.classList.add('border-lp-border', 'bg-lp-surface/40')
+      starCard?.classList.remove('border-[rgba(52,211,153,0.3)]', 'bg-[rgba(52,211,153,0.07)]')
+      if (starIconWrap) {
+        starIconWrap.className = 'grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(250,204,21,0.14)] text-[#facc15]'
+        starIconWrap.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+      }
+      if (starTitle) { starTitle.textContent = 'Star the repo, save $5/mo'; starTitle.className = 'text-lp-text text-[12.5px] font-semibold' }
+      starBtns?.classList.remove('hidden')
     }
   }
 
@@ -2428,12 +2463,21 @@ import DiscoverView from '../components/DiscoverView.astro'
     renderConnections(c)
   }
   function renderConnections(c) {
-    const gh = c && c.github
     const ghStatus = document.getElementById('gh-status')
     const ghBtn = document.getElementById('gh-connect-btn')
     const starStatus = document.getElementById('conn-star-status')
     const repoEl = document.getElementById('conn-repo')
-    if (repoEl && c && c.repo) repoEl.textContent = c.repo
+
+    if (!c) {
+      if (ghStatus) {
+        ghStatus.textContent = 'Unable to load — check your connection and try again.'
+        ghStatus.className = 'setting-desc text-lp-warn'
+      }
+      return
+    }
+
+    const gh = c.github
+    if (repoEl && c.repo) repoEl.textContent = c.repo
     if (ghStatus && ghBtn) {
       if (gh && gh.connected) {
         ghStatus.textContent = gh.login ? `Connected as @${gh.login}` : 'Connected'
@@ -2445,29 +2489,77 @@ import DiscoverView from '../components/DiscoverView.astro'
         ghBtn.textContent = 'Connect GitHub'
       }
     }
+    const starBtn = document.getElementById('conn-star-btn')
     if (starStatus) {
-      const starred = c && c.starred
+      const starred = c.starred
       starStatus.textContent = starred
         ? 'You starred the repo — $4/mo unlocked.'
         : 'Not starred yet — star the repo to save $5/mo.'
       starStatus.className = 'setting-desc' + (starred ? ' text-lp-success' : '')
+      if (starBtn) setConnStarBtn(starBtn, starred)
+    }
+  }
+  function setConnStarBtn(btn, starred) {
+    const starSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+    if (starred) {
+      btn.innerHTML = starSvg + ' Starred'
+      btn.className = 'inline-flex h-9 cursor-default items-center gap-1.5 rounded-md border border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.1)] px-3 text-[12px] font-medium text-lp-success'
+      btn.disabled = true
+    } else {
+      btn.innerHTML = starSvg + ' Star on GitHub'
+      btn.className = 'text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-white/[0.04] px-3 text-[12px] font-medium transition-colors hover:bg-white/[0.08]'
+      btn.disabled = false
     }
   }
   document
     .getElementById('connections-signin-btn')
     ?.addEventListener('click', () => openLoginModal())
   document.getElementById('gh-connect-btn')?.addEventListener('click', () => {
-    if (typeof startSSO === 'function') startSSO('github')
+    const btn = document.getElementById('gh-connect-btn')
+    const origText = btn?.textContent?.trim() || 'Connect GitHub'
+    if (btn) { btn.disabled = true; btn.textContent = 'Connecting…' }
+    startSSO('github', {
+      silent: true,
+      onSuccess: async () => {
+        await onShowConnections()
+        if (btn) btn.disabled = false
+        status('GitHub connected', 'success')
+        setTimeout(() => status(''), 3000)
+      },
+      onFail: () => {
+        if (btn) { btn.disabled = false; btn.textContent = origText }
+        status('GitHub connection failed — try again', 'error')
+      },
+    })
   })
   document.getElementById('conn-star-btn')?.addEventListener('click', () => {
-    const repo = (billingPricing && billingPricing.repo) || GH_REPO_DEFAULT
+    const repo = document.getElementById('conn-repo')?.textContent?.trim() || GH_REPO_DEFAULT
     call('OpenExternal', `https://github.com/${repo}`).catch(() => {})
   })
   document.getElementById('conn-recheck-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('conn-recheck-btn')
+    if (btn) { btn.disabled = true; btn.textContent = 'Checking…' }
     try {
-      await fetch(`${API_BASE}/api/billing/star-check`, { method: 'POST', headers: authHeaders() })
-    } catch (_) {}
-    onShowConnections()
+      const r = await (
+        await fetch(`${API_BASE}/api/billing/star-check`, { method: 'POST', headers: authHeaders() })
+      ).json()
+      const starStatus = document.getElementById('conn-star-status')
+      const starBtn2 = document.getElementById('conn-star-btn')
+      if (starStatus) {
+        starStatus.textContent = r.starred
+          ? 'You starred the repo — $4/mo unlocked.'
+          : 'Not starred yet — star the repo to save $5/mo.'
+        starStatus.className = 'setting-desc' + (r.starred ? ' text-lp-success' : '')
+      }
+      if (starBtn2) setConnStarBtn(starBtn2, r.starred)
+      status(
+        r.starred ? 'Star confirmed — $4/mo unlocked' : 'No star found yet — star the repo first',
+        r.starred ? 'success' : 'error'
+      )
+    } catch (_) {
+      status('Could not verify star', 'error')
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Re-check' }
   })
 
   // ── Hotkeys (events emitted from Go) ─────────────────────────────
