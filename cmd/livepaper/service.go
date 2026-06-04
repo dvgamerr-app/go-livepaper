@@ -249,11 +249,16 @@ func sanitizeName(s string) string {
 	return b.String()
 }
 
-// DownloadToTemp fetches a community wallpaper from the backend (with the user's
-// bearer token) into the temp folder and returns the local path so the normal
-// apply flow can use it. Returns "premium_required" when the server gates it.
+// DownloadToTemp fetches a community wallpaper (premium-gated) into the app's
+// install directory under a "data" sub-folder. The file is saved without
+// an extension to discourage direct use outside the app.
+// Returns "premium_required" when the server rejects with 402.
 func (s *AppService) DownloadToTemp(url, token, id string) (string, error) {
-	dir := filepath.Join(os.TempDir(), "livepaper", "discover")
+	exe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(filepath.Dir(exe), "data")
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err
 	}
@@ -283,7 +288,8 @@ func (s *AppService) DownloadToTemp(url, token, id string) (string, error) {
 		return "", fmt.Errorf("download failed: %d", resp.StatusCode)
 	}
 
-	out := filepath.Join(dir, sanitizeName(id)+extFromContentType(resp.Header.Get("Content-Type")))
+	// No extension — hide file type from the filesystem
+	out := filepath.Join(dir, sanitizeName(id))
 	f, err := os.Create(out)
 	if err != nil {
 		return "", err

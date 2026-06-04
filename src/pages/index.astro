@@ -635,10 +635,8 @@ import DiscoverView from '../components/DiscoverView.astro'
     if (entry.remote) {
       card.dataset.remote = '1'
       name = entry.title || 'Wallpaper'
-      const tier = entry.tier || 'free'
-      // reuse existing badge palette: top→purple(gif), premium→orange(video), free→green(image)
-      badgeClass = tier === 'top' ? 'gif' : tier === 'premium' ? 'video' : 'image'
-      badgeText = tier.toUpperCase()
+      badgeClass = (entry.contentType || '').startsWith('video/') ? 'video' : 'image'
+      badgeText = resolutionBadgeText(entry.width, entry.height) || 'HD'
       if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
       payload = JSON.stringify({
         remote: true,
@@ -770,6 +768,7 @@ import DiscoverView from '../components/DiscoverView.astro'
         id: it.id,
         title: it.title,
         tier: it.tier || 'free',
+        contentType: it.contentType || '',
         downloadUrl: it.downloadUrl,
         thumbnail: it.thumbnailUrl,
         width: it.width || 0,
@@ -868,6 +867,19 @@ import DiscoverView from '../components/DiscoverView.astro'
 
   function extOf(p) {
     return p.replace(/\\/g, '/').split('/').pop().split('.').pop().toLowerCase()
+  }
+
+  function resolutionBadgeText(w, h) {
+    if (!w || !h) return ''
+    function gcd(a, b) { return b ? gcd(b, a % b) : a }
+    const g = gcd(w, h)
+    let ratio = `${w / g}:${h / g}`
+    const r = w / h
+    if (Math.abs(r - 16 / 9) < 0.05) ratio = '16:9'
+    else if (Math.abs(r - 21 / 9) < 0.05) ratio = '21:9'
+    else if (Math.abs(r - 4 / 3) < 0.05) ratio = '4:3'
+    const res = w >= 7680 ? '8K' : w >= 3840 ? '4K' : w >= 2560 ? '2K' : `${w}p`
+    return `${res} · ${ratio}`
   }
 
   function getMonitorViewport() {
@@ -2117,15 +2129,16 @@ import DiscoverView from '../components/DiscoverView.astro'
     }
     grid.innerHTML = ''
     for (const it of items) {
-      const tier = it.tier || 'free'
-      const badgeClass = tier === 'top' ? 'top' : tier === 'premium' ? 'video' : 'image'
+      const isVideo = (it.contentType || '').startsWith('video/')
+      const badgeClass = isVideo ? 'video' : 'image'
+      const badgeText = resolutionBadgeText(it.width, it.height) || (isVideo ? 'VIDEO' : 'IMG')
       const card = document.createElement('div')
       card.className = 'discover-card'
       const isLocked = !isPremium()
       card.innerHTML = `
         <img alt="" loading="lazy" draggable="false">
         <div class="dc-grad"></div>
-        <span class="dc-badge ${badgeClass}">${tier.toUpperCase()}</span>
+        <span class="dc-badge ${badgeClass}">${badgeText}</span>
         <button class="dc-apply ${isLocked ? 'locked' : 'unlocked'}" type="button" title="${isLocked ? 'Subscribe to apply' : 'Apply to primary display'}">
           ${isLocked
             ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Unlock`
