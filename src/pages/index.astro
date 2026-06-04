@@ -6,7 +6,6 @@ import LoginModal from '../components/LoginModal.astro'
 import Footer from '../components/Footer.astro'
 import SettingsView from '../components/SettingsView.astro'
 import DiscoverView from '../components/DiscoverView.astro'
-import BillingView from '../components/BillingView.astro'
 ---
 
 <Layout title="Live Paper">
@@ -75,34 +74,6 @@ import BillingView from '../components/BillingView.astro'
             </svg>
           </span>
           Discover
-          <span class="nav-dot"></span>
-        </button>
-
-        <!-- Billing — subscription -->
-        <button
-          class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
-          data-view="billing"
-        >
-          <span class="nav-icon">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="1" y="4" width="22" height="16" rx="2"></rect><line
-                x1="1"
-                y1="10"
-                x2="23"
-                y2="10"></line>
-            </svg>
-          </span>
-          Billing
           <span class="nav-dot"></span>
         </button>
 
@@ -450,7 +421,6 @@ import BillingView from '../components/BillingView.astro'
       <!-- ── Alternate views (replace main content when open) ── -->
       <SettingsView />
       <DiscoverView />
-      <BillingView />
     </section>
   </div>
 
@@ -516,7 +486,6 @@ import BillingView from '../components/BillingView.astro'
     displays: 'main-content',
     settings: 'settings-panel',
     discover: 'discover-panel',
-    billing: 'billing-panel',
   }
   let currentView = 'displays'
 
@@ -535,10 +504,15 @@ import BillingView from '../components/BillingView.astro'
     })
     currentView = name
     if (name === 'discover') onShowDiscover()
-    if (name === 'billing') onShowBilling()
   }
   function openSettings() {
     showView('settings')
+  }
+  // Open Settings and activate a specific tab (e.g. "billing", "connections").
+  function openSettingsTab(tabId) {
+    showView('settings')
+    const tab = document.querySelector(`.settings-tab[data-stab="${tabId}"]`)
+    if (tab) tab.click()
   }
 
   document.getElementById('tb-settings').addEventListener('click', openSettings)
@@ -668,38 +642,64 @@ import BillingView from '../components/BillingView.astro'
     card.draggable = true
     card.dataset.index = index
 
-    const ext = extOf(entry.filePath)
-    const badgeClass = entry.isVideo && ext !== 'gif' ? 'video' : ext === 'gif' ? 'gif' : 'image'
-    const badgeText = entry.isVideo && ext !== 'gif' ? 'VIDEO' : ext === 'gif' ? 'GIF' : 'IMG'
-    const name = entry.filePath
-      .replace(/\\/g, '/')
-      .split('/')
-      .pop()
-      .replace(/\.[^.]+$/, '')
-    const ratioLabel = getRatioLabel(entry.width, entry.height)
+    let name, badgeClass, badgeText, ratioLabel, payload, lockHtml
+    if (entry.remote) {
+      card.dataset.remote = '1'
+      name = entry.title || 'Wallpaper'
+      const tier = entry.tier || 'free'
+      // reuse existing badge palette: top→purple(gif), premium→orange(video), free→green(image)
+      badgeClass = tier === 'top' ? 'gif' : tier === 'premium' ? 'video' : 'image'
+      badgeText = tier.toUpperCase()
+      ratioLabel = getRatioLabel(entry.width, entry.height)
+      payload = JSON.stringify({
+        remote: true,
+        id: entry.id,
+        downloadUrl: entry.downloadUrl,
+        tier: entry.tier,
+        thumbnail: entry.thumbnail,
+        title: entry.title,
+      })
+      lockHtml = `<span class="gc-lock${isPremium() ? ' hidden' : ''}" aria-hidden="true">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </span>`
+    } else {
+      const ext = extOf(entry.filePath)
+      badgeClass = entry.isVideo && ext !== 'gif' ? 'video' : ext === 'gif' ? 'gif' : 'image'
+      badgeText = entry.isVideo && ext !== 'gif' ? 'VIDEO' : ext === 'gif' ? 'GIF' : 'IMG'
+      name = entry.filePath
+        .replace(/\\/g, '/')
+        .split('/')
+        .pop()
+        .replace(/\.[^.]+$/, '')
+      ratioLabel = getRatioLabel(entry.width, entry.height)
+      payload = JSON.stringify({
+        filePath: entry.filePath,
+        cachedPath: entry.cachedPath,
+        isVideo: entry.isVideo,
+        thumbnail: entry.thumbnail,
+        width: entry.width || 0,
+        height: entry.height || 0,
+      })
+      lockHtml = ''
+    }
 
     card.innerHTML = `
-      <img class="gc-img" src="${entry.thumbnail || ''}" alt="${name}" draggable="false">
+      <img class="gc-img" src="${entry.thumbnail || ''}" alt="" draggable="false">
       <div class="gc-overlay"></div>
       <span class="gc-badge ${badgeClass}">${badgeText}</span>
       ${ratioLabel ? `<span class="gc-ratio">${ratioLabel}</span>` : ''}
+      ${lockHtml || ''}
       <div class="gc-grip" aria-hidden="true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
           <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
         </svg>
       </div>
-      <div class="gc-info"><div class="gc-name">${name}</div></div>
+      <div class="gc-info"><div class="gc-name"></div></div>
     `
+    card.querySelector('.gc-name').textContent = name
+    card.querySelector('.gc-img').alt = name
 
-    const payload = JSON.stringify({
-      filePath: entry.filePath,
-      cachedPath: entry.cachedPath,
-      isVideo: entry.isVideo,
-      thumbnail: entry.thumbnail,
-      width: entry.width || 0,
-      height: entry.height || 0,
-    })
     card.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('application/livepaper', payload)
       e.dataTransfer.effectAllowed = 'copy'
@@ -771,9 +771,39 @@ import BillingView from '../components/BillingView.astro'
     }
   }
 
+  // Fetch the community catalog from the backend so the gallery always has
+  // content to browse/drag, even before the user has applied anything locally.
+  async function loadRemoteGalleryItems() {
+    try {
+      const res = await fetch(`${API_BASE}/api/wallpapers?limit=60`)
+      const data = await res.json()
+      return (data?.items || []).map((it) => ({
+        remote: true,
+        id: it.id,
+        title: it.title,
+        tier: it.tier || 'free',
+        downloadUrl: it.downloadUrl,
+        thumbnail: it.thumbnailUrl,
+        width: it.width || 0,
+        height: it.height || 0,
+      }))
+    } catch (_) {
+      return []
+    }
+  }
+
   async function refreshGallery() {
-    galleryItems = await loadGalleryItems()
+    const [local, remote] = await Promise.all([loadGalleryItems(), loadRemoteGalleryItems()])
+    // Local recents first (user's own history), then the community catalog.
+    galleryItems = [...local, ...remote]
     renderGalleryStrip()
+  }
+
+  // Toggle the lock indicator on remote gallery cards based on subscription.
+  function refreshGalleryLocks() {
+    document.querySelectorAll('.gallery-strip-card[data-remote="1"] .gc-lock').forEach((el) => {
+      el.classList.toggle('hidden', isPremium())
+    })
   }
 
   async function clearRecentHistory() {
@@ -947,6 +977,12 @@ import BillingView from '../components/BillingView.astro'
         try {
           entry = JSON.parse(e.dataTransfer.getData('application/livepaper'))
         } catch {
+          return
+        }
+
+        // Community (remote) item: download first (subscription-gated), then stage.
+        if (entry.remote) {
+          await applyRemoteEntryToMonitor(entry, m)
           return
         }
 
@@ -1184,8 +1220,7 @@ import BillingView from '../components/BillingView.astro'
     try {
       await call('CleanTempFiles')
       await clearRecentHistory()
-      galleryItems = []
-      renderGalleryStrip()
+      await refreshGallery()
       status('Cache cleaned', 'success')
       setTimeout(() => status(''), 3000)
     } catch (e) {
@@ -1205,8 +1240,7 @@ import BillingView from '../components/BillingView.astro'
     for (const idx of Object.keys(state).map(Number)) resetMonitor(idx)
     localStorage.removeItem(STORAGE_KEY)
     await clearRecentHistory().catch(() => {})
-    galleryItems = []
-    renderGalleryStrip()
+    await refreshGallery().catch(() => {})
     status('Reset complete', 'success')
     setTimeout(() => status(''), 3000)
     refreshApply()
@@ -1732,6 +1766,9 @@ import BillingView from '../components/BillingView.astro'
         setToggle(btn, appSettings[key])
         if (key === 'telemetry' && appSettings.telemetry) track('telemetry_enabled')
         saveSettingsDebounced()
+        // GPU acceleration changes mpv's decoder — re-apply running video
+        // wallpapers so the new CPU/GPU path takes effect immediately.
+        if (key === 'gpuAcceleration') reapplyVideoWallpapers()
       })
     })
     document.querySelectorAll('select[data-setting]').forEach((sel) => {
@@ -1781,6 +1818,8 @@ import BillingView from '../components/BillingView.astro'
       document.querySelectorAll('[data-spanel]').forEach((p) => {
         p.hidden = p.dataset.spanel !== id
       })
+      if (id === 'billing') onShowBilling()
+      if (id === 'connections') onShowConnections()
     })
   })
 
@@ -1836,6 +1875,34 @@ import BillingView from '../components/BillingView.astro'
     },
     true
   )
+
+  // Re-apply the currently-staged wallpapers so a GPU-acceleration change is
+  // picked up by mpv (which reads the hwdec flag at spawn time). For videos this
+  // restarts mpv with the new CPU/GPU decode path.
+  async function reapplyVideoWallpapers() {
+    const list = Object.entries(state)
+      .filter(([, s]) => s.filePath && s.ready)
+      .map(([idx, s]) => ({
+        monitorIndex: parseInt(idx, 10),
+        filePath: s.cachedPath || s.filePath,
+      }))
+    if (!list.length) return
+    // Ensure Go has the latest settings before it reads them for mpv args.
+    try {
+      await call('SaveSettings', appSettings)
+    } catch (_) {}
+    status('Reapplying…')
+    try {
+      await call('ApplyWallpapers', list)
+      status(
+        appSettings.gpuAcceleration ? 'GPU acceleration on' : 'GPU acceleration off',
+        'success'
+      )
+      setTimeout(() => status(''), 2500)
+    } catch (e) {
+      status(`Failed: ${e}`, 'error')
+    }
+  }
 
   async function initSettings() {
     try {
@@ -1949,11 +2016,11 @@ import BillingView from '../components/BillingView.astro'
   async function onDiscoverApply(it) {
     if (!getToken()) {
       lpToast('Sign in to apply community wallpapers', 'error')
-      showView('billing')
+      openSettingsTab('billing')
       return
     }
     if (!isPremium()) {
-      showView('billing')
+      openSettingsTab('billing')
       return
     }
     const target = monitors.find((m) => m.primary) || monitors[0]
@@ -1967,7 +2034,7 @@ import BillingView from '../components/BillingView.astro'
       path = await call('DownloadToTemp', it.downloadUrl, getToken(), it.id)
     } catch (e) {
       if (String(e).includes('premium_required')) {
-        showView('billing')
+        openSettingsTab('billing')
         status('')
       } else status('Download failed', 'error')
       return
@@ -2011,6 +2078,52 @@ import BillingView from '../components/BillingView.astro'
     }
   }
 
+  // Drop of a community (remote) gallery card onto a monitor: gate, download,
+  // encode if needed, then stage it (user clicks Apply to commit — same as local).
+  async function applyRemoteEntryToMonitor(entry, m) {
+    if (!getToken()) {
+      lpToast('Sign in to apply community wallpapers', 'error')
+      openSettingsTab('billing')
+      return
+    }
+    if (!isPremium()) {
+      openSettingsTab('billing')
+      return
+    }
+    status('Downloading…')
+    let path
+    try {
+      path = await call('DownloadToTemp', entry.downloadUrl, getToken(), entry.id)
+    } catch (e) {
+      if (String(e).includes('premium_required')) {
+        openSettingsTab('billing')
+        status('')
+      } else status('Download failed', 'error')
+      return
+    }
+    const isVideo = await call('IsVideoFile', path)
+    const thumbnail = await call('GetThumbnail', path)
+    let cached = path
+    if (isVideo && extOf(path) !== 'gif') {
+      state[m.index] = { filePath: path, cachedPath: path, isVideo: true, ready: false, thumbnail }
+      applyThumb(m.index, thumbnail, path, true)
+      refreshApply()
+      setEncoding(m.index, true, 0)
+      try {
+        cached = await call('PreprocessVideo', path, m.width, m.height)
+      } catch (_) {
+        resetMonitor(m.index)
+        status('Encoding cancelled.', '')
+        return
+      }
+      setEncoding(m.index, false, 100)
+    }
+    state[m.index] = { filePath: path, cachedPath: cached, isVideo, ready: true, thumbnail }
+    applyThumb(m.index, thumbnail, path, isVideo)
+    refreshApply()
+    status('Ready — click Apply Wallpapers', '')
+  }
+
   document
     .getElementById('discover-search')
     ?.addEventListener('input', (e) => renderDiscover(e.target.value))
@@ -2020,7 +2133,7 @@ import BillingView from '../components/BillingView.astro'
   })
   document
     .getElementById('discover-unlock-btn')
-    ?.addEventListener('click', () => showView('billing'))
+    ?.addEventListener('click', () => openSettingsTab('billing'))
 
   // ── Billing ──────────────────────────────────────────────────────
   let billingPricing = null
@@ -2163,17 +2276,86 @@ import BillingView from '../components/BillingView.astro'
           : 'Free — all local features, unlimited.'
     }
     refreshDiscoverLock()
-    if (currentView === 'billing') onShowBilling()
+    refreshGalleryLocks()
+    const billingPanel = document.querySelector('[data-spanel="billing"]')
+    if (currentView === 'settings' && billingPanel && !billingPanel.hidden) onShowBilling()
+    const connPanel = document.querySelector('[data-spanel="connections"]')
+    if (currentView === 'settings' && connPanel && !connPanel.hidden) onShowConnections()
   }
+
+  // ── Connections (Settings → Connections) ─────────────────────────
+  async function onShowConnections() {
+    const signin = document.getElementById('connections-signin')
+    const content = document.getElementById('connections-content')
+    if (!signin || !content) return
+    if (!getToken()) {
+      signin.classList.remove('hidden')
+      signin.classList.add('flex')
+      content.classList.add('hidden')
+      return
+    }
+    signin.classList.add('hidden')
+    signin.classList.remove('flex')
+    content.classList.remove('hidden')
+    let c = null
+    try {
+      c = await (await fetch(`${API_BASE}/api/connections`, { headers: authHeaders() })).json()
+    } catch (_) {}
+    renderConnections(c)
+  }
+  function renderConnections(c) {
+    const gh = c && c.github
+    const ghStatus = document.getElementById('gh-status')
+    const ghBtn = document.getElementById('gh-connect-btn')
+    const starStatus = document.getElementById('conn-star-status')
+    const repoEl = document.getElementById('conn-repo')
+    if (repoEl && c && c.repo) repoEl.textContent = c.repo
+    if (ghStatus && ghBtn) {
+      if (gh && gh.connected) {
+        ghStatus.textContent = gh.login ? `Connected as @${gh.login}` : 'Connected'
+        ghStatus.className = 'setting-desc text-lp-success'
+        ghBtn.textContent = 'Reconnect'
+      } else {
+        ghStatus.textContent = 'Not connected — link GitHub to unlock the star discount.'
+        ghStatus.className = 'setting-desc'
+        ghBtn.textContent = 'Connect GitHub'
+      }
+    }
+    if (starStatus) {
+      const starred = c && c.starred
+      starStatus.textContent = starred
+        ? 'You starred the repo — $4/mo unlocked.'
+        : 'Not starred yet — star the repo to save $5/mo.'
+      starStatus.className = 'setting-desc' + (starred ? ' text-lp-success' : '')
+    }
+  }
+  document
+    .getElementById('connections-signin-btn')
+    ?.addEventListener('click', () => openLoginModal())
+  document.getElementById('gh-connect-btn')?.addEventListener('click', () => {
+    if (typeof startSSO === 'function') startSSO('github')
+  })
+  document.getElementById('conn-star-btn')?.addEventListener('click', () => {
+    const repo = (billingPricing && billingPricing.repo) || GH_REPO_DEFAULT
+    call('OpenExternal', `https://github.com/${repo}`).catch(() => {})
+  })
+  document.getElementById('conn-recheck-btn')?.addEventListener('click', async () => {
+    try {
+      await fetch(`${API_BASE}/api/billing/star-check`, { method: 'POST', headers: authHeaders() })
+    } catch (_) {}
+    onShowConnections()
+  })
 
   // ── Hotkeys (events emitted from Go) ─────────────────────────────
   async function cycleGallery(dir) {
-    if (!galleryItems || !galleryItems.length) {
-      lpToast('Gallery is empty', 'error')
+    // Hotkeys cycle only local wallpapers (remote items require a gated download).
+    const localItems = galleryItems.filter((it) => !it.remote)
+    if (!localItems.length) {
+      lpToast('No local wallpapers to cycle', 'error')
       return
     }
-    galleryCursor = (galleryCursor + dir + galleryItems.length) % galleryItems.length
-    const entry = galleryItems[galleryCursor]
+    galleryCursor = (galleryCursor + dir + localItems.length) % localItems.length
+    const entry = localItems[galleryCursor]
     const target = monitors.find((m) => m.primary) || monitors[0]
     if (!target || !entry) return
     status('Applying…')

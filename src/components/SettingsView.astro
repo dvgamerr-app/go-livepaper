@@ -6,7 +6,23 @@ const tabs = [
   { id: 'performance', label: 'Performance' },
   { id: 'startup', label: 'Startup' },
   { id: 'hotkeys', label: 'Hotkeys' },
+  { id: 'connections', label: 'Connections' },
+  { id: 'billing', label: 'Billing' },
   { id: 'about', label: 'About' },
+]
+
+const freeFeatures = [
+  'Multi-monitor wallpapers',
+  'Image, GIF & video wallpapers',
+  'Unlimited local library & gallery',
+  'Global hotkeys & window themes',
+  'Hardware decoding & power-saving',
+]
+const communityFeatures = [
+  'Everything in Free, unlimited',
+  'One-click apply community wallpapers',
+  'New community packs & creators',
+  'Priority workshop downloads',
 ]
 ---
 
@@ -114,8 +130,8 @@ const tabs = [
             <div class="min-w-0">
               <p class="setting-label">Temp folder</p>
               <p class="setting-desc">
-                Encoded video files are cached in <code class="setting-code"
-                  >%TEMP%\livepaper\</code>
+                Encoded video files are cached in <code class="setting-code">%TEMP%\livepaper\</code
+                >
               </p>
             </div>
           </div>
@@ -181,8 +197,8 @@ const tabs = [
         <div class="setting-group">
           <div class="setting-item">
             <div class="min-w-0">
-              <p class="setting-label">GPU acceleration</p>
-              <p class="setting-desc">Use a hardware encoder for faster video processing.</p>
+              <p class="setting-label">Hardware decoding</p>
+              <p class="setting-desc">Use GPU to decode video. Disabling uses CPU decoding with lighter GPU rendering.</p>
             </div>
             <button
               type="button"
@@ -190,13 +206,13 @@ const tabs = [
               aria-checked="false"
               data-setting="gpuAcceleration"
               class="lp-toggle"
-              aria-label="GPU acceleration"><span class="lp-toggle-knob"></span></button
+              aria-label="Hardware decoding"><span class="lp-toggle-knob"></span></button
             >
           </div>
           <div class="setting-item">
             <div class="min-w-0">
               <p class="setting-label">Memory cap</p>
-              <p class="setting-desc">Limit the decode buffer used by the playback engine.</p>
+              <p class="setting-desc">Limit the RAM read-ahead buffer used by the video stream.</p>
             </div>
             <div class="flex w-56 items-center gap-3">
               <input
@@ -383,6 +399,342 @@ const tabs = [
               <p class="setting-desc">Bring the Live Paper window to the front.</p>
             </div>
             <button type="button" class="lp-kbd" data-hotkey="open">—</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Connections ── -->
+      <section data-spanel="connections" hidden>
+        <!-- Signed out -->
+        <div
+          id="connections-signin"
+          class="border-lp-border bg-lp-surface/40 hidden flex-col items-center gap-4 rounded-xl border p-10 text-center"
+        >
+          <span class="grid h-12 w-12 place-items-center rounded-xl bg-white/[0.06]">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="rgba(255,255,255,0.7)"
+              aria-hidden="true"
+              ><path
+                d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.461-1.11-1.461-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+              ></path></svg
+            >
+          </span>
+          <div>
+            <p class="text-lp-text text-[14px] font-semibold">Sign in to manage connections</p>
+            <p class="text-lp-muted mt-1 text-[12px]">
+              Link a GitHub account to unlock the star discount.
+            </p>
+          </div>
+          <button
+            id="connections-signin-btn"
+            class="bg-lp-accent inline-flex h-11 cursor-pointer items-center gap-2 rounded-md px-6 text-[13px] font-semibold text-white transition-colors hover:bg-[#4a9fff]"
+          >
+            Sign in
+          </button>
+        </div>
+
+        <!-- Signed in -->
+        <div id="connections-content" class="hidden">
+          <h3 class="setting-section-title">Linked accounts</h3>
+          <div class="setting-group">
+            <div class="setting-item">
+              <div class="flex min-w-0 items-center gap-3">
+                <span
+                  class="text-lp-text grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white/[0.06]"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                    ><path
+                      d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.461-1.11-1.461-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"
+                    ></path></svg
+                  >
+                </span>
+                <div class="min-w-0">
+                  <p class="setting-label">GitHub</p>
+                  <p class="setting-desc" id="gh-status">Checking…</p>
+                </div>
+              </div>
+              <button
+                id="gh-connect-btn"
+                class="text-lp-text inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-white/[0.04] px-3 text-[12px] font-medium transition-colors hover:bg-white/[0.08]"
+              >
+                Connect GitHub
+              </button>
+            </div>
+            <div class="setting-item">
+              <div class="min-w-0">
+                <p class="setting-label">Repo star</p>
+                <p class="setting-desc" id="conn-star-status">Checking…</p>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
+                <button
+                  id="conn-star-btn"
+                  class="text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-white/[0.04] px-3 text-[12px] font-medium transition-colors hover:bg-white/[0.08]"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                    ><polygon
+                      points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                    ></polygon></svg
+                  >
+                  Star on GitHub
+                </button>
+                <button
+                  id="conn-recheck-btn"
+                  class="text-lp-muted hover:text-lp-text inline-flex h-9 cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-[12px] transition-colors hover:bg-white/[0.05]"
+                  >Re-check</button
+                >
+              </div>
+            </div>
+          </div>
+          <p class="text-lp-muted mt-3 text-[11px] leading-snug">
+            Starring <span class="font-mono" id="conn-repo">dvgamerr/go-livepaper</span> drops community
+            access from $9 to $4/mo.
+          </p>
+        </div>
+      </section>
+
+      <!-- ── Billing ── -->
+      <section data-spanel="billing" hidden>
+        <!-- Not signed in -->
+        <div
+          id="billing-signin"
+          class="border-lp-border bg-lp-surface/40 hidden flex-col items-center gap-4 rounded-xl border p-10 text-center"
+        >
+          <span class="grid h-12 w-12 place-items-center rounded-xl bg-white/[0.06]">
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="rgba(255,255,255,0.7)"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              ><rect x="3" y="11" width="18" height="11" rx="2"></rect><path
+                d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg
+            >
+          </span>
+          <div>
+            <p class="text-lp-text text-[14px] font-semibold">Sign in to subscribe</p>
+            <p class="text-lp-muted mt-1 text-[12px]">
+              A free account links your subscription and unlocks the GitHub-star discount.
+            </p>
+          </div>
+          <button
+            id="billing-signin-btn"
+            class="bg-lp-accent inline-flex h-11 cursor-pointer items-center gap-2 rounded-md px-6 text-[13px] font-semibold text-white transition-colors hover:bg-[#4a9fff]"
+          >
+            Sign in
+          </button>
+        </div>
+
+        <!-- Active subscription -->
+        <div id="billing-active" class="hidden">
+          <div
+            class="rounded-xl border border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.07)] p-6"
+          >
+            <div class="flex items-center gap-2.5">
+              <span class="bg-lp-success grid h-6 w-6 place-items-center rounded-full text-black">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg
+                >
+              </span>
+              <h2 class="text-[15px] font-semibold">Community access active</h2>
+            </div>
+            <p class="text-lp-muted mt-2 text-[12px]">
+              <span id="billing-active-plan">Monthly</span> · <span id="billing-active-price"
+                >$9</span
+              >/mo · renews <span id="billing-active-renew">—</span>
+            </p>
+            <p id="billing-active-starred" class="text-lp-success mt-1 hidden text-[11px]">
+              ★ GitHub-star discount applied
+            </p>
+            <button
+              id="billing-cancel-btn"
+              class="text-lp-muted hover:text-lp-danger mt-4 inline-flex h-9 cursor-pointer items-center rounded-md border border-white/[0.1] bg-transparent px-4 text-[12px] font-medium transition-colors hover:border-[rgba(255,85,85,0.3)] hover:bg-[rgba(255,85,85,0.06)]"
+            >
+              Cancel subscription
+            </button>
+          </div>
+        </div>
+
+        <!-- Free / upsell -->
+        <div id="billing-free" class="hidden">
+          <div
+            class="border-lp-border bg-lp-surface/40 mb-5 flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center"
+          >
+            <span
+              class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(250,204,21,0.14)] text-[#facc15]"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+                ><polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                ></polygon></svg
+              >
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="text-lp-text text-[12.5px] font-semibold">Star the repo, save $5/mo</p>
+              <p class="text-lp-muted text-[11px] leading-snug" id="billing-star-status">
+                Star <span class="font-mono" id="billing-repo">dvgamerr/go-livepaper</span> on GitHub
+                to drop the price from $9 to $4.
+              </p>
+            </div>
+            <div class="flex shrink-0 items-center gap-2">
+              <button
+                id="billing-star-btn"
+                class="text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-white/[0.04] px-3 text-[12px] font-medium transition-colors hover:bg-white/[0.08]"
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                  ><polygon
+                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                  ></polygon></svg
+                >
+                Star on GitHub
+              </button>
+              <button
+                id="billing-recheck-btn"
+                class="text-lp-muted hover:text-lp-text inline-flex h-9 cursor-pointer items-center rounded-md border-0 bg-transparent px-2 text-[12px] transition-colors hover:bg-white/[0.05]"
+                >Re-check</button
+              >
+            </div>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="border-lp-border bg-lp-surface/40 rounded-xl border p-5">
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-[14px] font-semibold">Free</h3>
+                <span
+                  class="text-lp-muted rounded bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium"
+                  id="billing-free-badge">Current</span
+                >
+              </div>
+              <p class="mt-2 text-[26px] font-bold tracking-tight">
+                $0<span class="text-lp-muted text-[12px] font-medium">/forever</span>
+              </p>
+              <p class="text-lp-muted mt-1 text-[11px]">All local features, no limits.</p>
+              <ul class="mt-4 flex flex-col gap-2">
+                {
+                  freeFeatures.map((f) => (
+                    <li class="text-lp-text flex items-center gap-2 text-[12px]">
+                      <svg
+                        class="text-lp-success shrink-0"
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))
+                }
+              </ul>
+            </div>
+
+            <div
+              class="border-lp-accent/40 relative rounded-xl border bg-[rgba(47,138,239,0.06)] p-5 shadow-[0_20px_50px_-25px_rgba(47,138,239,0.6)]"
+            >
+              <span
+                class="bg-lp-accent absolute -top-2.5 left-5 rounded px-2 py-0.5 text-[9px] font-bold tracking-wide text-white uppercase"
+                >Recommended</span
+              >
+              <div class="flex items-baseline justify-between">
+                <h3 class="text-[14px] font-semibold">Community</h3>
+              </div>
+              <p class="mt-2 flex items-baseline gap-2">
+                <span class="text-[26px] font-bold tracking-tight"
+                  ><span id="billing-price">$9</span><span
+                    class="text-lp-muted text-[12px] font-medium">/mo</span
+                  ></span
+                >
+                <span
+                  id="billing-price-strike"
+                  class="text-lp-muted hidden text-[14px] font-medium line-through">$9</span
+                >
+              </p>
+              <p class="text-lp-muted mt-1 text-[11px]" id="billing-price-note">
+                Apply any community wallpaper.
+              </p>
+              <ul class="mt-4 flex flex-col gap-2">
+                {
+                  communityFeatures.map((f) => (
+                    <li class="text-lp-text flex items-center gap-2 text-[12px]">
+                      <svg
+                        class="text-lp-accent shrink-0"
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      {f}
+                    </li>
+                  ))
+                }
+              </ul>
+              <button
+                id="billing-subscribe-btn"
+                class="bg-lp-accent mt-5 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-md text-[13px] font-semibold text-white transition-colors hover:bg-[#4a9fff] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Subscribe for <span id="billing-subscribe-price">$9</span>/mo
+              </button>
+              <p
+                class="text-lp-muted mt-3 flex items-center justify-center gap-1.5 text-center text-[10px]"
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  ><rect x="3" y="11" width="18" height="11" rx="2"></rect><path
+                    d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg
+                >
+                Secure checkout · Cancel anytime
+              </p>
+            </div>
           </div>
         </div>
       </section>

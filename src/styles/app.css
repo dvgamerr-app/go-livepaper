@@ -594,6 +594,23 @@
   color: rgba(255, 255, 255, 0.9);
   background: rgba(0, 0, 0, 0.55);
 }
+/* lock badge on community (remote) gallery cards when not subscribed */
+.gc-lock {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  color: #fff;
+  background: rgba(245, 158, 11, 0.9);
+  z-index: 2;
+}
+.gc-lock.hidden {
+  display: none;
+}
 .gc-info {
   position: absolute;
   bottom: 0;
