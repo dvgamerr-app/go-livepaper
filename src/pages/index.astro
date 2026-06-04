@@ -624,41 +624,13 @@ import DiscoverView from '../components/DiscoverView.astro'
     })
   }
 
-  function getRatioLabel(w, h) {
-    if (!w || !h) return ''
-    const known = [
-      [21, 9],
-      [16, 9],
-      [16, 10],
-      [4, 3],
-      [3, 2],
-      [1, 1],
-      [9, 16],
-      [10, 16],
-      [3, 4],
-      [2, 3],
-      [9, 21],
-    ]
-    const r = w / h
-    let best = null,
-      bestDiff = Infinity
-    for (const [a, b] of known) {
-      const diff = Math.abs(r - a / b)
-      if (diff < bestDiff) {
-        bestDiff = diff
-        best = [a, b]
-      }
-    }
-    return bestDiff < 0.05 ? `${best[0]}:${best[1]}` : ''
-  }
-
   function buildGalleryCard(entry, index) {
     const card = document.createElement('div')
     card.className = 'gallery-strip-card wails-no-drag'
     card.draggable = true
     card.dataset.index = index
 
-    let name, badgeClass, badgeText, ratioLabel, payload, lockHtml
+    let name, badgeClass, badgeText, payload, lockHtml
     if (entry.remote) {
       card.dataset.remote = '1'
       name = entry.title || 'Wallpaper'
@@ -666,7 +638,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       // reuse existing badge palette: top→purple(gif), premium→orange(video), free→green(image)
       badgeClass = tier === 'top' ? 'gif' : tier === 'premium' ? 'video' : 'image'
       badgeText = tier.toUpperCase()
-      ratioLabel = getRatioLabel(entry.width, entry.height)
+      if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
       payload = JSON.stringify({
         remote: true,
         id: entry.id,
@@ -687,7 +659,7 @@ import DiscoverView from '../components/DiscoverView.astro'
         .split('/')
         .pop()
         .replace(/\.[^.]+$/, '')
-      ratioLabel = getRatioLabel(entry.width, entry.height)
+      if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
       payload = JSON.stringify({
         filePath: entry.filePath,
         cachedPath: entry.cachedPath,
@@ -703,7 +675,6 @@ import DiscoverView from '../components/DiscoverView.astro'
       <img class="gc-img" src="${entry.thumbnail || ''}" alt="" draggable="false">
       <div class="gc-overlay"></div>
       <span class="gc-badge ${badgeClass}">${badgeText}</span>
-      ${ratioLabel ? `<span class="gc-ratio">${ratioLabel}</span>` : ''}
       ${lockHtml || ''}
       <div class="gc-grip" aria-hidden="true">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -866,6 +837,30 @@ import DiscoverView from '../components/DiscoverView.astro'
     if (mp) mp.classList.remove('active')
   }
 
+  function cancelEncode(idx) {
+    const prev = lastAppliedState[idx]
+    if (prev) {
+      state[idx] = { ...prev }
+      setEncoding(idx, false, 0)
+      applyThumb(idx, prev.thumbnail, prev.filePath, prev.isVideo)
+    } else {
+      resetMonitor(idx)
+    }
+    const allIdxs = new Set([
+      ...Object.keys(state).map(Number),
+      ...Object.keys(lastAppliedState).map(Number),
+    ])
+    let dirty = false
+    for (const i of allIdxs) {
+      if ((state[i]?.filePath || '') !== (lastAppliedState[i]?.filePath || '')) {
+        dirty = true
+        break
+      }
+    }
+    pendingChanges = dirty
+    refreshApply()
+  }
+
   async function call(method, ...args) {
     return await Call.ByName('main.AppService.' + method, ...args)
   }
@@ -1005,9 +1000,7 @@ import DiscoverView from '../components/DiscoverView.astro'
         const isNonGifVideo = entry.isVideo && extOf(entry.filePath) !== 'gif'
         const resolutionMismatch =
           isNonGifVideo &&
-          entry.width &&
-          entry.height &&
-          (entry.width !== m.width || entry.height !== m.height)
+          (!entry.width || !entry.height || entry.width !== m.width || entry.height !== m.height)
 
         if (resolutionMismatch) {
           state[m.index] = {
@@ -1026,7 +1019,7 @@ import DiscoverView from '../components/DiscoverView.astro'
             state[m.index].cachedPath = cached
             state[m.index].ready = true
           } catch (_) {
-            resetMonitor(m.index)
+            cancelEncode(m.index)
             status('Encoding cancelled.', '')
             return
           }
@@ -1166,7 +1159,7 @@ import DiscoverView from '../components/DiscoverView.astro'
         state[idx].cachedPath = cached
         state[idx].ready = true
       } catch (e) {
-        resetMonitor(idx)
+        cancelEncode(idx)
         status('Encoding cancelled.', '')
         return
       }
@@ -1179,7 +1172,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   Events.On('video:progress', (evt) => {
     const d = evt?.data || {}
     for (const [idx, s] of Object.entries(state)) {
-      if (s.filePath === d.file) {
+      if (s.filePath === d.file && !s.ready) {
         setEncoding(parseInt(idx), true, d.progress ?? 0)
       }
     }
@@ -2242,7 +2235,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       try {
         cached = await call('PreprocessVideo', path, m.width, m.height)
       } catch (_) {
-        resetMonitor(m.index)
+        cancelEncode(m.index)
         status('Encoding cancelled.', '')
         return
       }

@@ -502,8 +502,8 @@
 /* ── Strip cards ──────────────────────────────────────────────────── */
 .gallery-strip-card {
   flex-shrink: 0;
-  width: 180px;
   height: 120px;
+  aspect-ratio: 16 / 9;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--lp-border);
@@ -581,18 +581,6 @@
 }
 .gc-badge.gif {
   background: rgba(168, 85, 247, 0.9);
-}
-.gc-ratio {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  padding: 2px 5px;
-  border-radius: 3px;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(0, 0, 0, 0.55);
 }
 /* lock badge on community (remote) gallery cards when not subscribed */
 .gc-lock {

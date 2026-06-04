@@ -9,7 +9,6 @@ import (
 	_ "golang.org/x/image/webp"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/nfnt/resize"
 )
@@ -62,21 +61,11 @@ func CreateBlackCanvas(width, height int) *image.RGBA {
 }
 
 func SaveImageAs(img image.Image, quality int) (string, error) {
-	filename := fmt.Sprintf("wallpaper_%d.jpg", time.Now().UnixNano())
-
-	if !filepath.IsAbs(filename) {
-		tempDir, err := GetTempDir()
-		if err != nil {
-			return "", fmt.Errorf("failed to get temp directory: %w", err)
-		}
-
-		dir := filepath.Dir(filepath.Join(tempDir, filename))
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return "", fmt.Errorf("failed to create directory: %w", err)
-		}
-
-		filename = filepath.Join(tempDir, filename)
+	tempDir, err := GetTempDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get temp directory: %w", err)
 	}
+	filename := filepath.Join(tempDir, "background.jpg")
 
 	file, err := os.Create(filename)
 	if err != nil {
