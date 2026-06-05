@@ -1,5 +1,5 @@
 ---
-
+import { Check, Pause } from '@lucide/astro'
 ---
 
 <footer
@@ -30,19 +30,7 @@
         id="apply-btn"
         disabled
       >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
+        <Check size={14} strokeWidth={2.5} aria-hidden="true" />
         Apply Wallpapers
       </button>
     </div>
@@ -53,21 +41,7 @@
       class="lp-pause-action"
       aria-pressed="false"
     >
-      <svg
-        id="pause-wallpaper-icon"
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <rect x="6" y="4" width="4" height="16"></rect>
-        <rect x="14" y="4" width="4" height="16"></rect>
-      </svg>
+      <Pause id="pause-wallpaper-icon" size={14} strokeWidth={2} aria-hidden="true" />
       <span id="pause-wallpaper-label">Pause</span>
     </button>
   </div>

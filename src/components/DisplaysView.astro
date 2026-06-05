@@ -1,5 +1,6 @@
 ---
 import Footer from './Footer.astro'
+import { ChevronLeft, ChevronRight } from '@lucide/astro'
 ---
 
 <div id="main-content" class="flex flex-1 flex-col overflow-hidden">
@@ -34,10 +35,10 @@ import Footer from './Footer.astro'
       </div>
       <div class="flex items-center gap-1.5">
         <button class="gallery-nav-btn" id="gallery-prev" aria-label="Scroll left">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <ChevronLeft size={13} strokeWidth={2.5} aria-hidden="true" />
         </button>
         <button class="gallery-nav-btn" id="gallery-next" aria-label="Scroll right">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <ChevronRight size={13} strokeWidth={2.5} aria-hidden="true" />
         </button>
       </div>
     </div>
