@@ -1,0 +1,53 @@
+---
+import Footer from './Footer.astro'
+---
+
+<div id="main-content" class="flex flex-1 flex-col overflow-hidden">
+  <!-- Top bar -->
+  <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6">
+    <div class="wails-drag">
+      <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Display Workspace</h1>
+      <p class="text-lp-muted mt-px text-[11px]" id="monitor-subtitle">Loading displays…</p>
+    </div>
+  </div>
+
+  <!-- Monitor canvas -->
+  <div
+    class="wails-drag relative min-h-[180px] flex-1 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(47,138,239,0.05),transparent_65%)] before:content-['']"
+  >
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-[0.08]"
+      style="background-image:linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to top, black, transparent)"
+    ></div>
+    <div class="absolute inset-0 flex items-center justify-center overflow-hidden p-12" id="content">
+      <div class="loading">Loading monitors…</div>
+    </div>
+  </div>
+
+  <!-- Recent Wallpaper gallery -->
+  <div class="gallery-section wails-no-drag border-lp-border flex flex-col overflow-hidden border-t" id="gallery-section">
+    <div class="flex shrink-0 items-center justify-between px-6 py-2.5">
+      <div>
+        <h2 class="text-[13px] font-semibold tracking-tight">Recent Wallpaper</h2>
+        <p class="text-lp-muted text-[11px]" id="gallery-count">Loading…</p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button class="gallery-nav-btn" id="gallery-prev" aria-label="Scroll left">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <button class="gallery-nav-btn" id="gallery-next" aria-label="Scroll right">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </div>
+    <div class="gallery-strip-wrap min-h-0 flex-1">
+      <div class="gallery-strip-fade-l"></div>
+      <div class="gallery-strip-fade-r"></div>
+      <div class="gallery-strip wails-no-drag" id="gallery-strip"></div>
+    </div>
+    <div class="flex shrink-0 items-center justify-center gap-1.5 py-2" id="gallery-dots"></div>
+  </div>
+
+  <Footer />
+</div>

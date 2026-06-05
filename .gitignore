@@ -85,3 +85,4 @@ dist/
 cmd/livepaper/dist/*
 !cmd/livepaper/dist/index.html
 bin/data/
+.env
