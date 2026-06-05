@@ -203,6 +203,12 @@ func (s *AppService) WindowShow() {
 	}
 }
 
+func (s *AppService) WindowToggleMaximise() {
+	if s.window != nil {
+		s.window.ToggleMaximise()
+	}
+}
+
 func (s *AppService) OpenExternal(url string) error {
 	return browser.OpenURL(url)
 }
@@ -459,6 +465,49 @@ func videoThumbnail(filePath string) string {
 		return ""
 	}
 	return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(out)
+}
+
+// GetAnimatedThumbnail generates a small animated GIF preview for a video file,
+// cached to temp dir so repeated calls are instant.
+func (s *AppService) GetAnimatedThumbnail(filePath string) string {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	if !wp.IsVideoFile(filePath) || ext == ".gif" {
+		return ""
+	}
+
+	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return ""
+	}
+	base := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
+	outGif := filepath.Join(tmpDir, fmt.Sprintf("%s_preview.gif", base))
+
+	// Return cached file if it already exists
+	if data, err := os.ReadFile(outGif); err == nil && len(data) > 0 {
+		return "data:image/gif;base64," + base64.StdEncoding.EncodeToString(data)
+	}
+
+	seekSec := wp.VideoMidSec(filePath)
+	// Single-pass palette GIF: split → palettegen + paletteuse
+	filter := "fps=10,scale=320:-2:force_original_aspect_ratio=decrease,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+	cmd := exec.Command("ffmpeg",
+		"-ss", fmt.Sprintf("%.3f", seekSec),
+		"-i", filePath,
+		"-t", "2.5",
+		"-vf", filter,
+		"-loop", "0",
+		"-y", outGif,
+	)
+	wp.ConfigureBackgroundCommand(cmd)
+	cmd.Stderr = io.Discard
+	if err := cmd.Run(); err != nil {
+		return ""
+	}
+	data, err := os.ReadFile(outGif)
+	if err != nil || len(data) == 0 {
+		return ""
+	}
+	return "data:image/gif;base64," + base64.StdEncoding.EncodeToString(data)
 }
 
 func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) {
