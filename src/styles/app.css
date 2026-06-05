@@ -1612,7 +1612,10 @@ html[data-window-theme='solid'] body {
 /* ── Full-window preview overlay ─────────────────────────────────── */
 .dc-preview-overlay {
   position: fixed;
-  inset: 0;
+  top: 40px; /* below titlebar (h-10) */
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 950;
   display: flex;
   flex-direction: column;
@@ -1791,3 +1794,122 @@ html[data-window-theme='solid'] body {
   color: rgba(255, 255, 255, 0.35);
   padding-left: 4px;
 }
+
+/* ── Storage admin table ─────────────────────────────────────────── */
+.storage-table {
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.storage-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lp-muted);
+  border-bottom: 1px solid var(--lp-border);
+  white-space: nowrap;
+}
+
+.storage-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+
+.storage-table tr:last-child td { border-bottom: none; }
+.storage-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.storage-thumb {
+  width: 48px;
+  height: 27px;
+  object-fit: cover;
+  border-radius: 3px;
+  background: #111;
+  display: block;
+}
+
+.storage-title {
+  color: var(--lp-text);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.storage-id {
+  font-size: 9px;
+  color: var(--lp-muted);
+  font-family: monospace;
+  margin-top: 1px;
+}
+
+.tier-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.tier-badge.free    { background: rgba(52,211,153,0.15); color: var(--lp-success); }
+.tier-badge.premium { background: rgba(245,158,11,0.15); color: var(--lp-warn); }
+.tier-badge.top     { background: rgba(239,68,68,0.15);  color: var(--lp-danger); }
+
+.storage-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+.storage-status.published { color: var(--lp-success); }
+.storage-status.hidden    { color: var(--lp-muted); }
+
+.storage-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.storage-action-btn {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  border: 1px solid var(--lp-border);
+  background: transparent;
+  color: var(--lp-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.storage-action-btn:hover { color: var(--lp-text); background: rgba(255,255,255,0.06); }
+.storage-action-btn.danger:hover { color: var(--lp-danger); border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+
+.storage-empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--lp-muted);
+  font-size: 12px;
+}
+
+/* ── Upload modal ────────────────────────────────────────────────── */
+.upload-tier-btn {
+  flex: 1;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--lp-border);
+  background: transparent;
+  color: var(--lp-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.upload-tier-btn:hover { color: var(--lp-text); background: rgba(255,255,255,0.04); }
+.upload-tier-btn.active { background: var(--lp-accent-soft); border-color: rgba(47,138,239,0.4); color: var(--lp-text); }

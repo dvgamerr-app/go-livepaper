@@ -160,6 +160,28 @@ import DiscoverView from '../components/DiscoverView.astro'
         </button>
       </nav>
 
+      <!-- Admin section — shown only when user has admin role -->
+      <div
+        id="admin-sidebar-section"
+        class="text-lp-muted wails-drag px-[18px] pt-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase hidden"
+      >
+        Admin
+      </div>
+      <div id="admin-nav-items" class="wails-no-drag hidden flex-col gap-0.5 px-2">
+        <button
+          class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
+          data-view="storage"
+        >
+          <span class="nav-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </span>
+          Storage
+          <span class="nav-dot"></span>
+        </button>
+      </div>
+
       <div
         class="text-lp-muted wails-drag px-[18px] pt-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase"
       >
@@ -335,7 +357,7 @@ import DiscoverView from '../components/DiscoverView.astro'
           </div>
         </div>
 
-        <!-- Wallpaper Gallery -->
+        <!-- Recent Wallpaper -->
         <div
           class="gallery-section wails-no-drag border-lp-border flex flex-col overflow-hidden border-t"
           id="gallery-section"
@@ -343,7 +365,7 @@ import DiscoverView from '../components/DiscoverView.astro'
           <!-- Gallery header -->
           <div class="flex shrink-0 items-center justify-between px-6 py-2.5">
             <div>
-              <h2 class="text-[13px] font-semibold tracking-tight">Wallpaper Gallery</h2>
+              <h2 class="text-[13px] font-semibold tracking-tight">Recent Wallpaper</h2>
               <p class="text-lp-muted text-[11px]" id="gallery-count">Loading…</p>
             </div>
             <div class="flex items-center gap-1.5">
@@ -393,6 +415,42 @@ import DiscoverView from '../components/DiscoverView.astro'
       <SettingsView />
       <DiscoverView />
 
+      <!-- Storage Admin View -->
+      <div id="storage-panel" class="hidden flex-1 flex-col overflow-hidden">
+        <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6">
+          <div class="wails-drag">
+            <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Storage</h1>
+            <p class="text-lp-muted mt-px text-[11px]" id="storage-count">Loading wallpapers…</p>
+          </div>
+          <button
+            id="storage-upload-btn"
+            class="wails-no-drag inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-lp-accent px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#4a9fff]"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload
+          </button>
+        </div>
+        <div class="wails-no-drag lp-scroll flex-1 overflow-y-auto">
+          <div class="px-6 py-4">
+            <table class="storage-table w-full" id="storage-table">
+              <thead>
+                <tr>
+                  <th class="w-16">Thumb</th>
+                  <th>Title</th>
+                  <th class="w-20">Tier</th>
+                  <th class="w-24">Type</th>
+                  <th class="w-20">Status</th>
+                  <th class="w-28 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="storage-tbody">
+                <tr><td colspan="6" class="storage-empty">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- Library View -->
       <div id="library-panel" class="hidden flex-1 flex-col overflow-hidden">
         <div
@@ -412,6 +470,72 @@ import DiscoverView from '../components/DiscoverView.astro'
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- Storage upload modal -->
+  <div id="storage-upload-modal" class="wails-no-drag fixed inset-0 z-[210] flex items-center justify-center bg-black/65" hidden>
+    <div class="border-lp-border-strong w-[480px] overflow-hidden rounded-xl border bg-[#18181b] shadow-[0_24px_64px_rgba(0,0,0,0.7)]" role="dialog" aria-modal="true">
+      <div class="px-5 pt-5 pb-3">
+        <p class="text-lp-text mb-1 text-[13px] font-semibold" id="upload-modal-title">Upload Wallpaper</p>
+        <p class="text-lp-muted text-[11px]">Select a file, fill in details, then click Upload.</p>
+      </div>
+      <!-- File picker -->
+      <div class="px-5 pb-3">
+        <div id="upload-file-zone" class="border-lp-border flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed bg-white/[0.02] py-5 transition-colors hover:border-lp-accent hover:bg-lp-accent-soft">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-lp-muted"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span class="text-lp-muted text-[12px]" id="upload-file-label">Click to choose file…</span>
+        </div>
+        <!-- Thumbnail preview -->
+        <div id="upload-thumb-wrap" class="mt-3 hidden items-center gap-3">
+          <img id="upload-thumb-img" class="h-16 w-28 rounded-md object-cover border border-lp-border" src="" alt="">
+          <div>
+            <p class="text-lp-text text-[11px] font-medium" id="upload-file-info">—</p>
+            <p class="text-lp-muted text-[10px]" id="upload-thumb-note">Thumbnail auto-generated</p>
+          </div>
+        </div>
+      </div>
+      <!-- Fields -->
+      <div class="flex flex-col gap-3 px-5 pb-4">
+        <div>
+          <label class="text-lp-muted mb-1 block text-[10px] font-semibold uppercase tracking-wide">Title</label>
+          <input id="upload-title" type="text" class="border-lp-border text-lp-text placeholder:text-lp-muted h-9 w-full rounded-md border bg-white/[0.04] px-3 text-[12px] outline-none focus:border-lp-accent/60" placeholder="Wallpaper title…">
+        </div>
+        <div>
+          <label class="text-lp-muted mb-1 block text-[10px] font-semibold uppercase tracking-wide">Tier</label>
+          <div class="flex gap-2" id="upload-tier-group">
+            <button class="upload-tier-btn active" data-tier="free">Free</button>
+            <button class="upload-tier-btn" data-tier="premium">Premium</button>
+            <button class="upload-tier-btn" data-tier="top">Top</button>
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div id="upload-progress-wrap" class="hidden">
+          <div class="border-lp-border overflow-hidden rounded-full border bg-white/[0.04]" style="height:6px">
+            <div id="upload-progress-bar" class="h-full rounded-full bg-lp-accent transition-all" style="width:0%"></div>
+          </div>
+          <p class="text-lp-muted mt-1 text-[10px]" id="upload-progress-label">Preparing…</p>
+        </div>
+      </div>
+      <div class="border-lp-border flex items-center justify-end gap-2 border-t px-5 py-3">
+        <button id="upload-cancel-btn" class="text-lp-muted hover:text-lp-text cursor-pointer rounded-md border border-white/[0.08] bg-transparent px-3 py-1.5 text-[12px] transition-colors hover:bg-white/[0.04]">Cancel</button>
+        <button id="upload-submit-btn" class="cursor-pointer rounded-md bg-lp-accent px-4 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-[#4a9fff] disabled:cursor-default disabled:opacity-50" disabled>Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Storage delete confirm modal -->
+  <div id="storage-delete-modal" class="wails-no-drag fixed inset-0 z-[210] flex items-center justify-center bg-black/65" hidden>
+    <div class="border-lp-border-strong w-[320px] overflow-hidden rounded-xl border bg-[#18181b] shadow-[0_24px_64px_rgba(0,0,0,0.7)]" role="dialog" aria-modal="true">
+      <div class="px-5 pt-5 pb-4">
+        <p class="text-lp-text mb-1 text-[13px] font-semibold">Delete wallpaper?</p>
+        <p class="text-lp-muted text-[11px] leading-relaxed">This will permanently remove the wallpaper and its files from storage. This cannot be undone.</p>
+        <p class="text-lp-warn mt-2 text-[11px] font-medium" id="storage-delete-name"></p>
+      </div>
+      <div class="border-lp-border flex items-center justify-end gap-2 border-t px-5 py-3">
+        <button id="storage-delete-cancel" class="text-lp-muted hover:text-lp-text cursor-pointer rounded-md border border-white/[0.08] bg-transparent px-3 py-1.5 text-[12px] transition-colors hover:bg-white/[0.04]">Cancel</button>
+        <button id="storage-delete-confirm" class="cursor-pointer rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300">Delete permanently</button>
+      </div>
+    </div>
   </div>
 
   <!-- Monitor picker modal -->
@@ -524,6 +648,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     settings: 'settings-panel',
     discover: 'discover-panel',
     library: 'library-panel',
+    storage: 'storage-panel',
   }
   let currentView = 'displays'
 
@@ -543,6 +668,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     currentView = name
     if (name === 'discover') onShowDiscover()
     if (name === 'library') renderLibrary()
+    if (name === 'storage') loadStorageWallpapers()
   }
 
   // ── Downloaded wallpapers tracking ───────────────────────────────
@@ -673,24 +799,15 @@ import DiscoverView from '../components/DiscoverView.astro'
   function buildGalleryCard(entry, index) {
     const card = document.createElement('div')
     card.className = 'gallery-strip-card wails-no-drag'
-    card.draggable = true
     card.dataset.index = index
 
-    let name, badgeClass, badgeText, payload, lockHtml
+    let name, badgeClass, badgeText, lockHtml
     if (entry.remote) {
       card.dataset.remote = '1'
       name = entry.title || 'Wallpaper'
       badgeClass = (entry.contentType || '').startsWith('video/') ? 'video' : 'image'
       badgeText = resolutionBadgeText(entry.width, entry.height) || 'HD'
       if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
-      payload = JSON.stringify({
-        remote: true,
-        id: entry.id,
-        downloadUrl: entry.downloadUrl,
-        tier: entry.tier,
-        thumbnail: entry.thumbnail,
-        title: entry.title,
-      })
       lockHtml = `<span class="gc-lock${isPremium() ? ' hidden' : ''}" aria-hidden="true">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </span>`
@@ -704,6 +821,22 @@ import DiscoverView from '../components/DiscoverView.astro'
         .pop()
         .replace(/\.[^.]+$/, '')
       if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
+      lockHtml = ''
+    }
+
+    const isLocalVideo = !entry.remote && entry.isVideo && extOf(entry.filePath || '') !== 'gif'
+
+    let payload
+    if (entry.remote) {
+      payload = JSON.stringify({
+        remote: true,
+        id: entry.id,
+        downloadUrl: entry.downloadUrl,
+        tier: entry.tier,
+        thumbnail: entry.thumbnail,
+        title: entry.title,
+      })
+    } else {
       payload = JSON.stringify({
         filePath: entry.filePath,
         cachedPath: entry.cachedPath,
@@ -712,9 +845,9 @@ import DiscoverView from '../components/DiscoverView.astro'
         width: entry.width || 0,
         height: entry.height || 0,
       })
-      lockHtml = ''
     }
 
+    card.draggable = true
     card.innerHTML = `
       <img class="gc-img" src="${entry.thumbnail || ''}" alt="" draggable="false">
       <div class="gc-overlay"></div>
@@ -729,8 +862,10 @@ import DiscoverView from '../components/DiscoverView.astro'
       <div class="gc-info"><div class="gc-name"></div></div>
     `
     card.querySelector('.gc-name').textContent = name
-    card.querySelector('.gc-img').alt = name
+    const imgEl = card.querySelector('.gc-img')
+    imgEl.alt = name
 
+    // Drag-and-drop
     card.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('application/livepaper', payload)
       e.dataTransfer.effectAllowed = 'copy'
@@ -738,8 +873,33 @@ import DiscoverView from '../components/DiscoverView.astro'
     })
     card.addEventListener('dragend', () => card.classList.remove('dragging'))
 
-    // hover → activate matching dot
-    card.addEventListener('mouseenter', () => setActiveDot(index))
+    // Hover → GIF animation for local video files + dot activation
+    let _gifLoading = false
+    let _gifUrl = entry._animGif || null
+    let _hovering = false
+
+    card.addEventListener('mouseenter', async () => {
+      setActiveDot(index)
+      _hovering = true
+      if (!isLocalVideo) return
+      if (_gifUrl) { imgEl.src = _gifUrl; return }
+      if (_gifLoading) return
+      _gifLoading = true
+      try {
+        const gif = await call('GetAnimatedThumbnail', entry.filePath)
+        if (gif) {
+          _gifUrl = gif
+          entry._animGif = gif
+          if (_hovering) imgEl.src = gif
+        }
+      } catch (_) {}
+      _gifLoading = false
+    })
+
+    card.addEventListener('mouseleave', () => {
+      _hovering = false
+      if (isLocalVideo && _gifUrl) imgEl.src = entry.thumbnail || ''
+    })
 
     return card
   }
@@ -774,7 +934,7 @@ import DiscoverView from '../components/DiscoverView.astro'
 
     const n = galleryItems.length
     if (countEl)
-      countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''} · Drag onto a monitor to assign`
+      countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''} · Drag onto a display to apply`
 
     // build dots — 1 per image
     if (dotsEl) {
@@ -825,9 +985,14 @@ import DiscoverView from '../components/DiscoverView.astro'
   }
 
   async function refreshGallery() {
-    const [local, remote] = await Promise.all([loadGalleryItems(), loadRemoteGalleryItems()])
-    // Local recents first (user's own history), then the community catalog.
-    galleryItems = [...local, ...remote]
+    const local = await loadGalleryItems()
+    if (local.length > 0) {
+      // User has recent wallpapers — show those only
+      galleryItems = local
+    } else {
+      // No recents yet — fall back to Discover community items
+      galleryItems = await loadRemoteGalleryItems()
+    }
     renderGalleryStrip()
   }
 
@@ -1203,7 +1368,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     if (!filePath) return
 
     const isVideo = await call('IsVideoFile', filePath)
-    const thumbnail = await call('GetThumbnail', filePath)
+    const thumbnail = await call('GetMonitorThumbnail', filePath, w, h)
 
     state[idx] = { filePath, cachedPath: filePath, isVideo, ready: !isVideo, thumbnail }
     applyThumb(idx, thumbnail, filePath, isVideo)
@@ -1366,7 +1531,13 @@ import DiscoverView from '../components/DiscoverView.astro'
       const cachedPath = s.cachedPath || s.filePath
       if (s.isVideo && !(await call('FileExists', cachedPath))) continue
 
-      const thumbnail = await call('GetThumbnail', s.filePath)
+      const mon = monitors.find((m) => m.index === i)
+      const thumbnail = await call(
+        'GetMonitorThumbnail',
+        s.filePath,
+        mon?.width || 0,
+        mon?.height || 0
+      )
       state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: true, thumbnail }
       applyThumb(i, thumbnail, s.filePath, s.isVideo)
     }
@@ -1459,6 +1630,9 @@ import DiscoverView from '../components/DiscoverView.astro'
   document
     .getElementById('tb-min')
     .addEventListener('click', () => call('WindowMinimise').catch(() => {}))
+  document
+    .getElementById('tb-max')
+    ?.addEventListener('click', () => call('WindowToggleMaximise').catch(() => {}))
   document
     .getElementById('tb-close')
     .addEventListener('click', () => call('WindowHide').catch(() => {}))
@@ -2116,6 +2290,132 @@ import DiscoverView from '../components/DiscoverView.astro'
     initCustomSelects()
     refreshAuthDependentUI()
     track('app_open')
+  }
+
+  // ── Gallery strip preview ─────────────────────────────────────────
+  let _gpItems = []
+  let _gpIndex = 0
+
+  function openGalleryPreview(items, index) {
+    const entry = items[index]
+    if (!entry) return
+
+    if (entry.remote) {
+      // Find full item data from Discover catalog for rich preview
+      const full = discoverItems.find((i) => i.id === entry.id)
+      if (full) {
+        const di = discoverItems.indexOf(full)
+        onDiscoverPreview(full, discoverItems, di)
+        return
+      }
+    }
+    // Local item (or remote without full data) — gallery preview
+    _gpItems = items
+    _gpIndex = index
+    _renderGalleryPreview()
+  }
+
+  function _renderGalleryPreview() {
+    if (_pvOverlay) {
+      _pvOverlay.remove()
+      document.removeEventListener('keydown', _pvKeyHandler)
+      _pvOverlay = null
+    }
+
+    const items = _gpItems
+    const entry = items[_gpIndex]
+    if (!entry) return
+
+    const isRemote = !!entry.remote
+    const name = isRemote
+      ? (entry.title || 'Wallpaper')
+      : ((entry.filePath || '').replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '') || 'Wallpaper')
+    const ext = entry.isVideo
+      ? (extOf(entry.filePath || '') === 'gif' ? 'gif' : 'video')
+      : 'image'
+
+    const ov = document.createElement('div')
+    ov.className = 'dc-preview-overlay'
+    ov.innerHTML = `
+      <img class="dc-preview-bg" src="${entry.thumbnail || ''}" alt="" draggable="false">
+      <div class="dc-preview-scrim"></div>
+      <div class="dc-preview-top">
+        <button class="dc-preview-close" aria-label="Close preview">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <span></span>
+      </div>
+      <div class="dc-preview-bottom">
+        <div class="dc-preview-title">${escapeHtml(name)}</div>
+        ${!isRemote && entry.width && entry.height ? `<div class="dc-preview-meta">${ext.toUpperCase()} · ${entry.width}×${entry.height}</div>` : ''}
+        <div class="dc-preview-actions">
+          <button id="gp-apply" class="dc-preview-btn primary">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Apply Wallpaper
+          </button>
+          <button id="gp-back" class="dc-preview-btn secondary">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <button id="gp-random" class="dc-preview-btn secondary">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+            Random
+          </button>
+          <button id="gp-next" class="dc-preview-btn secondary">
+            Next
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <span class="dc-preview-counter">${_gpIndex + 1} / ${items.length}</span>
+        </div>
+      </div>`
+
+    const closeGP = () => {
+      ov.remove()
+      document.removeEventListener('keydown', gpKey)
+      _pvOverlay = null
+    }
+
+    ov.querySelector('.dc-preview-close').addEventListener('click', closeGP)
+
+    ov.querySelector('#gp-apply').addEventListener('click', async () => {
+      closeGP()
+      if (isRemote) {
+        // Remote fallback item — try to download & apply via discover flow
+        const synthetic = { id: entry.id, downloadUrl: entry.downloadUrl, title: entry.title, tags: [], tier: entry.tier }
+        await onDiscoverApply(synthetic)
+      } else {
+        if (monitors.length <= 1) {
+          const target = monitors[0]
+          if (target) await applyLocalEntryToMonitor(target, entry)
+        } else {
+          showLibraryMonitorPicker(entry)
+        }
+      }
+    })
+
+    ov.querySelector('#gp-back').addEventListener('click', () => {
+      _gpIndex = (_gpIndex - 1 + items.length) % items.length
+      _renderGalleryPreview()
+    })
+    ov.querySelector('#gp-next').addEventListener('click', () => {
+      _gpIndex = (_gpIndex + 1) % items.length
+      _renderGalleryPreview()
+    })
+    ov.querySelector('#gp-random').addEventListener('click', () => {
+      _gpIndex = Math.floor(Math.random() * items.length)
+      _renderGalleryPreview()
+    })
+
+    const gpKey = (e) => {
+      if (e.key === 'Escape') closeGP()
+      if (e.key === 'ArrowLeft') ov.querySelector('#gp-back')?.click()
+      if (e.key === 'ArrowRight') ov.querySelector('#gp-next')?.click()
+    }
+
+    document.body.appendChild(ov)
+    document.addEventListener('keydown', gpKey)
+    _pvOverlay = ov
+    _pvKeyHandler = gpKey
   }
 
   // ── Discover ─────────────────────────────────────────────────────
@@ -3057,6 +3357,268 @@ import DiscoverView from '../components/DiscoverView.astro'
     }
   })
 
+  // ── Admin helpers ─────────────────────────────────────────────────
+  function isAdmin() {
+    return !!(currentUser && currentUser.role === 'admin')
+  }
+
+  function refreshAdminUI() {
+    const sec = document.getElementById('admin-sidebar-section')
+    const nav = document.getElementById('admin-nav-items')
+    const show = isAdmin()
+    if (sec) sec.classList.toggle('hidden', !show)
+    if (nav) {
+      nav.classList.toggle('hidden', !show)
+      nav.classList.toggle('flex', show)
+    }
+  }
+
+  // ── Storage (Admin) ───────────────────────────────────────────────
+  let storageItems = []
+
+  async function loadStorageWallpapers() {
+    const tbody = document.getElementById('storage-tbody')
+    const countEl = document.getElementById('storage-count')
+    if (!tbody) return
+    tbody.innerHTML = '<tr><td colspan="6" class="storage-empty">Loading…</td></tr>'
+    try {
+      const raw = await call('AdminListWallpapers', getToken() || '')
+      const data = JSON.parse(raw)
+      if (data.error) throw new Error(data.error)
+      storageItems = Array.isArray(data) ? data : (data.items || [])
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="storage-empty" style="color:var(--lp-danger)">Failed: ${escapeHtml(String(e))}</td></tr>`
+      return
+    }
+    renderStorageTable()
+    if (countEl) countEl.textContent = `${storageItems.length} wallpaper${storageItems.length !== 1 ? 's' : ''}`
+  }
+
+  function renderStorageTable() {
+    const tbody = document.getElementById('storage-tbody')
+    if (!tbody) return
+    if (!storageItems.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="storage-empty">No wallpapers yet. Click Upload to add one.</td></tr>'
+      return
+    }
+    tbody.innerHTML = ''
+    storageItems.forEach((it) => {
+      const isVideo = (it.contentType || '').startsWith('video/')
+      const isPublished = it.isPublished !== false
+      const tier = it.tier || 'free'
+      const shortId = it.id ? it.id.slice(0, 16) + '…' : '—'
+
+      const tr = document.createElement('tr')
+      tr.innerHTML = `
+        <td>
+          <img class="storage-thumb" src="${escapeHtml(it.thumbnailUrl || '')}" alt="">
+        </td>
+        <td>
+          <div class="storage-title" title="${escapeHtml(it.title || '')}">${escapeHtml(it.title || 'Untitled')}</div>
+          <div class="storage-id">${escapeHtml(shortId)}</div>
+        </td>
+        <td><span class="tier-badge ${tier}">${tier}</span></td>
+        <td style="font-size:10px;color:var(--lp-muted)">${isVideo ? '🎬 Video' : '🖼 Image'}</td>
+        <td>
+          <span class="storage-status ${isPublished ? 'published' : 'hidden'}">
+            <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
+            ${isPublished ? 'Live' : 'Hidden'}
+          </span>
+        </td>
+        <td>
+          <div class="storage-actions">
+            <!-- Replace thumbnail -->
+            <button class="storage-action-btn" title="Replace thumbnail" data-action="replace-thumb" data-id="${escapeHtml(it.id)}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </button>
+            <!-- Replace original -->
+            <button class="storage-action-btn" title="Replace original file" data-action="replace-orig" data-id="${escapeHtml(it.id)}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </button>
+            <!-- Hide / show -->
+            <button class="storage-action-btn" title="${isPublished ? 'Hide' : 'Show'}" data-action="toggle-publish" data-id="${escapeHtml(it.id)}" data-published="${isPublished}">
+              ${isPublished
+                ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+                : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'}
+            </button>
+            <!-- Delete -->
+            <button class="storage-action-btn danger" title="Delete" data-action="delete" data-id="${escapeHtml(it.id)}" data-title="${escapeHtml(it.title || 'Untitled')}">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </td>`
+
+      // Wire action buttons
+      tr.querySelectorAll('[data-action]').forEach((btn) => {
+        btn.addEventListener('click', () => onStorageAction(btn.dataset.action, btn.dataset.id, btn.dataset))
+      })
+      tbody.appendChild(tr)
+    })
+  }
+
+  async function onStorageAction(action, id, data) {
+    if (action === 'replace-thumb' || action === 'replace-orig') {
+      const uploadType = action === 'replace-thumb' ? 'thumbnail' : 'original'
+      let filePath
+      try { filePath = await call('BrowseFile') } catch { return }
+      if (!filePath) return
+      status(`Replacing ${uploadType}…`)
+      try {
+        await call('AdminReplaceFile', getToken() || '', id, uploadType, filePath)
+        status('Replaced!', 'success')
+        setTimeout(() => { status(''); loadStorageWallpapers() }, 1500)
+      } catch (e) { status(`Failed: ${e}`, 'error') }
+    }
+
+    if (action === 'toggle-publish') {
+      const nowPublished = data.published === 'true'
+      try {
+        await call('AdminPatchWallpaper', getToken() || '', id, JSON.stringify({ isPublished: !nowPublished }))
+        const it = storageItems.find((i) => i.id === id)
+        if (it) it.isPublished = !nowPublished
+        renderStorageTable()
+      } catch (e) { status(`Failed: ${e}`, 'error') }
+    }
+
+    if (action === 'delete') {
+      const modal = document.getElementById('storage-delete-modal')
+      const nameEl = document.getElementById('storage-delete-name')
+      if (nameEl) nameEl.textContent = `"${data.title}"`
+      if (modal) modal.hidden = false
+      document.getElementById('storage-delete-confirm').dataset.deleteId = id
+      document.getElementById('storage-delete-confirm').dataset.deleteTitle = data.title
+    }
+  }
+
+  document.getElementById('storage-delete-cancel')?.addEventListener('click', () => {
+    document.getElementById('storage-delete-modal').hidden = true
+  })
+  document.getElementById('storage-delete-confirm')?.addEventListener('click', async (e) => {
+    const id = e.currentTarget.dataset.deleteId
+    const btn = e.currentTarget
+    btn.disabled = true
+    btn.textContent = 'Deleting…'
+    document.getElementById('storage-delete-modal').hidden = true
+    try {
+      await call('AdminDeleteWallpaper', getToken() || '', id)
+      storageItems = storageItems.filter((i) => i.id !== id)
+      renderStorageTable()
+      const countEl = document.getElementById('storage-count')
+      if (countEl) countEl.textContent = `${storageItems.length} wallpaper${storageItems.length !== 1 ? 's' : ''}`
+      status('Deleted', 'success')
+      setTimeout(() => status(''), 2000)
+    } catch (err) { status(`Delete failed: ${err}`, 'error') }
+    btn.disabled = false
+    btn.textContent = 'Delete permanently'
+  })
+
+  // ── Upload modal ──────────────────────────────────────────────────
+  let _uploadFilePath = ''
+  let _uploadTier = 'free'
+
+  function openUploadModal() {
+    _uploadFilePath = ''
+    _uploadTier = 'free'
+    const modal = document.getElementById('storage-upload-modal')
+    const fileLabel = document.getElementById('upload-file-label')
+    const thumbWrap = document.getElementById('upload-thumb-wrap')
+    const titleInput = document.getElementById('upload-title')
+    const progressWrap = document.getElementById('upload-progress-wrap')
+    const submitBtn = document.getElementById('upload-submit-btn')
+    if (fileLabel) fileLabel.textContent = 'Click to choose file…'
+    if (thumbWrap) thumbWrap.classList.add('hidden')
+    if (titleInput) titleInput.value = ''
+    if (progressWrap) progressWrap.classList.add('hidden')
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Upload' }
+    // reset tier buttons
+    document.querySelectorAll('.upload-tier-btn').forEach((b) => b.classList.toggle('active', b.dataset.tier === 'free'))
+    if (modal) modal.hidden = false
+  }
+
+  function closeUploadModal() {
+    const modal = document.getElementById('storage-upload-modal')
+    if (modal) modal.hidden = true
+  }
+
+  document.getElementById('storage-upload-btn')?.addEventListener('click', openUploadModal)
+  document.getElementById('upload-cancel-btn')?.addEventListener('click', closeUploadModal)
+
+  document.getElementById('upload-file-zone')?.addEventListener('click', async () => {
+    let filePath
+    try { filePath = await call('BrowseFile') } catch { return }
+    if (!filePath) return
+    _uploadFilePath = filePath
+    const label = filePath.replace(/\\/g, '/').split('/').pop()
+    const fileLabel = document.getElementById('upload-file-label')
+    if (fileLabel) fileLabel.textContent = label
+
+    // auto-fill title
+    const titleInput = document.getElementById('upload-title')
+    if (titleInput && !titleInput.value) {
+      titleInput.value = label.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
+    }
+
+    // generate + show thumbnail preview
+    const thumbWrap = document.getElementById('upload-thumb-wrap')
+    const thumbImg = document.getElementById('upload-thumb-img')
+    const fileInfo = document.getElementById('upload-file-info')
+    const thumbNote = document.getElementById('upload-thumb-note')
+    const submitBtn = document.getElementById('upload-submit-btn')
+
+    if (thumbNote) thumbNote.textContent = 'Generating thumbnail…'
+    if (thumbWrap) { thumbWrap.classList.remove('hidden'); thumbWrap.classList.add('flex') }
+
+    try {
+      const thumb = await call('GetThumbnail', filePath)
+      if (thumbImg && thumb) thumbImg.src = thumb
+      if (fileInfo) fileInfo.textContent = label
+      const isVid = await call('IsVideoFile', filePath)
+      if (thumbNote) thumbNote.textContent = isVid ? 'GIF thumbnail will be generated for upload' : 'JPEG thumbnail generated'
+    } catch { if (thumbNote) thumbNote.textContent = 'Preview unavailable' }
+
+    if (submitBtn) submitBtn.disabled = false
+  })
+
+  document.querySelectorAll('.upload-tier-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      _uploadTier = btn.dataset.tier
+      document.querySelectorAll('.upload-tier-btn').forEach((b) => b.classList.toggle('active', b === btn))
+    })
+  })
+
+  document.getElementById('upload-submit-btn')?.addEventListener('click', async () => {
+    if (!_uploadFilePath) return
+    const title = document.getElementById('upload-title')?.value?.trim() || 'Untitled'
+    const submitBtn = document.getElementById('upload-submit-btn')
+    const progressWrap = document.getElementById('upload-progress-wrap')
+    const progressBar = document.getElementById('upload-progress-bar')
+    const progressLabel = document.getElementById('upload-progress-label')
+
+    submitBtn.disabled = true
+    if (progressWrap) progressWrap.classList.remove('hidden')
+
+    const steps = ['Generating thumbnail…', 'Creating entry…', 'Uploading thumbnail…', 'Uploading original…', 'Done!']
+    let step = 0
+    const tick = () => {
+      if (progressBar) progressBar.style.width = `${Math.round((step / (steps.length - 1)) * 100)}%`
+      if (progressLabel) progressLabel.textContent = steps[step] || '…'
+      step++
+    }
+    tick()
+
+    try {
+      const id = await call('AdminUploadWallpaper', getToken() || '', _uploadFilePath, title, _uploadTier)
+      tick(); tick(); tick(); tick()
+      closeUploadModal()
+      status('Uploaded!', 'success')
+      setTimeout(() => { status(''); loadStorageWallpapers() }, 1200)
+    } catch (e) {
+      if (progressLabel) progressLabel.textContent = `Failed: ${e}`
+      if (progressBar) progressBar.style.background = 'var(--lp-danger)'
+      submitBtn.disabled = false
+    }
+  })
+
   // ── Auth-dependent UI (license, gating, billing refresh) ─────────
   function refreshAuthDependentUI() {
     const lic = document.getElementById('about-license')
@@ -3071,6 +3633,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     }
     refreshDiscoverLock()
     refreshGalleryLocks()
+    refreshAdminUI()
     const billingPanel = document.querySelector('[data-spanel="billing"]')
     if (currentView === 'settings' && billingPanel && !billingPanel.hidden) onShowBilling()
     const connPanel = document.querySelector('[data-spanel="connections"]')

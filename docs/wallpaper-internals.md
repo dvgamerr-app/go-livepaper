@@ -159,6 +159,20 @@ rawY = normalizedY + vdMinY
 - `wails3 dev` จะรอ frontend dev server ถ้าไม่ได้ build แบบ production tag
 - restore state ที่ชี้ไป cached video ที่ถูกลบแล้วจะทำให้ monitor block ติดสถานะ encoding ถาวร
 
+### Video / ffmpeg / mpv
+
+- cache-hit check ของ `PreprocessVideo`/`preprocessGIF` ที่เช็คแค่ `os.Stat(out)` (ว่ามีไฟล์) ไม่พอ: encode ที่ถูก kill/crash จะทิ้งไฟล์ `.mp4` ที่ truncated (ไม่มี moov atom) หรือ 0 byte ไว้ใน `%TEMP%\livepaper` แล้วถูก reuse → ffmpeg frame extract ออก `exit status 0xfffffffe` และ mpv ออก `exit status 2` บนไฟล์เดียวกัน วิธีแก้: validate ด้วย `IsPlayableVideo()` (ffprobe duration > 0 + size > 0) ก่อน reuse, ถ้าไม่ผ่านให้ลบแล้ว re-encode
+- mpv exit codes: `1` = init ล้มเหลว/option ผิด, `2` = เล่นไฟล์ไม่ได้ (corrupt/unsupported/missing) — **ไม่ใช่** "bad arguments" ตามที่ comment เก่าเขียนไว้ ทั้งสองโค้ดเป็น permanent สำหรับ file+args เดิม จึงไม่ควร retry (จะ spin)
+- `--no-terminal` ทำให้ mpv ไม่พ่นอะไรลง stderr เลย ดังนั้นถ้า mpv loop ออก exit 2 จะไม่เห็นเหตุผล — ต้อง validate ไฟล์ด้วย ffprobe ก่อน spawn แทนที่จะหวังพึ่ง stderr
+- `cmd.Stderr = io.Discard` ใน `ExtractVideoFrame` ทำให้ error เหลือแค่ exit status เปล่า ๆ; capture stderr แล้วแนบบรรทัดสุดท้ายของ ffmpeg (เช่น "moov atom not found") เข้า error
+- บน Windows `cmd.Process.Kill()` ทำให้ process ออก exit code `1`; ใน `spawnMpv` ต้องเช็ค stop channel ก่อน classify exit ไม่งั้น teardown ปกติจะ log error หลอก
+- `IsPlayableVideo` ต้องยอมให้ผ่าน (return true) เมื่อหา `ffprobe` ไม่เจอ (`exec.ErrNotFound`) มิฉะนั้น setup ที่ไม่มี ffprobe จะ reject cache ที่ดีทุกไฟล์
+
+### Image / EXIF
+
+- `Warning: Could not extract EXIF data: exif: failed to find exif intro marker` ที่เด้งทุกครั้งตอน apply **ไม่ใช่** error ของ `background.jpg` — มันมาจาก `getOrientation()` ที่อ่าน EXIF ของ **source image ที่ผู้ใช้เลือก** ใน `LoadAndResizeImage`. `background.jpg` (composite output ของ `SaveImageAs`) ไม่เคยถูกอ่าน EXIF กลับ ดังนั้นการเขียน EXIF ลง background.jpg ไม่ช่วยอะไร
+- รูปส่วนใหญ่ (PNG, WebP, screenshot, JPEG ที่ generate เอง) ไม่มี EXIF block อยู่แล้ว → `exif.Decode` คืน error (`EOF` หรือ `failed to find exif intro marker`) เป็นเรื่องปกติ แปลว่า "ไม่ต้องหมุน". การอ่าน orientation เป็น best-effort + non-fatal (fallback = 1 เสมอ) จึงไม่ควร log warning ทุกครั้ง — string-match error message เปราะ (มีหลายข้อความ) ให้เงียบไปเลยบน decode error
+
 ### Local Agent Environment
 
 - ใช้ PowerShell-native shell flow ใน repo นี้ทำให้เจอ quoting/error ง่ายโดยไม่จำเป็น
