@@ -107,42 +107,12 @@ import DiscoverView from '../components/DiscoverView.astro'
           >
         </button>
 
+        <!-- Library — downloaded wallpapers -->
         <button
-          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
-          tabindex="-1"
-          title="Coming soon"
-          aria-disabled="true"
+          class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
+          data-view="library"
         >
-          <span class="text-lp-muted flex shrink-0 items-center">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <polygon points="23 7 16 12 23 17 23 7"></polygon><rect
-                x="1"
-                y="5"
-                width="15"
-                height="14"
-                rx="2"></rect>
-            </svg>
-          </span>
-          Live Wallpapers
-        </button>
-
-        <button
-          class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
-          tabindex="-1"
-          title="Coming soon"
-          aria-disabled="true"
-        >
-          <span class="text-lp-muted flex shrink-0 items-center">
+          <span class="nav-icon">
             <svg
               width="14"
               height="14"
@@ -160,7 +130,8 @@ import DiscoverView from '../components/DiscoverView.astro'
                 r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>
             </svg>
           </span>
-          Static
+          Library
+          <span class="nav-dot"></span>
         </button>
 
         <button
@@ -421,7 +392,57 @@ import DiscoverView from '../components/DiscoverView.astro'
       <!-- ── Alternate views (replace main content when open) ── -->
       <SettingsView />
       <DiscoverView />
+
+      <!-- Library View -->
+      <div id="library-panel" class="hidden flex-1 flex-col overflow-hidden">
+        <div
+          class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
+        >
+          <div class="wails-drag">
+            <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Library</h1>
+            <p class="text-lp-muted mt-px text-[11px]" id="library-count">Your downloaded wallpapers</p>
+          </div>
+        </div>
+        <div class="wails-no-drag lp-scroll flex-1 overflow-y-auto">
+          <div class="p-3">
+            <div id="library-grid">
+              <div class="lib-empty">No wallpapers yet — download from Discover to add them here</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
+  </div>
+
+  <!-- Monitor picker modal -->
+  <div
+    id="monitor-picker-modal"
+    class="wails-no-drag fixed inset-0 z-[200] flex items-center justify-center bg-black/60"
+    hidden
+  >
+    <div
+      class="border-lp-border-strong w-[520px] overflow-hidden rounded-xl border bg-[#18181b] shadow-[0_24px_64px_rgba(0,0,0,0.7)]"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="px-5 pt-5 pb-3">
+        <p class="text-lp-text mb-1 text-[13px] font-semibold">Select Monitor</p>
+        <p class="text-lp-muted text-[11px] leading-relaxed">
+          Choose which monitor to apply this wallpaper to. Hover to preview.
+        </p>
+      </div>
+      <div id="monitor-picker-grid" class="flex gap-3 px-5 pb-4">
+        <!-- populated by JS -->
+      </div>
+      <div class="border-lp-border flex items-center justify-end gap-2 border-t px-5 py-3">
+        <button
+          id="monitor-picker-cancel"
+          class="text-lp-muted hover:text-lp-text cursor-pointer rounded-md border border-white/[0.08] bg-transparent px-3 py-1.5 text-[12px] transition-colors duration-[120ms] hover:bg-white/[0.04]"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Sign-out confirm modal -->
@@ -502,6 +523,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     displays: 'main-content',
     settings: 'settings-panel',
     discover: 'discover-panel',
+    library: 'library-panel',
   }
   let currentView = 'displays'
 
@@ -520,6 +542,28 @@ import DiscoverView from '../components/DiscoverView.astro'
     })
     currentView = name
     if (name === 'discover') onShowDiscover()
+    if (name === 'library') renderLibrary()
+  }
+
+  // ── Downloaded wallpapers tracking ───────────────────────────────
+  const DOWNLOADED_KEY = 'livepaper_downloaded_v1'
+
+  function getDownloadedMap() {
+    try { return JSON.parse(localStorage.getItem(DOWNLOADED_KEY) || '{}') } catch { return {} }
+  }
+
+  function setDownloadedItem(id, info) {
+    const m = getDownloadedMap()
+    m[id] = info
+    localStorage.setItem(DOWNLOADED_KEY, JSON.stringify(m))
+  }
+
+  function getDownloadedItem(id) {
+    return getDownloadedMap()[id] || null
+  }
+
+  function isDownloaded(id) {
+    return !!getDownloadedItem(id)
   }
   function openSettings() {
     showView('settings')
@@ -2099,7 +2143,8 @@ import DiscoverView from '../components/DiscoverView.astro'
     document.querySelectorAll('.dc-feat-lock-note').forEach((el) =>
       el.classList.toggle('hidden', prem)
     )
-    document.querySelectorAll('.dc-download').forEach((b) => {
+    // Only update non-downloaded card buttons
+    document.querySelectorAll('.dc-download:not(.downloaded)').forEach((b) => {
       b.classList.toggle('unlocked', prem)
       b.classList.toggle('locked', !prem)
       b.innerHTML = prem ? DC_SVG_DL : DC_SVG_LOCK
@@ -2108,8 +2153,8 @@ import DiscoverView from '../components/DiscoverView.astro'
       b.classList.toggle('unlocked', prem)
       b.classList.toggle('locked', !prem)
       b.innerHTML = prem
-        ? `${DC_SVG_DL} Apply Wallpaper`
-        : `${DC_SVG_LOCK} Unlock to Apply`
+        ? `${DC_SVG_DL} Download`
+        : `${DC_SVG_LOCK} Unlock to Download`
     })
   }
 
@@ -2171,6 +2216,14 @@ import DiscoverView from '../components/DiscoverView.astro'
     const isLocked = !isPremium()
     const dlText = it.downloadCount ? fmtCount(it.downloadCount) + ' downloads' : 'Community wallpaper'
     const ratingText = it.avgRating != null ? ` · ★ ${Number(it.avgRating).toFixed(1)}` : ''
+    const featDl = isDownloaded(it.id)
+    const DC_SVG_CHECK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`
+    let featBtnClass = isLocked ? 'locked' : 'unlocked'
+    let featBtnHtml = featDl
+      ? `${DC_SVG_CHECK} Apply Wallpaper`
+      : isLocked
+        ? `${DC_SVG_LOCK} Unlock to Download`
+        : `${DC_SVG_DL} Download`
     container.innerHTML = `
       <div class="dc-featured">
         <img alt="${it.title || ''}">
@@ -2184,16 +2237,19 @@ import DiscoverView from '../components/DiscoverView.astro'
           <p class="dc-feat-sub">${dlText}${ratingText}</p>
           <p class="dc-feat-lock-note${isLocked ? '' : ' hidden'}">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Browsing is free · apply from <strong>$4/mo</strong>
+            Browsing is free · download from <strong>$4/mo</strong>
           </p>
-          <button class="dc-feat-btn ${isLocked ? 'locked' : 'unlocked'}">
-            ${isLocked ? DC_SVG_LOCK + ' Unlock to Apply' : DC_SVG_DL + ' Apply Wallpaper'}
+          <button class="dc-feat-btn ${featBtnClass}">
+            ${featBtnHtml}
           </button>
         </div>
       </div>`
     container.querySelector('img').src = it.thumbnailUrl || ''
     container.querySelector('.dc-feat-title').textContent = it.title || 'Untitled'
-    container.querySelector('.dc-feat-btn').addEventListener('click', () => onDiscoverApply(it))
+    container.querySelector('.dc-feat-btn').addEventListener('click', () => {
+      if (featDl) onDiscoverApply(it)
+      else onDiscoverDownload(it, container.querySelector('.dc-feat-btn'))
+    })
     container.classList.remove('hidden')
   }
 
@@ -2231,6 +2287,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       const isFeatured = idx === 0 && !q && discoverActiveFilter !== 'trending'
       const card = document.createElement('div')
       card.className = 'discover-card' + (isFeatured ? ' featured' : '')
+      card.dataset.discoverId = it.id
 
       const badgeHtml = isVideo
         ? `<span class="dc-badge video"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="5" width="14" height="14" rx="2"/></svg>Video</span>`
@@ -2242,13 +2299,22 @@ import DiscoverView from '../components/DiscoverView.astro'
         : 'No ratings yet — click to rate'
       const ratingContent = avgRating ? `${DC_SVG_STAR}${avgRating}` : DC_SVG_STAR
 
+      const dl = isDownloaded(it.id)
+      const DC_SVG_CHECK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`
+      let dlBtnClass, dlBtnLabel, dlBtnSvg
+      if (dl) {
+        dlBtnClass = 'dc-download downloaded'; dlBtnLabel = 'Apply wallpaper'; dlBtnSvg = DC_SVG_CHECK
+      } else if (prem) {
+        dlBtnClass = 'dc-download unlocked'; dlBtnLabel = 'Download wallpaper'; dlBtnSvg = DC_SVG_DL
+      } else {
+        dlBtnClass = 'dc-download locked'; dlBtnLabel = 'Subscribe to download'; dlBtnSvg = DC_SVG_LOCK
+      }
+
       card.innerHTML = `
         <img alt="" loading="lazy" draggable="false">
         <div class="dc-grad"></div>
         ${badgeHtml}
-        <button class="dc-download ${prem ? 'unlocked' : 'locked'}" type="button" aria-label="${prem ? 'Apply wallpaper' : 'Subscribe to apply'}">
-          ${prem ? DC_SVG_DL : DC_SVG_LOCK}
-        </button>
+        <button class="${dlBtnClass}" type="button" aria-label="${dlBtnLabel}">${dlBtnSvg}</button>
         <div class="dc-info">
           <div class="dc-title${isFeatured ? ' large' : ''}"></div>
           <div class="dc-meta">
@@ -2265,7 +2331,12 @@ import DiscoverView from '../components/DiscoverView.astro'
 
       card.querySelector('.dc-download').addEventListener('click', (e) => {
         e.stopPropagation()
-        onDiscoverApply(it)
+        const btn = e.currentTarget
+        if (btn.classList.contains('downloaded')) {
+          onDiscoverApply(it)
+        } else {
+          onDiscoverDownload(it, btn)
+        }
       })
 
       card.querySelector('.dc-stat-rating').addEventListener('click', (e) => {
@@ -2275,7 +2346,7 @@ import DiscoverView from '../components/DiscoverView.astro'
 
       card.addEventListener('click', (e) => {
         if (!e.target.closest('.dc-download, .dc-stat-rating, .dc-rate-picker')) {
-          onDiscoverPreview(it)
+          onDiscoverPreview(it, items, idx)
         }
       })
 
@@ -2340,116 +2411,237 @@ import DiscoverView from '../components/DiscoverView.astro'
     setTimeout(() => document.addEventListener('click', closePicker), 0)
   }
 
-  function onDiscoverPreview(it) {
-    if (document.querySelector('.dc-lightbox')) return
-    const isLocked = !isPremium()
-    const avgRating = it.avgRating != null ? Number(it.avgRating).toFixed(1) : null
-    const tags = (it.tags || [])
-    const tagsHtml = tags.map((t) => `<span class="dc-lb-tag">${t}</span>`).join('')
+  // ── Full-window preview overlay ───────────────────────────────────
+  let _pvItems = []
+  let _pvIndex = 0
+  let _pvSearch = ''
+  let _pvOverlay = null
+  let _pvKeyHandler = null
 
-    const lb = document.createElement('div')
-    lb.className = 'dc-lightbox'
-    lb.innerHTML = `
-      <div class="dc-lb-backdrop"></div>
-      <div class="dc-lb-panel">
-        <button class="dc-lb-close" aria-label="Close">
+  function onDiscoverPreview(it, itemList, idx) {
+    _pvItems = itemList || discoverItems
+    _pvIndex = idx != null ? idx : _pvItems.findIndex((i) => i.id === it.id)
+    if (_pvIndex < 0) _pvIndex = 0
+    _pvSearch = ''
+    _renderPreview()
+  }
+
+  function _renderPreview() {
+    if (_pvOverlay) {
+      _pvOverlay.remove()
+      document.removeEventListener('keydown', _pvKeyHandler)
+    }
+
+    // If search query, filter items
+    const baseItems = _pvSearch
+      ? discoverItems.filter((i) => {
+          const q = _pvSearch.toLowerCase()
+          return (i.title || '').toLowerCase().includes(q) ||
+            (i.tags || []).some((t) => t.toLowerCase().includes(q))
+        })
+      : _pvItems
+
+    if (baseItems.length === 0) return
+    if (_pvIndex >= baseItems.length) _pvIndex = 0
+    const it = baseItems[_pvIndex]
+
+    const isLocked = !isPremium()
+    const dl = isDownloaded(it.id)
+    const avgRating = it.avgRating != null ? Number(it.avgRating).toFixed(1) : null
+    const tags = it.tags || []
+    const DC_SVG_CHECK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`
+
+    let actionClass, actionHtml
+    if (dl) {
+      actionClass = 'dc-preview-btn success'; actionHtml = `${DC_SVG_CHECK} Apply Wallpaper`
+    } else if (isLocked) {
+      actionClass = 'dc-preview-btn locked'; actionHtml = `${DC_SVG_LOCK} Unlock to Download`
+    } else {
+      actionClass = 'dc-preview-btn primary'; actionHtml = `${DC_SVG_DL} Download`
+    }
+
+    const tagsHtml = tags.map((t) => `<span class="dc-preview-tag">${escapeHtml(t)}</span>`).join('')
+    const metaHtml = [
+      avgRating ? `${DC_SVG_STAR} ${avgRating}` : '',
+      it.downloadCount ? `${DC_SVG_DL} ${fmtCount(it.downloadCount)}` : '',
+    ].filter(Boolean).join('<span style="opacity:.3">·</span>')
+
+    const ov = document.createElement('div')
+    ov.className = 'dc-preview-overlay'
+    ov.innerHTML = `
+      <img class="dc-preview-bg" src="${it.thumbnailUrl || ''}" alt="" draggable="false">
+      <div class="dc-preview-scrim"></div>
+      <div class="dc-preview-top">
+        <button class="dc-preview-close" aria-label="Close preview">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
-        <div class="dc-lb-img-wrap">
-          <img alt="" draggable="false">
+        <div class="dc-preview-search-wrap">
+          <svg class="dc-preview-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="pv-search" class="dc-preview-search" type="search" placeholder="Search by name or tag…" value="${escapeHtml(_pvSearch)}" autocomplete="off">
         </div>
-        <div class="dc-lb-info">
-          <div class="dc-lb-title"></div>
-          <div class="dc-lb-meta">
-            ${avgRating ? `<span class="dc-lb-rating">${DC_SVG_STAR}${avgRating} <span style="opacity:.55">(${it.ratingCount})</span></span>` : ''}
-            ${tags.length ? `<span class="dc-lb-tags">${tagsHtml}</span>` : ''}
-          </div>
-          <button class="dc-lb-apply dc-download ${isLocked ? 'locked' : 'unlocked'}" style="position:static;opacity:1;width:auto;height:32px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
-            ${isLocked ? DC_SVG_LOCK + ' Unlock to Apply' : DC_SVG_DL + ' Apply Wallpaper'}
+      </div>
+      <div class="dc-preview-bottom">
+        <div class="dc-preview-title">${escapeHtml(it.title || 'Untitled')}</div>
+        ${tags.length ? `<div class="dc-preview-tags">${tagsHtml}</div>` : ''}
+        ${metaHtml ? `<div class="dc-preview-meta">${metaHtml}</div>` : ''}
+        <div class="dc-preview-actions">
+          <button id="pv-action" class="${actionClass}">${actionHtml}</button>
+          <button id="pv-back" class="dc-preview-btn secondary">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
           </button>
+          <button id="pv-random" class="dc-preview-btn secondary">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+            Random
+          </button>
+          <button id="pv-next" class="dc-preview-btn secondary">
+            Next
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <span class="dc-preview-counter">${_pvIndex + 1} / ${baseItems.length}</span>
         </div>
       </div>`
 
-    lb.querySelector('img').src = it.thumbnailUrl || ''
-    lb.querySelector('.dc-lb-title').textContent = it.title || 'Untitled'
+    const closePreview = () => {
+      ov.remove()
+      document.removeEventListener('keydown', _pvKeyHandler)
+      _pvOverlay = null
+    }
 
-    const close = () => { lb.remove(); document.removeEventListener('keydown', onKey) }
-    const onKey = (e) => { if (e.key === 'Escape') close() }
+    ov.querySelector('#pv-close, .dc-preview-close')?.addEventListener('click', closePreview)
 
-    lb.querySelector('.dc-lb-backdrop').addEventListener('click', close)
-    lb.querySelector('.dc-lb-close').addEventListener('click', close)
-    lb.querySelector('.dc-lb-apply').addEventListener('click', () => { close(); onDiscoverApply(it) })
+    ov.querySelector('#pv-action').addEventListener('click', async () => {
+      if (isLocked) { closePreview(); openSettingsTab('billing'); return }
+      const btn = ov.querySelector('#pv-action')
+      if (dl) { closePreview(); await onDiscoverApply(it) }
+      else { await onDiscoverDownload(it, btn); _pvItems = baseItems; _renderPreview() }
+    })
 
-    document.body.appendChild(lb)
-    document.addEventListener('keydown', onKey)
+    ov.querySelector('#pv-back').addEventListener('click', () => {
+      _pvItems = baseItems
+      _pvIndex = (_pvIndex - 1 + baseItems.length) % baseItems.length
+      _renderPreview()
+    })
+    ov.querySelector('#pv-next').addEventListener('click', () => {
+      _pvItems = baseItems
+      _pvIndex = (_pvIndex + 1) % baseItems.length
+      _renderPreview()
+    })
+    ov.querySelector('#pv-random').addEventListener('click', () => {
+      _pvItems = baseItems
+      _pvIndex = Math.floor(Math.random() * baseItems.length)
+      _renderPreview()
+    })
+
+    const searchEl = ov.querySelector('#pv-search')
+    searchEl?.addEventListener('input', (e) => {
+      _pvSearch = e.target.value
+      _pvIndex = 0
+      _renderPreview()
+      // re-focus the search after re-render
+      setTimeout(() => document.querySelector('#pv-search')?.focus(), 0)
+    })
+
+    _pvKeyHandler = (e) => {
+      if (e.key === 'Escape') closePreview()
+      if (!e.target.closest('#pv-search')) {
+        if (e.key === 'ArrowLeft') { ov.querySelector('#pv-back')?.click() }
+        if (e.key === 'ArrowRight') { ov.querySelector('#pv-next')?.click() }
+      }
+    }
+
+    document.body.appendChild(ov)
+    document.addEventListener('keydown', _pvKeyHandler)
+    _pvOverlay = ov
   }
 
-  async function onDiscoverApply(it) {
-    if (!getToken()) {
-      openLoginModal()
-      return
-    }
-    if (!isPremium()) {
-      openSettingsTab('billing')
-      return
-    }
-    const target = monitors.find((m) => m.primary) || monitors[0]
-    if (!target) {
-      status('No display detected', 'error')
-      return
-    }
+  // Download only (no apply). btn is the button element to update in-place.
+  async function onDiscoverDownload(it, btn) {
+    if (!getToken()) { openLoginModal(); return }
+    if (!isPremium()) { openSettingsTab('billing'); return }
+
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Downloading…</span>' }
     status('Downloading…')
     let path
     try {
       path = await call('DownloadToTemp', it.downloadUrl, getToken(), it.id)
     } catch (e) {
-      if (String(e).includes('premium_required')) {
-        openSettingsTab('billing')
-        status('')
-      } else status('Download failed', 'error')
+      if (String(e).includes('premium_required')) { openSettingsTab('billing'); status('') }
+      else status('Download failed', 'error')
+      if (btn) { btn.disabled = false; btn.innerHTML = DC_SVG_DL }
       return
     }
+
     const isVideo = await call('IsVideoFile', path)
     const thumbnail = await call('GetThumbnail', path)
-    let cached = path
-    if (isVideo && extOf(path) !== 'gif') {
-      status('Encoding…')
-      try {
-        cached = await call('PreprocessVideo', path, target.width, target.height)
-      } catch (_) {
-        status('Encoding cancelled.')
-        return
-      }
+
+    setDownloadedItem(it.id, { path, thumbnail, title: it.title, isVideo, tags: it.tags || [] })
+
+    await upsertRecent({
+      fileKey: `discover:${it.id}`,
+      filePath: path,
+      cachedPath: path,
+      isVideo,
+      thumbnail,
+      width: 0,
+      height: 0,
+    }).catch(() => {})
+    pruneRecent().catch(() => {})
+    refreshGallery().catch(() => {})
+
+    status('Downloaded!', 'success')
+    setTimeout(() => status(''), 2500)
+    track('discover_download', { id: it.id })
+
+    // Update the card button to "Apply" state
+    const DC_SVG_CHECK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`
+    if (btn) {
+      btn.disabled = false
+      btn.className = 'dc-download downloaded'
+      btn.setAttribute('aria-label', 'Apply wallpaper')
+      btn.innerHTML = DC_SVG_CHECK
+      btn.onclick = (e) => { e.stopPropagation(); onDiscoverApply(it) }
     }
-    status('Applying…')
-    try {
-      await call('ApplyWallpapers', [{ monitorIndex: target.index, filePath: cached }])
-      state[target.index] = { filePath: path, cachedPath: cached, isVideo, ready: true, thumbnail }
-      lastAppliedState = {}
-      for (const [idx, s] of Object.entries(state)) {
-        if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
+    // Also update any other cards for this item in the grid
+    document.querySelectorAll(`.discover-card[data-discover-id="${it.id}"] .dc-download`).forEach((b) => {
+      if (b !== btn) {
+        b.className = 'dc-download downloaded'
+        b.setAttribute('aria-label', 'Apply wallpaper')
+        b.innerHTML = DC_SVG_CHECK
+        b.onclick = (e) => { e.stopPropagation(); onDiscoverApply(it) }
       }
-      pendingChanges = false
-      showView('displays')
-      applyThumb(target.index, thumbnail, path, isVideo)
-      refreshApply()
-      saveState()
-      await upsertRecent({
-        fileKey: path,
-        filePath: path,
-        cachedPath: cached,
-        isVideo,
-        thumbnail,
-        width: target.width,
-        height: target.height,
-      }).catch(() => {})
-      pruneRecent().catch(() => {})
-      await refreshGallery().catch(() => {})
-      status('Applied!', 'success')
-      track('discover_apply', { id: it.id })
-      setTimeout(() => status(''), 3000)
-    } catch (e) {
-      status(`Failed: ${e}`, 'error')
+    })
+
+    // Refresh library if visible
+    if (currentView === 'library') renderLibrary()
+  }
+
+  async function onDiscoverApply(it) {
+    if (!getToken()) { openLoginModal(); return }
+    if (!isPremium()) { openSettingsTab('billing'); return }
+
+    // Check if already downloaded locally
+    let dlInfo = getDownloadedItem(it.id)
+    if (dlInfo) {
+      const exists = await call('FileExists', dlInfo.path).catch(() => false)
+      if (!exists) dlInfo = null // file gone, re-download
+    }
+
+    if (!dlInfo) {
+      // Need to download first
+      await onDiscoverDownload(it, null)
+      dlInfo = getDownloadedItem(it.id)
+      if (!dlInfo) return // download failed
+    }
+
+    const { path, isVideo, thumbnail } = dlInfo
+
+    if (monitors.length <= 1) {
+      const target = monitors[0]
+      if (!target) { status('No display detected', 'error'); return }
+      await applyToMonitor(target, path, isVideo, thumbnail, it)
+    } else {
+      showMonitorPicker(it, path, isVideo, thumbnail)
     }
   }
 
@@ -2499,6 +2691,190 @@ import DiscoverView from '../components/DiscoverView.astro'
     refreshApply()
     status('Ready — click Apply Wallpapers', '')
   }
+
+  // ── Library ──────────────────────────────────────────────────────
+  async function renderLibrary() {
+    const grid = document.getElementById('library-grid')
+    const countEl = document.getElementById('library-count')
+    if (!grid) return
+
+    const items = await loadGalleryItems()
+    if (items.length === 0) {
+      grid.innerHTML = '<div class="lib-empty">No wallpapers yet — download from Discover to add them here</div>'
+      if (countEl) countEl.textContent = 'Your downloaded wallpapers'
+      return
+    }
+
+    grid.innerHTML = ''
+    items.forEach((entry) => {
+      const card = document.createElement('div')
+      card.className = 'lib-card'
+
+      const ext = entry.isVideo ? (extOf(entry.filePath || '') === 'gif' ? 'gif' : 'video') : 'image'
+      const name = (entry.filePath || '')
+        .replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '') || 'Wallpaper'
+
+      card.innerHTML = `
+        <img src="${entry.thumbnail || ''}" alt="${escapeHtml(name)}" loading="lazy" draggable="false">
+        <span class="lib-card-type ${ext}">${ext.toUpperCase()}</span>
+        <div class="lib-card-overlay">
+          <button class="lib-card-apply" type="button">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Apply
+          </button>
+          <span class="lib-card-name">${escapeHtml(name)}</span>
+        </div>`
+
+      card.querySelector('.lib-card-apply').addEventListener('click', async (e) => {
+        e.stopPropagation()
+        const isNonGifVideo = entry.isVideo && extOf(entry.filePath) !== 'gif'
+        const path = entry.filePath
+        const thumbnail = entry.thumbnail
+
+        if (monitors.length <= 1) {
+          const target = monitors[0]
+          if (!target) { status('No display detected', 'error'); return }
+          await applyLocalEntryToMonitor(target, entry)
+        } else {
+          showLibraryMonitorPicker(entry)
+        }
+      })
+
+      grid.appendChild(card)
+    })
+
+    const n = items.length
+    if (countEl) countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''}`
+  }
+
+  async function applyLocalEntryToMonitor(m, entry) {
+    const isNonGifVideo = entry.isVideo && extOf(entry.filePath) !== 'gif'
+    let cached = entry.cachedPath || entry.filePath
+    if (isNonGifVideo && (entry.width !== m.width || entry.height !== m.height || !entry.width)) {
+      status('Encoding…')
+      try {
+        cached = await call('PreprocessVideo', entry.filePath, m.width, m.height)
+      } catch (_) { status('Encoding cancelled.'); return }
+    }
+    status('Applying…')
+    try {
+      await call('ApplyWallpapers', [{ monitorIndex: m.index, filePath: cached }])
+      state[m.index] = { filePath: entry.filePath, cachedPath: cached, isVideo: entry.isVideo, ready: true, thumbnail: entry.thumbnail }
+      lastAppliedState = {}
+      for (const [idx, s] of Object.entries(state)) {
+        if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
+      }
+      pendingChanges = false
+      showView('displays')
+      applyThumb(m.index, entry.thumbnail, entry.filePath, entry.isVideo)
+      refreshApply()
+      saveState()
+      status('Applied!', 'success')
+      setTimeout(() => status(''), 3000)
+    } catch (e) { status(`Failed: ${e}`, 'error') }
+  }
+
+  function showLibraryMonitorPicker(entry) {
+    const modal = document.getElementById('monitor-picker-modal')
+    const grid = document.getElementById('monitor-picker-grid')
+    if (!modal || !grid) return
+
+    grid.innerHTML = ''
+    monitors.forEach((m) => {
+      const opt = _buildMonitorOption(m, entry.thumbnail)
+      opt.addEventListener('click', async () => {
+        modal.hidden = true
+        await applyLocalEntryToMonitor(m, entry)
+      })
+      grid.appendChild(opt)
+    })
+
+    modal.hidden = false
+  }
+
+  // ── Monitor picker (for discover wallpapers) ──────────────────────
+  function showMonitorPicker(it, path, isVideo, thumbnail) {
+    const modal = document.getElementById('monitor-picker-modal')
+    const grid = document.getElementById('monitor-picker-grid')
+    if (!modal || !grid) return
+
+    grid.innerHTML = ''
+    monitors.forEach((m) => {
+      const opt = _buildMonitorOption(m, thumbnail)
+      opt.addEventListener('click', async () => {
+        modal.hidden = true
+        await applyToMonitor(m, path, isVideo, thumbnail, it)
+      })
+      grid.appendChild(opt)
+    })
+
+    modal.hidden = false
+  }
+
+  function _buildMonitorOption(m, newThumb) {
+    const opt = document.createElement('div')
+    opt.className = 'monitor-option'
+
+    const currentThumb = state[m.index]?.thumbnail || ''
+    const currentName = state[m.index]?.filePath
+      ? (state[m.index].filePath.replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '') || 'Current')
+      : 'No wallpaper'
+
+    opt.innerHTML = `
+      <div class="monitor-option-preview">
+        ${currentThumb ? `<img src="${escapeHtml(currentThumb)}" alt="">` : `<div style="width:100%;height:100%;background:#111"></div>`}
+        ${newThumb ? `<div class="monitor-option-new-preview" style="background-image:url('${escapeHtml(newThumb)}')"></div>` : ''}
+      </div>
+      <div class="monitor-option-footer">
+        <div class="monitor-option-label">Monitor ${m.index + 1}${m.primary ? ' · Primary' : ''}</div>
+        <div class="monitor-option-current">${escapeHtml(currentName)}</div>
+      </div>`
+
+    return opt
+  }
+
+  async function applyToMonitor(m, path, isVideo, thumbnail, it) {
+    const isNonGifVideo = isVideo && extOf(path) !== 'gif'
+    let cached = path
+    if (isNonGifVideo) {
+      status('Encoding…')
+      try {
+        cached = await call('PreprocessVideo', path, m.width, m.height)
+      } catch (_) { status('Encoding cancelled.'); return }
+    }
+    status('Applying…')
+    try {
+      await call('ApplyWallpapers', [{ monitorIndex: m.index, filePath: cached }])
+      state[m.index] = { filePath: path, cachedPath: cached, isVideo, ready: true, thumbnail }
+      lastAppliedState = {}
+      for (const [idx, s] of Object.entries(state)) {
+        if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
+      }
+      pendingChanges = false
+      showView('displays')
+      applyThumb(m.index, thumbnail, path, isVideo)
+      refreshApply()
+      saveState()
+      await upsertRecent({
+        fileKey: `discover:${it.id}|${m.width}x${m.height}`,
+        filePath: path,
+        cachedPath: cached,
+        isVideo,
+        thumbnail,
+        width: m.width,
+        height: m.height,
+      }).catch(() => {})
+      pruneRecent().catch(() => {})
+      refreshGallery().catch(() => {})
+      status('Applied!', 'success')
+      track('discover_apply', { id: it.id })
+      setTimeout(() => status(''), 3000)
+    } catch (e) { status(`Failed: ${e}`, 'error') }
+  }
+
+  document.getElementById('monitor-picker-cancel')?.addEventListener('click', () => {
+    document.getElementById('monitor-picker-modal').hidden = true
+  })
 
   document
     .getElementById('discover-search')
