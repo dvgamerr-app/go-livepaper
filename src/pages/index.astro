@@ -193,7 +193,7 @@ import DiscoverView from '../components/DiscoverView.astro'
           tabindex="-1"
           title="Coming soon"
           aria-disabled="true"
-          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#34d399"
+          ><span class="swatch-atmospheric h-2 w-2 shrink-0 rounded-full"
           ></span>Atmospheric</button
         >
         <button
@@ -201,7 +201,7 @@ import DiscoverView from '../components/DiscoverView.astro'
           tabindex="-1"
           title="Coming soon"
           aria-disabled="true"
-          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#a78bfa"
+          ><span class="swatch-cyberpunk h-2 w-2 shrink-0 rounded-full"
           ></span>Cyberpunk</button
         >
         <button
@@ -209,7 +209,7 @@ import DiscoverView from '../components/DiscoverView.astro'
           tabindex="-1"
           title="Coming soon"
           aria-disabled="true"
-          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#f472b6"
+          ><span class="swatch-anime h-2 w-2 shrink-0 rounded-full"
           ></span>Anime</button
         >
         <button
@@ -217,7 +217,7 @@ import DiscoverView from '../components/DiscoverView.astro'
           tabindex="-1"
           title="Coming soon"
           aria-disabled="true"
-          ><span class="h-2 w-2 shrink-0 rounded-full" style="background:#fbbf24"
+          ><span class="swatch-nature h-2 w-2 shrink-0 rounded-full"
           ></span>Nature</button
         >
       </div>
@@ -710,6 +710,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   })
 
   const STORAGE_KEY = 'livepaper_state_v1'
+  const WALLPAPER_LIMIT = 60
 
   // ── IndexedDB recent wallpapers ──────────────────────────────────
   const IDB_NAME = 'livepaper'
@@ -966,7 +967,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   // content to browse/drag, even before the user has applied anything locally.
   async function loadRemoteGalleryItems() {
     try {
-      const res = await fetch(`${API_BASE}/api/wallpapers?limit=60`)
+      const res = await fetch(`${API_BASE}/api/wallpapers?limit=${WALLPAPER_LIMIT}`)
       const data = await res.json()
       return (data?.items || []).map((it) => ({
         remote: true,
@@ -1003,6 +1004,11 @@ import DiscoverView from '../components/DiscoverView.astro'
     })
   }
 
+  function pruneAndRefresh() {
+    pruneRecent().catch(() => {})
+    refreshGallery().catch(() => {})
+  }
+
   async function clearRecentHistory() {
     const db = await openDB()
     return new Promise((resolve, reject) => {
@@ -1013,7 +1019,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     })
   }
 
-  function status(msg, type) {
+  function status(msg, type, clearAfter) {
     statusEl.textContent = msg || 'Running'
     statusEl.className = 'status' + (type ? ` ${type}` : '')
     if (dotEl) {
@@ -1021,6 +1027,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       else if (type === 'success' || !msg) dotEl.className = 'ab-dot'
       else dotEl.className = 'ab-dot busy'
     }
+    if (clearAfter) setTimeout(() => status(''), clearAfter)
   }
 
   function refreshApply() {
@@ -1416,12 +1423,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     try {
       await call('ApplyWallpapers', list)
       status('Applied!', 'success')
-      lastAppliedState = {}
-      for (const [idx, s] of Object.entries(state)) {
-        if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
-      }
-      pendingChanges = false
-      saveState()
+      commitApply()
       // Persist each applied wallpaper to IndexedDB as recent
       await Promise.all(
         Object.entries(state)
@@ -1443,8 +1445,7 @@ import DiscoverView from '../components/DiscoverView.astro'
             }).catch(() => {})
           })
       )
-      pruneRecent().catch(() => {})
-      refreshGallery().catch(() => {})
+      pruneAndRefresh()
       setTimeout(() => status(''), 3000)
     } catch (e) {
       status(`Failed: ${e}`, 'error')
@@ -1476,8 +1477,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       await call('CleanTempFiles')
       await clearRecentHistory()
       await refreshGallery()
-      status('Cache cleaned', 'success')
-      setTimeout(() => status(''), 3000)
+      status('Cache cleaned', 'success', 3000)
     } catch (e) {
       status(`Clean failed: ${e}`, 'error')
     }
@@ -1498,12 +1498,20 @@ import DiscoverView from '../components/DiscoverView.astro'
     localStorage.removeItem(STORAGE_KEY)
     await clearRecentHistory().catch(() => {})
     await refreshGallery().catch(() => {})
-    status('Reset complete', 'success')
-    setTimeout(() => status(''), 3000)
+    status('Reset complete', 'success', 3000)
     refreshApply()
   })
 
   // ── State persistence ────────────────────────────────────────────
+  function commitApply() {
+    lastAppliedState = {}
+    for (const [idx, s] of Object.entries(state)) {
+      if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
+    }
+    pendingChanges = false
+    saveState()
+  }
+
   function saveState() {
     const saved = {}
     for (const [idx, s] of Object.entries(state)) {
@@ -1558,8 +1566,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       for (const [idx, s] of Object.entries(state)) {
         if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
       }
-      status('Restored', 'success')
-      setTimeout(() => status(''), 3000)
+      status('Restored', 'success', 3000)
     } catch (e) {
       status(`failed: ${e}`, 'error')
     }
@@ -1590,7 +1597,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       document.getElementById('monitor-subtitle').textContent =
         `${n} display${n !== 1 ? 's' : ''} connected · Click to browse or drag from gallery`
     } catch (e) {
-      contentEl.innerHTML = `<div class="loading" style="color:var(--lp-danger)">Failed to load monitors: ${e}</div>`
+      contentEl.innerHTML = `<div class="loading text-lp-danger">Failed to load monitors: ${escapeHtml(String(e))}</div>`
       return
     }
 
@@ -1602,8 +1609,8 @@ import DiscoverView from '../components/DiscoverView.astro'
       if (missing.length > 0) {
         const warnEl = document.getElementById('dep-warn')
         const msgEl = document.getElementById('dep-warn-msg')
-        msgEl.innerHTML = `Missing: <strong>${missing.join(', ')}</strong> — video wallpapers won't work. Run <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:3px">scripts\\install-deps.ps1</code> to install.`
-        warnEl.style.display = 'flex'
+        if (msgEl) msgEl.innerHTML = `Missing: <strong>${missing.map(escapeHtml).join(', ')}</strong> — video wallpapers won't work. Run <code class="code-inline">scripts\\install-deps.ps1</code> to install.`
+        if (warnEl) warnEl.style.display = 'flex'
       }
     } catch (_) {}
 
@@ -2161,7 +2168,7 @@ import DiscoverView from '../components/DiscoverView.astro'
         t.classList.toggle('text-lp-muted', !on)
         t.setAttribute('aria-selected', on ? 'true' : 'false')
         const dot = t.querySelector('.dot')
-        if (dot) dot.style.display = on ? '' : 'none'
+        if (dot) dot.classList.toggle('hidden', !on)
       })
       document.querySelectorAll('[data-spanel]').forEach((p) => {
         p.hidden = p.dataset.spanel !== id
@@ -2244,9 +2251,9 @@ import DiscoverView from '../components/DiscoverView.astro'
       await call('ApplyWallpapers', list)
       status(
         appSettings.gpuAcceleration ? 'GPU acceleration on' : 'GPU acceleration off',
-        'success'
+        'success',
+        2500
       )
-      setTimeout(() => status(''), 2500)
     } catch (e) {
       status(`Failed: ${e}`, 'error')
     }
@@ -2468,7 +2475,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     if (!grid) return
     grid.innerHTML = '<div class="discover-empty">Loading community wallpapers…</div>'
     try {
-      const res = await fetch(`${API_BASE}/api/wallpapers?limit=60`)
+      const res = await fetch(`${API_BASE}/api/wallpapers?limit=${WALLPAPER_LIMIT}`)
       const data = await res.json()
       discoverItems = (data && data.items) || []
     } catch (_) {
@@ -2764,7 +2771,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     const metaHtml = [
       avgRating ? `${DC_SVG_STAR} ${avgRating}` : '',
       it.downloadCount ? `${DC_SVG_DL} ${fmtCount(it.downloadCount)}` : '',
-    ].filter(Boolean).join('<span style="opacity:.3">·</span>')
+    ].filter(Boolean).join('<span class="meta-sep">·</span>')
 
     const ov = document.createElement('div')
     ov.className = 'dc-preview-overlay'
@@ -2860,7 +2867,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     if (!getToken()) { openLoginModal(); return }
     if (!isPremium()) { openSettingsTab('billing'); return }
 
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:.6">Downloading…</span>' }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="lp-loading-text">Downloading…</span>' }
     status('Downloading…')
     let path
     try {
@@ -2886,11 +2893,9 @@ import DiscoverView from '../components/DiscoverView.astro'
       width: 0,
       height: 0,
     }).catch(() => {})
-    pruneRecent().catch(() => {})
-    refreshGallery().catch(() => {})
+    pruneAndRefresh()
 
-    status('Downloaded!', 'success')
-    setTimeout(() => status(''), 2500)
+    status('Downloaded!', 'success', 2500)
     track('discover_download', { id: it.id })
 
     // Update the card button to "Apply" state
@@ -3060,17 +3065,11 @@ import DiscoverView from '../components/DiscoverView.astro'
     try {
       await call('ApplyWallpapers', [{ monitorIndex: m.index, filePath: cached }])
       state[m.index] = { filePath: entry.filePath, cachedPath: cached, isVideo: entry.isVideo, ready: true, thumbnail: entry.thumbnail }
-      lastAppliedState = {}
-      for (const [idx, s] of Object.entries(state)) {
-        if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
-      }
-      pendingChanges = false
+      commitApply()
       showView('displays')
       applyThumb(m.index, entry.thumbnail, entry.filePath, entry.isVideo)
       refreshApply()
-      saveState()
-      status('Applied!', 'success')
-      setTimeout(() => status(''), 3000)
+      status('Applied!', 'success', 3000)
     } catch (e) { status(`Failed: ${e}`, 'error') }
   }
 
@@ -3122,7 +3121,7 @@ import DiscoverView from '../components/DiscoverView.astro'
 
     opt.innerHTML = `
       <div class="monitor-option-preview">
-        ${currentThumb ? `<img src="${escapeHtml(currentThumb)}" alt="">` : `<div style="width:100%;height:100%;background:#111"></div>`}
+        ${currentThumb ? `<img src="${escapeHtml(currentThumb)}" alt="">` : ''}
         ${newThumb ? `<div class="monitor-option-new-preview" style="background-image:url('${escapeHtml(newThumb)}')"></div>` : ''}
       </div>
       <div class="monitor-option-footer">
@@ -3146,15 +3145,10 @@ import DiscoverView from '../components/DiscoverView.astro'
     try {
       await call('ApplyWallpapers', [{ monitorIndex: m.index, filePath: cached }])
       state[m.index] = { filePath: path, cachedPath: cached, isVideo, ready: true, thumbnail }
-      lastAppliedState = {}
-      for (const [idx, s] of Object.entries(state)) {
-        if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
-      }
-      pendingChanges = false
+      commitApply()
       showView('displays')
       applyThumb(m.index, thumbnail, path, isVideo)
       refreshApply()
-      saveState()
       await upsertRecent({
         fileKey: `discover:${it.id}|${m.width}x${m.height}`,
         filePath: path,
@@ -3164,11 +3158,9 @@ import DiscoverView from '../components/DiscoverView.astro'
         width: m.width,
         height: m.height,
       }).catch(() => {})
-      pruneRecent().catch(() => {})
-      refreshGallery().catch(() => {})
-      status('Applied!', 'success')
+      pruneAndRefresh()
+      status('Applied!', 'success', 3000)
       track('discover_apply', { id: it.id })
-      setTimeout(() => status(''), 3000)
     } catch (e) { status(`Failed: ${e}`, 'error') }
   }
 
@@ -3387,7 +3379,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       if (data.error) throw new Error(data.error)
       storageItems = Array.isArray(data) ? data : (data.items || [])
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6" class="storage-empty" style="color:var(--lp-danger)">Failed: ${escapeHtml(String(e))}</td></tr>`
+      tbody.innerHTML = `<tr><td colspan="6" class="storage-empty text-lp-danger">Failed: ${escapeHtml(String(e))}</td></tr>`
       return
     }
     renderStorageTable()
@@ -3418,7 +3410,7 @@ import DiscoverView from '../components/DiscoverView.astro'
           <div class="storage-id">${escapeHtml(shortId)}</div>
         </td>
         <td><span class="tier-badge ${tier}">${tier}</span></td>
-        <td style="font-size:10px;color:var(--lp-muted)">${isVideo ? '🎬 Video' : '🖼 Image'}</td>
+        <td class="storage-type">${isVideo ? '🎬 Video' : '🖼 Image'}</td>
         <td>
           <span class="storage-status ${isPublished ? 'published' : 'hidden'}">
             <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
@@ -3505,8 +3497,7 @@ import DiscoverView from '../components/DiscoverView.astro'
       renderStorageTable()
       const countEl = document.getElementById('storage-count')
       if (countEl) countEl.textContent = `${storageItems.length} wallpaper${storageItems.length !== 1 ? 's' : ''}`
-      status('Deleted', 'success')
-      setTimeout(() => status(''), 2000)
+      status('Deleted', 'success', 2000)
     } catch (err) { status(`Delete failed: ${err}`, 'error') }
     btn.disabled = false
     btn.textContent = 'Delete permanently'
@@ -3721,8 +3712,7 @@ import DiscoverView from '../components/DiscoverView.astro'
         prefetchConnections()
         await onShowConnections()
         if (btn) btn.disabled = false
-        status('GitHub connected', 'success')
-        setTimeout(() => status(''), 3000)
+        status('GitHub connected', 'success', 3000)
       },
       onFail: () => {
         if (btn) { btn.disabled = false; btn.textContent = origText }
@@ -3788,16 +3778,10 @@ import DiscoverView from '../components/DiscoverView.astro'
         ready: true,
         thumbnail: entry.thumbnail,
       }
-      lastAppliedState = {}
-      for (const [idx, s] of Object.entries(state)) {
-        if (s.filePath) lastAppliedState[parseInt(idx)] = { ...s }
-      }
-      pendingChanges = false
+      commitApply()
       applyThumb(target.index, entry.thumbnail, entry.filePath, entry.isVideo)
       refreshApply()
-      saveState()
-      status('Applied!', 'success')
-      setTimeout(() => status(''), 2000)
+      status('Applied!', 'success', 2000)
     } catch (e) {
       status(`Failed: ${e}`, 'error')
     }
@@ -3809,8 +3793,7 @@ import DiscoverView from '../components/DiscoverView.astro'
   Events.On('video:paused', (evt) => {
     const p = evt && evt.data && evt.data.paused
     syncPauseBtn(p)
-    status(p ? 'Paused' : 'Resumed', '')
-    setTimeout(() => status(''), 1500)
+    status(p ? 'Paused' : 'Resumed', '', 1500)
   })
 
   // telemetry on apply (attempt)

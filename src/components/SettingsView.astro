@@ -71,8 +71,7 @@ const communityFeatures = [
           >
             {t.label}
             <span
-              class="dot bg-lp-accent ml-auto h-1.5 w-1.5 rounded-full"
-              style={i === 0 ? '' : 'display:none'}
+              class={`dot bg-lp-accent ml-auto h-1.5 w-1.5 rounded-full${i === 0 ? '' : ' hidden'}`}
             />
           </button>
         ))
