@@ -1636,7 +1636,7 @@ import DiscoverView from '../components/DiscoverView.astro'
     btn.disabled = true
     btn.textContent = '…'
     try {
-      await fetch(`${API_BASE}/api/auth/sign-out`, { method: 'POST', headers: authHeaders() })
+      await fetch(`${API_BASE}/api/auth/sign-out`, { method: 'POST', headers: authHeaders(), body: '{}' })
     } catch (_) {}
     clearToken()
     await updateProfileUI(null)
