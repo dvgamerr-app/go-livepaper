@@ -47,7 +47,7 @@ func SetWallpaper(imagePath string) error {
 		return fmt.Errorf("failed to convert path to UTF16 pointer: %w", err)
 	}
 
-	if err := broadcastSettingChange(uintptr(unsafe.Pointer(imagePathPtr)), spifSendChange); err != nil {
+	if err := broadcastSettingChange(uintptr(unsafe.Pointer(imagePathPtr)), spifUpdateINIFile|spifSendChange); err != nil {
 		return fmt.Errorf("failed to set wallpaper: %w", err)
 	}
 
@@ -67,10 +67,6 @@ func SetWallpaperStyle(style WallpaperStyle) error {
 
 	if err = key.SetStringValue("TileWallpaper", "0"); err != nil {
 		return fmt.Errorf("failed to set TileWallpaper registry value: %w", err)
-	}
-
-	if err := broadcastSettingChange(0, spifUpdateINIFile|spifSendChange); err != nil {
-		return fmt.Errorf("failed to broadcast registry change: %w", err)
 	}
 
 	return nil
