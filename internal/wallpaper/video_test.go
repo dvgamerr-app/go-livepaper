@@ -329,13 +329,13 @@ func TestPreprocessVideo_ValidCacheHit(t *testing.T) {
 	}
 
 	const w, h, base = 320, 240, "cachetest_valid"
-	cachedPath := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
-	makeTestVideo(t, cachedPath, w, h)
-	t.Cleanup(func() { os.Remove(cachedPath) })
-
 	// src does NOT exist: a cache miss would force an encode that fails, so a
 	// successful no-error return proves the valid cache was reused.
 	srcPath := filepath.Join(t.TempDir(), base+".mp4")
+	cachedPath := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", CacheKey(srcPath), w, h))
+	makeTestVideo(t, cachedPath, w, h)
+	t.Cleanup(func() { os.Remove(cachedPath) })
+
 	out, err := PreprocessVideo(srcPath, w, h)
 	if err != nil {
 		t.Fatalf("PreprocessVideo() error = %v", err)
@@ -355,15 +355,15 @@ func TestPreprocessVideo_StaleCacheRejected(t *testing.T) {
 	}
 
 	const w, h, base = 320, 240, "cachetest_stale"
-	cachedPath := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
+	// src missing → a re-encode (which a stale cache must trigger) fails.
+	srcPath := filepath.Join(t.TempDir(), base+".mp4")
+	cachedPath := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", CacheKey(srcPath), w, h))
 	// Corrupt cache (no moov atom), as left by an interrupted encode.
 	if err := os.WriteFile(cachedPath, []byte("corrupt not a video"), 0644); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { os.Remove(cachedPath) })
 
-	// src missing → a re-encode (which a stale cache must trigger) fails.
-	srcPath := filepath.Join(t.TempDir(), base+".mp4")
 	_, err := PreprocessVideo(srcPath, w, h)
 	if err == nil {
 		t.Fatal("PreprocessVideo() reused stale cache, expected re-encode error")

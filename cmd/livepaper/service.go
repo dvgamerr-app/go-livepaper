@@ -3,9 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"crypto/sha1"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	_ "golang.org/x/image/webp"
@@ -459,6 +457,10 @@ func thumbBox(w, h int) (int, int) {
 }
 
 func generateThumbnail(filePath string, boxW, boxH int) string {
+	// Pre-generate the animated GIF preview for videos in the background so it
+	// is ready by the time the user hovers the card — never generated on hover.
+	warmAnimatedThumbnail(filePath)
+
 	cachePath := thumbCachePath(filePath, boxW, boxH)
 	if data := readThumbCache(cachePath, filePath); data != nil {
 		return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(data)
@@ -478,14 +480,20 @@ func generateThumbnail(filePath string, boxW, boxH int) string {
 	return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(data)
 }
 
+// cacheKey hashes a source path (and optional discriminators) into a collision-
+// free cache filename. Delegates to wp.CacheKey so the tray and CLI encode paths
+// produce identical cache filenames and share results.
+func cacheKey(parts ...string) string {
+	return wp.CacheKey(parts...)
+}
+
 // thumbCachePath derives the on-disk cache location for a thumbnail. The key
 // folds in the source path and bounding box; mtime is validated on read so a
 // re-encoded source invalidates the cache.
 func thumbCachePath(filePath string, boxW, boxH int) string {
 	dir := filepath.Join(os.TempDir(), "livepaper", "thumbs")
 	_ = os.MkdirAll(dir, 0755)
-	sum := sha1.Sum([]byte(fmt.Sprintf("%s|%dx%d", filePath, boxW, boxH)))
-	return filepath.Join(dir, hex.EncodeToString(sum[:])+".jpg")
+	return filepath.Join(dir, cacheKey(filePath, fmt.Sprintf("%dx%d", boxW, boxH))+".jpg")
 }
 
 // readThumbCache returns cached thumbnail bytes when the cache file exists and
@@ -549,24 +557,56 @@ func videoThumbnailBytes(filePath string, boxW, boxH int) []byte {
 	return out
 }
 
-// GetAnimatedThumbnail generates a small animated GIF preview for a video file,
-// cached to temp dir so repeated calls are instant.
-func (s *AppService) GetAnimatedThumbnail(filePath string) string {
+// gifLocks serializes GIF generation per output file so an eager background
+// warm and an on-hover request never run ffmpeg twice for the same video.
+var (
+	gifLocksMu sync.Mutex
+	gifLocks   = map[string]*sync.Mutex{}
+)
+
+func gifLock(key string) *sync.Mutex {
+	gifLocksMu.Lock()
+	defer gifLocksMu.Unlock()
+	m, ok := gifLocks[key]
+	if !ok {
+		m = &sync.Mutex{}
+		gifLocks[key] = m
+	}
+	return m
+}
+
+// warmAnimatedThumbnail kicks off GIF-preview generation in the background for
+// video files, so the preview is cached before the user hovers the card.
+func warmAnimatedThumbnail(filePath string) {
 	ext := strings.ToLower(filepath.Ext(filePath))
 	if !wp.IsVideoFile(filePath) || ext == ".gif" {
-		return ""
+		return
+	}
+	go buildAnimatedThumbnail(filePath)
+}
+
+// buildAnimatedThumbnail returns the cached GIF-preview bytes for a video,
+// generating and caching it on first call. Concurrent callers for the same file
+// are serialized so ffmpeg runs at most once.
+func buildAnimatedThumbnail(filePath string) []byte {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	if !wp.IsVideoFile(filePath) || ext == ".gif" {
+		return nil
 	}
 
 	tmpDir := filepath.Join(os.TempDir(), "livepaper")
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return ""
+		return nil
 	}
-	base := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
-	outGif := filepath.Join(tmpDir, fmt.Sprintf("%s_preview.gif", base))
+	outGif := filepath.Join(tmpDir, cacheKey(filePath)+"_preview.gif")
+
+	lock := gifLock(outGif)
+	lock.Lock()
+	defer lock.Unlock()
 
 	// Return cached file if it already exists
 	if data, err := os.ReadFile(outGif); err == nil && len(data) > 0 {
-		return "data:image/gif;base64," + base64.StdEncoding.EncodeToString(data)
+		return data
 	}
 
 	seekSec := wp.VideoMidSec(filePath)
@@ -583,10 +623,21 @@ func (s *AppService) GetAnimatedThumbnail(filePath string) string {
 	wp.ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	if err := cmd.Run(); err != nil {
-		return ""
+		return nil
 	}
 	data, err := os.ReadFile(outGif)
 	if err != nil || len(data) == 0 {
+		return nil
+	}
+	return data
+}
+
+// GetAnimatedThumbnail returns the animated GIF preview for a video file. The
+// GIF is normally already cached from warmAnimatedThumbnail (triggered at
+// thumbnail time), so this returns instantly without generating on hover.
+func (s *AppService) GetAnimatedThumbnail(filePath string) string {
+	data := buildAnimatedThumbnail(filePath)
+	if len(data) == 0 {
 		return ""
 	}
 	return "data:image/gif;base64," + base64.StdEncoding.EncodeToString(data)
@@ -601,8 +652,7 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return "", err
 	}
-	base := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
-	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
+	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", cacheKey(filePath), w, h))
 
 	if _, err := os.Stat(out); err == nil {
 		if wp.IsPlayableVideo(out) {
@@ -680,8 +730,7 @@ func (s *AppService) preprocessGIF(filePath string) (string, error) {
 		return "", err
 	}
 
-	base := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
-	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d_gif.mp4", base, cfg.Width, cfg.Height))
+	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d_gif.mp4", cacheKey(filePath), cfg.Width, cfg.Height))
 
 	if _, err := os.Stat(out); err == nil {
 		if wp.IsPlayableVideo(out) {
@@ -936,8 +985,7 @@ func generateUploadThumbnailBytes(filePath string) ([]byte, string, error) {
 func makeUploadGIF(filePath string) ([]byte, error) {
 	tmpDir := filepath.Join(os.TempDir(), "livepaper")
 	os.MkdirAll(tmpDir, 0755)
-	base := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
-	out := filepath.Join(tmpDir, base+"_upload_thumb.gif")
+	out := filepath.Join(tmpDir, cacheKey(filePath)+"_upload_thumb.gif")
 	if data, err := os.ReadFile(out); err == nil && len(data) > 0 {
 		return data, nil
 	}

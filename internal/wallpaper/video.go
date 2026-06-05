@@ -2,6 +2,8 @@ package wallpaper
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"image"
@@ -16,6 +18,14 @@ import (
 	"sync"
 	"time"
 )
+
+// CacheKey returns a stable short hash used to name derived cache files
+// (encoded videos, GIF previews, thumbnails) so distinct sources never collide
+// on basename. Shared by the CLI and tray encode paths to keep cache hits.
+func CacheKey(parts ...string) string {
+	sum := sha1.Sum([]byte(strings.Join(parts, "|")))
+	return hex.EncodeToString(sum[:])
+}
 
 var videoExts = map[string]bool{
 	".mp4": true, ".mkv": true, ".avi": true,
@@ -120,8 +130,7 @@ func PreprocessVideo(src string, w, h int) (string, error) {
 		return "", err
 	}
 
-	base := strings.TrimSuffix(filepath.Base(src), filepath.Ext(src))
-	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
+	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", CacheKey(src), w, h))
 
 	if _, err := os.Stat(out); err == nil {
 		if IsPlayableVideo(out) {
