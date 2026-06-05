@@ -19,21 +19,28 @@ const (
 const (
 	spiSetDeskWallpaper = 0x0014
 	spifUpdateINIFile   = 0x01
-	spifSendChange      = 0x02
+	hwndBroadcast       = 0xFFFF // HWND_BROADCAST
+	wmSettingChange     = 0x001A // WM_SETTINGCHANGE / WM_WININICHANGE
 	retSuccess          = "The operation completed successfully."
 )
 
-func broadcastSettingChange(wallpaperPtr uintptr, flags uintptr) error {
-	ret, _, err := systemParametersInfo.Call(spiSetDeskWallpaper, 0, wallpaperPtr, flags)
-	if ret == 0 {
-		if err != nil && err.Error() != retSuccess {
-			return fmt.Errorf("SystemParametersInfo call failed: %w", err)
-		}
-	} else {
-		if err != nil && err.Error() != retSuccess {
-			fmt.Printf("SystemParametersInfo returned non-zero (%d) but reported an error: %v\n", ret, err)
-		}
+// applyWallpaper sets the wallpaper via SystemParametersInfo and then
+// notifies all top-level windows asynchronously.
+//
+// We intentionally avoid SPIF_SENDCHANGE (0x02) because it triggers a
+// synchronous SendMessage(HWND_BROADCAST, WM_SETTINGCHANGE) that waits up
+// to 5 s for every top-level window to respond.  When Explorer is busy
+// processing desktop-window changes (e.g. mpv embedding / removal), the
+// broadcast times out and the desktop may not refresh.
+//
+// Instead we use SendNotifyMessageW which is fire-and-forget: it posts the
+// notification without blocking, so it never times out.
+func applyWallpaper(wallpaperPtr uintptr) error {
+	ret, _, err := systemParametersInfo.Call(spiSetDeskWallpaper, 0, wallpaperPtr, spifUpdateINIFile)
+	if ret == 0 && err != nil && err.Error() != retSuccess {
+		return fmt.Errorf("SystemParametersInfo call failed: %w", err)
 	}
+	sendNotifyMessageW.Call(hwndBroadcast, wmSettingChange, spiSetDeskWallpaper, 0)
 	return nil
 }
 
@@ -47,7 +54,7 @@ func SetWallpaper(imagePath string) error {
 		return fmt.Errorf("failed to convert path to UTF16 pointer: %w", err)
 	}
 
-	if err := broadcastSettingChange(uintptr(unsafe.Pointer(imagePathPtr)), spifUpdateINIFile|spifSendChange); err != nil {
+	if err := applyWallpaper(uintptr(unsafe.Pointer(imagePathPtr))); err != nil {
 		return fmt.Errorf("failed to set wallpaper: %w", err)
 	}
 

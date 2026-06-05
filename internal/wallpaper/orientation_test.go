@@ -3,8 +3,10 @@
 package wallpaper
 
 import (
+	"bytes"
 	"image"
 	"image/color"
+	"log"
 	"os"
 	"testing"
 )
@@ -190,6 +192,29 @@ func TestGetOrientation_NoExif(t *testing.T) {
 
 	if got := getOrientation(f); got != 1 {
 		t.Errorf("getOrientation (no EXIF) = %d, want 1", got)
+	}
+}
+
+// TestGetOrientation_NoExifIsSilent verifies that an image with no EXIF block
+// (the common case) defaults to orientation 1 without logging a warning.
+func TestGetOrientation_NoExifIsSilent(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+
+	f, err := os.CreateTemp(t.TempDir(), "noexif*.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	_, _ = f.WriteString("no exif intro marker here")
+	_, _ = f.Seek(0, 0)
+
+	if got := getOrientation(f); got != 1 {
+		t.Errorf("getOrientation (no EXIF) = %d, want 1", got)
+	}
+	if buf.Len() != 0 {
+		t.Errorf("expected no log output for absent EXIF, got: %q", buf.String())
 	}
 }
 

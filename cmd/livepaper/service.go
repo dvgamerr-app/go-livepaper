@@ -3,7 +3,10 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	_ "golang.org/x/image/webp"
 	"image"
@@ -157,8 +160,10 @@ func mpvArgsFromSettings() []string {
 		args = append(args, "--d3d11-adapter="+s.GPUAdapter)
 	}
 	if s.VRAMCapMB > 0 {
-		args = append(args, fmt.Sprintf("--demuxer-max-bytes=%dMiB", s.VRAMCapMB))
-		args = append(args, fmt.Sprintf("--demuxer-max-back-bytes=%dMiB", maxInt(s.VRAMCapMB/2, 32)))
+		// Use raw byte values — the "MiB" IEC suffix is not recognised by all
+		// mpv versions and causes an immediate exit-status-2 argument error.
+		args = append(args, fmt.Sprintf("--demuxer-max-bytes=%d", int64(s.VRAMCapMB)*1024*1024))
+		args = append(args, fmt.Sprintf("--demuxer-max-back-bytes=%d", int64(maxInt(s.VRAMCapMB/2, 32))*1024*1024))
 	}
 	return args
 }
@@ -419,52 +424,129 @@ func (s *AppService) IsVideoFile(filePath string) bool {
 	return wp.IsVideoFile(filePath)
 }
 
+// thumbMaxDim caps the longest side of preview thumbnails. Preview blocks are
+// small, so this keeps the encoded data URL light and — combined with the disk
+// cache below — lets restore/re-render skip decoding the full-resolution source.
+const thumbMaxDim = 512
+
+// GetThumbnail returns a generic preview thumbnail (16:9 bound) for a file.
+// Used by gallery/discover cards where no specific monitor is targeted.
 func (s *AppService) GetThumbnail(filePath string) string {
-	ext := strings.ToLower(filepath.Ext(filePath))
-	if wp.IsVideoFile(filePath) && ext != ".gif" {
-		return videoThumbnail(filePath)
-	}
-	return imageThumbnail(filePath)
+	return generateThumbnail(filePath, thumbMaxDim, thumbMaxDim*9/16)
 }
 
-func imageThumbnail(filePath string) string {
+// GetMonitorThumbnail returns a preview thumbnail bounded to the target
+// monitor's aspect ratio, capped at thumbMaxDim on the longest side. Smaller
+// monitors get smaller thumbnails, and every result is cached to disk keyed by
+// the source file, its mtime, and the bounding box — so repeated previews
+// (restore, window resize, re-render) read a small cached JPEG instead of
+// re-decoding and re-scaling the original.
+func (s *AppService) GetMonitorThumbnail(filePath string, w, h int) string {
+	boxW, boxH := thumbBox(w, h)
+	return generateThumbnail(filePath, boxW, boxH)
+}
+
+// thumbBox scales a monitor's (w,h) so the longest side equals thumbMaxDim,
+// preserving aspect. Falls back to a 16:9 box for invalid input.
+func thumbBox(w, h int) (int, int) {
+	if w <= 0 || h <= 0 {
+		return thumbMaxDim, thumbMaxDim * 9 / 16
+	}
+	if w >= h {
+		return thumbMaxDim, int(math.Round(float64(thumbMaxDim) * float64(h) / float64(w)))
+	}
+	return int(math.Round(float64(thumbMaxDim) * float64(w) / float64(h))), thumbMaxDim
+}
+
+func generateThumbnail(filePath string, boxW, boxH int) string {
+	cachePath := thumbCachePath(filePath, boxW, boxH)
+	if data := readThumbCache(cachePath, filePath); data != nil {
+		return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(data)
+	}
+
+	var data []byte
+	ext := strings.ToLower(filepath.Ext(filePath))
+	if wp.IsVideoFile(filePath) && ext != ".gif" {
+		data = videoThumbnailBytes(filePath, boxW, boxH)
+	} else {
+		data = imageThumbnailBytes(filePath, boxW, boxH)
+	}
+	if len(data) == 0 {
+		return ""
+	}
+	writeThumbCache(cachePath, data)
+	return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(data)
+}
+
+// thumbCachePath derives the on-disk cache location for a thumbnail. The key
+// folds in the source path and bounding box; mtime is validated on read so a
+// re-encoded source invalidates the cache.
+func thumbCachePath(filePath string, boxW, boxH int) string {
+	dir := filepath.Join(os.TempDir(), "livepaper", "thumbs")
+	_ = os.MkdirAll(dir, 0755)
+	sum := sha1.Sum([]byte(fmt.Sprintf("%s|%dx%d", filePath, boxW, boxH)))
+	return filepath.Join(dir, hex.EncodeToString(sum[:])+".jpg")
+}
+
+// readThumbCache returns cached thumbnail bytes when the cache file exists and
+// is at least as new as the source. Returns nil to signal a cache miss.
+func readThumbCache(cachePath, srcPath string) []byte {
+	ci, err := os.Stat(cachePath)
+	if err != nil {
+		return nil
+	}
+	if si, err := os.Stat(srcPath); err == nil && si.ModTime().After(ci.ModTime()) {
+		return nil // source changed since the cache was written
+	}
+	data, err := os.ReadFile(cachePath)
+	if err != nil || len(data) == 0 {
+		return nil
+	}
+	return data
+}
+
+func writeThumbCache(cachePath string, data []byte) {
+	_ = os.WriteFile(cachePath, data, 0644)
+}
+
+func imageThumbnailBytes(filePath string, boxW, boxH int) []byte {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return ""
+		return nil
 	}
 	defer f.Close()
 
 	img, _, err := image.Decode(f)
 	if err != nil {
-		return ""
+		return nil
 	}
-	thumb := resize.Thumbnail(800, 450, img, resize.Lanczos3)
+	thumb := resize.Thumbnail(uint(boxW), uint(boxH), img, resize.Lanczos3)
 	var buf bytes.Buffer
 	if err := jpeg.Encode(&buf, thumb, &jpeg.Options{Quality: 88}); err != nil {
-		return ""
+		return nil
 	}
-	return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+	return buf.Bytes()
 }
 
-func videoThumbnail(filePath string) string {
+func videoThumbnailBytes(filePath string, boxW, boxH int) []byte {
 	seekSec := wp.VideoMidSec(filePath)
 	cmd := exec.Command("ffmpeg",
 		"-ss", fmt.Sprintf("%.3f", seekSec),
 		"-i", filePath,
-		"-vf", "scale=800:450:force_original_aspect_ratio=decrease,pad=800:450:(ow-iw)/2:(oh-ih)/2",
+		"-vf", fmt.Sprintf("scale=%d:%d:force_original_aspect_ratio=decrease", boxW, boxH),
 		"-frames:v", "1",
 		"-f", "image2pipe",
 		"-vcodec", "mjpeg",
-		"-q:v", "1",
+		"-q:v", "2",
 		"-",
 	)
 	wp.ConfigureBackgroundCommand(cmd)
 	cmd.Stderr = io.Discard
 	out, err := cmd.Output()
 	if err != nil || len(out) == 0 {
-		return ""
+		return nil
 	}
-	return "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(out)
+	return out
 }
 
 // GetAnimatedThumbnail generates a small animated GIF preview for a video file,
@@ -523,8 +605,13 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
 
 	if _, err := os.Stat(out); err == nil {
-		s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: 100})
-		return out, nil
+		if wp.IsPlayableVideo(out) {
+			s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: 100})
+			return out, nil
+		}
+		// Stale/corrupt cache from an interrupted encode — discard and re-encode
+		// so we never hand a truncated file to mpv/ffmpeg later.
+		os.Remove(out)
 	}
 
 	durationUs := getVideoDurationUs(filePath)
@@ -597,8 +684,12 @@ func (s *AppService) preprocessGIF(filePath string) (string, error) {
 	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d_gif.mp4", base, cfg.Width, cfg.Height))
 
 	if _, err := os.Stat(out); err == nil {
-		s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: 100})
-		return out, nil
+		if wp.IsPlayableVideo(out) {
+			s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: 100})
+			return out, nil
+		}
+		// Stale/corrupt cache from an interrupted encode — discard and re-encode.
+		os.Remove(out)
 	}
 
 	durationUs := getVideoDurationUs(filePath)
@@ -772,4 +863,195 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 		}()
 	}
 	return nil
+}
+
+// ── Admin API helpers ────────────────────────────────────────────────────────
+
+const adminAPIBase = "https://sso.dvgamerr.app"
+
+func adminDo(method, url, token, contentType string, body io.Reader, contentLength int64) ([]byte, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	if contentLength >= 0 {
+		req.ContentLength = contentLength
+	}
+	client := &http.Client{Timeout: 600 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(data))
+	}
+	return data, nil
+}
+
+// AdminListWallpapers returns JSON array of all wallpapers from admin API.
+func (s *AppService) AdminListWallpapers(token string) string {
+	data, err := adminDo("GET", adminAPIBase+"/api/admin/wallpapers", token, "", nil, -1)
+	if err != nil {
+		return `{"error":"` + err.Error() + `"}`
+	}
+	return string(data)
+}
+
+// generateUploadThumbnailBytes creates a thumbnail for upload:
+// - JPEG (max 1920×1080) for images
+// - animated GIF (480px wide, 3s) for videos
+func generateUploadThumbnailBytes(filePath string) ([]byte, string, error) {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	if wp.IsVideoFile(filePath) && ext != ".gif" {
+		data, err := makeUploadGIF(filePath)
+		return data, "image/gif", err
+	}
+	if ext == ".gif" {
+		data, err := os.ReadFile(filePath)
+		return data, "image/gif", err
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, "", err
+	}
+	defer f.Close()
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return nil, "", err
+	}
+	thumb := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, thumb, &jpeg.Options{Quality: 88}); err != nil {
+		return nil, "", err
+	}
+	return buf.Bytes(), "image/jpeg", nil
+}
+
+func makeUploadGIF(filePath string) ([]byte, error) {
+	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	os.MkdirAll(tmpDir, 0755)
+	base := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
+	out := filepath.Join(tmpDir, base+"_upload_thumb.gif")
+	if data, err := os.ReadFile(out); err == nil && len(data) > 0 {
+		return data, nil
+	}
+	seekSec := wp.VideoMidSec(filePath)
+	filter := "fps=10,scale=480:-2:force_original_aspect_ratio=decrease,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
+	cmd := exec.Command("ffmpeg",
+		"-ss", fmt.Sprintf("%.3f", seekSec),
+		"-i", filePath,
+		"-t", "3",
+		"-vf", filter,
+		"-loop", "0",
+		"-y", out,
+	)
+	wp.ConfigureBackgroundCommand(cmd)
+	cmd.Stderr = io.Discard
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	return os.ReadFile(out)
+}
+
+// AdminUploadWallpaper runs the full 3-step upload: POST metadata → PUT thumbnail → PUT original.
+func (s *AppService) AdminUploadWallpaper(token, filePath, title, tier string) (string, error) {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	isVid := wp.IsVideoFile(filePath) && ext != ".gif"
+
+	contentTypeMap := map[string]string{
+		".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime",
+		".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+		".webp": "image/webp", ".gif": "image/gif",
+	}
+	origCT, ok := contentTypeMap[ext]
+	if !ok {
+		origCT = "application/octet-stream"
+	}
+
+	thumbBytes, thumbCT, err := generateUploadThumbnailBytes(filePath)
+	if err != nil {
+		return "", fmt.Errorf("thumbnail: %w", err)
+	}
+
+	// Step 1: create metadata row
+	createPayload, _ := json.Marshal(map[string]interface{}{
+		"title": title, "tier": tier,
+		"contentType": origCT, "thumbnailContentType": thumbCT,
+		"isVideo": isVid,
+	})
+	resp, err := adminDo("POST", adminAPIBase+"/api/admin/wallpapers", token, "application/json", bytes.NewReader(createPayload), int64(len(createPayload)))
+	if err != nil {
+		return "", fmt.Errorf("create: %w", err)
+	}
+	var meta struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(resp, &meta); err != nil || meta.ID == "" {
+		return "", fmt.Errorf("create response: %s", string(resp))
+	}
+	id := meta.ID
+
+	// Step 2: upload thumbnail
+	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=thumbnail", adminAPIBase, id), token, thumbCT, bytes.NewReader(thumbBytes), int64(len(thumbBytes))); err != nil {
+		return id, fmt.Errorf("thumbnail upload: %w", err)
+	}
+
+	// Step 3: upload original (streamed)
+	f, err := os.Open(filePath)
+	if err != nil {
+		return id, fmt.Errorf("open original: %w", err)
+	}
+	defer f.Close()
+	fi, _ := f.Stat()
+	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=original", adminAPIBase, id), token, origCT, f, fi.Size()); err != nil {
+		return id, fmt.Errorf("original upload: %w", err)
+	}
+
+	return id, nil
+}
+
+// AdminReplaceFile re-uploads either thumbnail or original for an existing wallpaper.
+func (s *AppService) AdminReplaceFile(token, id, uploadType, filePath string) error {
+	ext := strings.ToLower(filepath.Ext(filePath))
+	var data []byte
+	var ct string
+	var err error
+
+	if uploadType == "thumbnail" {
+		data, ct, err = generateUploadThumbnailBytes(filePath)
+	} else {
+		data, err = os.ReadFile(filePath)
+		ctMap := map[string]string{
+			".mp4": "video/mp4", ".webm": "video/webm",
+			".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+			".webp": "image/webp", ".gif": "image/gif",
+		}
+		ct = ctMap[ext]
+		if ct == "" {
+			ct = "application/octet-stream"
+		}
+	}
+	if err != nil {
+		return err
+	}
+	_, err = adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=%s", adminAPIBase, id, uploadType), token, ct, bytes.NewReader(data), int64(len(data)))
+	return err
+}
+
+// AdminPatchWallpaper sends a PATCH request with arbitrary JSON body.
+func (s *AppService) AdminPatchWallpaper(token, id, body string) error {
+	_, err := adminDo("PATCH", fmt.Sprintf("%s/api/admin/wallpapers/%s", adminAPIBase, id), token, "application/json", strings.NewReader(body), int64(len(body)))
+	return err
+}
+
+// AdminDeleteWallpaper deletes a wallpaper and purges R2 assets.
+func (s *AppService) AdminDeleteWallpaper(token, id string) error {
+	_, err := adminDo("DELETE", fmt.Sprintf("%s/api/admin/wallpapers/%s?purge=true", adminAPIBase, id), token, "", nil, -1)
+	return err
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -210,36 +211,165 @@ func TestVideoMidSec_ZeroDuration(t *testing.T) {
 	}
 }
 
-func TestPreprocessVideo_CacheHit(t *testing.T) {
-	// Pre-create the expected output file so PreprocessVideo skips ffmpeg.
+// hasTool reports whether a CLI tool is on PATH.
+func hasTool(name string) bool {
+	_, err := exec.LookPath(name)
+	return err == nil
+}
+
+// makeTestVideo encodes a tiny valid mp4 at path using ffmpeg's lavfi source.
+func makeTestVideo(t *testing.T, path string, w, h int) {
+	t.Helper()
+	cmd := exec.Command("ffmpeg",
+		"-v", "error",
+		"-f", "lavfi",
+		"-i", fmt.Sprintf("testsrc=duration=1:size=%dx%d:rate=10", w, h),
+		"-c:v", "libx264", "-pix_fmt", "yuv420p",
+		"-movflags", "+faststart",
+		"-y", path,
+	)
+	ConfigureBackgroundCommand(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Skipf("could not create test video with ffmpeg: %v", err)
+	}
+}
+
+func TestIsPlayableVideo_BadFiles(t *testing.T) {
+	if !hasTool("ffprobe") {
+		t.Skip("ffprobe not available")
+	}
+	dir := t.TempDir()
+
+	if IsPlayableVideo(filepath.Join(dir, "missing.mp4")) {
+		t.Error("IsPlayableVideo(missing) = true, want false")
+	}
+
+	empty := filepath.Join(dir, "empty.mp4")
+	if err := os.WriteFile(empty, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if IsPlayableVideo(empty) {
+		t.Error("IsPlayableVideo(empty) = true, want false")
+	}
+
+	// Truncated/corrupt mp4 — no moov atom. This is exactly the stale-cache file
+	// that previously caused ffmpeg exit 0xfffffffe and mpv exit 2.
+	corrupt := filepath.Join(dir, "corrupt.mp4")
+	if err := os.WriteFile(corrupt, []byte("not a real moov mp4 payload"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if IsPlayableVideo(corrupt) {
+		t.Error("IsPlayableVideo(corrupt) = true, want false")
+	}
+}
+
+func TestIsPlayableVideo_Good(t *testing.T) {
+	if !hasTool("ffmpeg") || !hasTool("ffprobe") {
+		t.Skip("ffmpeg/ffprobe not available")
+	}
+	good := filepath.Join(t.TempDir(), "good.mp4")
+	makeTestVideo(t, good, 320, 240)
+	if !IsPlayableVideo(good) {
+		t.Error("IsPlayableVideo(freshly encoded mp4) = false, want true")
+	}
+}
+
+func TestExtractVideoFrame_ErrorCarriesReason(t *testing.T) {
+	if !hasTool("ffmpeg") {
+		t.Skip("ffmpeg not available")
+	}
+	_, err := ExtractVideoFrame(filepath.Join(t.TempDir(), "missing.mp4"), 320, 240)
+	if err == nil {
+		t.Fatal("ExtractVideoFrame(missing) expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "ffmpeg frame extract") {
+		t.Errorf("error should mention 'ffmpeg frame extract', got: %v", err)
+	}
+}
+
+func TestClassifyMpvExit(t *testing.T) {
+	// Run real processes that exit with specific codes so we get genuine
+	// *exec.ExitError values, then assert classifyMpvExit's interpretation.
+	run := func(code int) error {
+		cmd := exec.Command("cmd", "/c", "exit", strconv.Itoa(code))
+		ConfigureBackgroundCommand(cmd)
+		return cmd.Run()
+	}
+
+	// Exit 1 = init/bad-option, exit 2 = unplayable file: both non-recoverable.
+	for _, code := range []int{1, 2} {
+		gotCode, _, recoverable := classifyMpvExit(run(code))
+		if gotCode != code {
+			t.Errorf("classifyMpvExit(exit %d): code = %d, want %d", code, gotCode, code)
+		}
+		if recoverable {
+			t.Errorf("classifyMpvExit(exit %d): recoverable = true, want false", code)
+		}
+	}
+
+	// An unexpected code (e.g. 3) is treated as a transient crash → recoverable.
+	if _, _, recoverable := classifyMpvExit(run(3)); !recoverable {
+		t.Error("classifyMpvExit(exit 3): recoverable = false, want true (retry transient crash)")
+	}
+
+	// A non-ExitError (spawn failure) is not recoverable.
+	spawnErr := exec.Command("definitely-not-a-real-binary-xyz").Run()
+	if _, _, recoverable := classifyMpvExit(spawnErr); recoverable {
+		t.Error("classifyMpvExit(spawn failure): recoverable = true, want false")
+	}
+}
+
+func TestPreprocessVideo_ValidCacheHit(t *testing.T) {
+	if !hasTool("ffmpeg") || !hasTool("ffprobe") {
+		t.Skip("ffmpeg/ffprobe not available")
+	}
 	tmpDir := filepath.Join(os.TempDir(), "livepaper")
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 
-	const (
-		w    = 1920
-		h    = 1080
-		base = "cachetest"
-	)
+	const w, h, base = 320, 240, "cachetest_valid"
 	cachedPath := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
-	f, err := os.Create(cachedPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	f.Close()
+	makeTestVideo(t, cachedPath, w, h)
 	t.Cleanup(func() { os.Remove(cachedPath) })
 
-	// src just needs the right base name; the file itself need not exist
-	// because PreprocessVideo checks the cache output path first.
+	// src does NOT exist: a cache miss would force an encode that fails, so a
+	// successful no-error return proves the valid cache was reused.
 	srcPath := filepath.Join(t.TempDir(), base+".mp4")
-
 	out, err := PreprocessVideo(srcPath, w, h)
 	if err != nil {
 		t.Fatalf("PreprocessVideo() error = %v", err)
 	}
 	if out != cachedPath {
 		t.Errorf("PreprocessVideo() = %q, want %q", out, cachedPath)
+	}
+}
+
+func TestPreprocessVideo_StaleCacheRejected(t *testing.T) {
+	if !hasTool("ffprobe") {
+		t.Skip("ffprobe not available (cannot validate cache)")
+	}
+	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	const w, h, base = 320, 240, "cachetest_stale"
+	cachedPath := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
+	// Corrupt cache (no moov atom), as left by an interrupted encode.
+	if err := os.WriteFile(cachedPath, []byte("corrupt not a video"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Remove(cachedPath) })
+
+	// src missing → a re-encode (which a stale cache must trigger) fails.
+	srcPath := filepath.Join(t.TempDir(), base+".mp4")
+	_, err := PreprocessVideo(srcPath, w, h)
+	if err == nil {
+		t.Fatal("PreprocessVideo() reused stale cache, expected re-encode error")
+	}
+	if !strings.Contains(err.Error(), "ffmpeg") {
+		t.Errorf("error should mention ffmpeg (re-encode attempt), got: %v", err)
 	}
 }
 

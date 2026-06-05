@@ -1,22 +1,24 @@
 package wallpaper
 
 import (
-	"fmt"
 	"image"
 	"os"
 
 	"github.com/rwcarlsen/goexif/exif"
 )
 
+// getOrientation reads the EXIF orientation tag, returning 1 (no rotation) when
+// the image has no EXIF block or the tag is absent/unreadable. This is a
+// best-effort, non-fatal read: most images (PNG, WebP, screenshots, generated
+// JPEGs) legitimately carry no EXIF, so failures are expected and stay silent.
 func getOrientation(file *os.File) int {
 	exifData, err := exif.Decode(file)
 	if err != nil {
-		fmt.Println("Warning: Could not extract EXIF data:", err)
-	} else {
-		if data, err := exifData.Get(exif.Orientation); err == nil {
-			if val, err := data.Int(0); err == nil {
-				return val
-			}
+		return 1
+	}
+	if data, err := exifData.Get(exif.Orientation); err == nil {
+		if val, err := data.Int(0); err == nil {
+			return val
 		}
 	}
 	return 1

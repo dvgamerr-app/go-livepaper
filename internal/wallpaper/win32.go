@@ -29,6 +29,7 @@ var (
 	setLayeredWindowAttributesW = user32.NewProc("SetLayeredWindowAttributes")
 	loadCursorW                 = user32.NewProc("LoadCursorW")
 
-	getModuleHandleW = kernel32.NewProc("GetModuleHandleW")
-	postMessageW     = user32.NewProc("PostMessageW")
+	getModuleHandleW   = kernel32.NewProc("GetModuleHandleW")
+	postMessageW       = user32.NewProc("PostMessageW")
+	sendNotifyMessageW = user32.NewProc("SendNotifyMessageW")
 )

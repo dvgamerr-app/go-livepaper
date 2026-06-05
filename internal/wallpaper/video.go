@@ -2,11 +2,11 @@ package wallpaper
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
-	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -124,8 +124,15 @@ func PreprocessVideo(src string, w, h int) (string, error) {
 	out := filepath.Join(tmpDir, fmt.Sprintf("%s_%dx%d.mp4", base, w, h))
 
 	if _, err := os.Stat(out); err == nil {
-		log.Printf("video cache: %s", out)
-		return out, nil
+		if IsPlayableVideo(out) {
+			log.Printf("video cache: %s", out)
+			return out, nil
+		}
+		// Stale cache: an earlier encode was interrupted/killed and left a
+		// truncated (no moov atom) or zero-byte file. Reusing it makes both
+		// ffmpeg frame extraction and mpv playback fail. Discard and re-encode.
+		log.Printf("video cache invalid, re-encoding: %s", out)
+		os.Remove(out)
 	}
 
 	log.Printf("transcoding %s → %dx%d ...", filepath.Base(src), w, h)
@@ -155,6 +162,38 @@ func PreprocessVideo(src string, w, h int) (string, error) {
 	return out, nil
 }
 
+// IsPlayableVideo reports whether path is a decodable video file: it must exist,
+// be non-empty, and expose a positive container duration via ffprobe. A
+// truncated or interrupted encode (missing moov atom) or a zero-byte file fails
+// this check, letting callers re-encode instead of handing a corrupt file to
+// mpv/ffmpeg (which would otherwise fail with ffmpeg exit 0xfffffffe / mpv exit 2).
+//
+// If ffprobe itself cannot be found, the probe is skipped and the file is assumed
+// playable (only the size guard applies) so a tool-less setup does not wrongly
+// reject otherwise-valid cached files.
+func IsPlayableVideo(path string) bool {
+	fi, err := os.Stat(path)
+	if err != nil || fi.Size() == 0 {
+		return false
+	}
+	cmd := exec.Command("ffprobe",
+		"-v", "error",
+		"-show_entries", "format=duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		path,
+	)
+	ConfigureBackgroundCommand(cmd)
+	out, err := cmd.Output()
+	if err != nil {
+		if errors.Is(err, exec.ErrNotFound) {
+			return true // ffprobe missing — can't prove it's bad, don't block
+		}
+		return false // non-zero exit = invalid/corrupt input
+	}
+	d, perr := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
+	return perr == nil && d > 0
+}
+
 // ExtractVideoFrame extracts a single frame from the middle of the video,
 // scaled and center-cropped to the given dimensions. Returns image.Image.
 func ExtractVideoFrame(path string, w, h int) (image.Image, error) {
@@ -173,9 +212,22 @@ func ExtractVideoFrame(path string, w, h int) (image.Image, error) {
 		"-",
 	)
 	ConfigureBackgroundCommand(cmd)
-	cmd.Stderr = io.Discard
+	// Capture stderr so a failure carries ffmpeg's reason (e.g. "moov atom not
+	// found") instead of a bare exit status that hides the root cause.
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	out, err := cmd.Output()
-	if err != nil || len(out) == 0 {
+	if err == nil && len(out) == 0 {
+		err = errors.New("no frame produced")
+	}
+	if err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if i := strings.LastIndexByte(msg, '\n'); i >= 0 {
+			msg = strings.TrimSpace(msg[i+1:]) // keep only ffmpeg's final line
+		}
+		if msg != "" {
+			return nil, fmt.Errorf("ffmpeg frame extract: %w (%s)", err, msg)
+		}
 		return nil, fmt.Errorf("ffmpeg frame extract: %w", err)
 	}
 	img, _, err := image.Decode(bytes.NewReader(out))
@@ -221,6 +273,30 @@ func fadeInWindow(hwnd uintptr) {
 
 // ── Internal ──────────────────────────────────────────────────────────────────
 
+// classifyMpvExit interprets an mpv process exit error against mpv's documented
+// exit codes. `recoverable` reports whether restarting mpv with the same file
+// and arguments could plausibly succeed.
+//
+//	1 = mpv failed to initialize (invalid option / no usable video output)
+//	2 = the file could not be played (corrupt, unsupported, or missing)
+//
+// Both are permanent for an unchanged file+args, so neither is recoverable —
+// retrying would just spin. (The previous code mislabeled 2 as "bad arguments".)
+func classifyMpvExit(err error) (code int, msg string, recoverable bool) {
+	var ee *exec.ExitError
+	if !errors.As(err, &ee) {
+		return -1, "mpv did not start (binary missing or spawn failed)", false
+	}
+	switch ee.ExitCode() {
+	case 1:
+		return 1, "mpv failed to initialize — invalid option or no usable video output", false
+	case 2:
+		return 2, "mpv could not play the file — corrupt, unsupported, or missing", false
+	default:
+		return ee.ExitCode(), "mpv exited unexpectedly", true
+	}
+}
+
 // spawnMpv runs mpv in a loop (crash-recovery). Exits cleanly when stop is
 // closed (typically from stopSession → cmd.Process.Kill → cmd.Run returns).
 func spawnMpv(videoPath string, hwnd uintptr, stop <-chan struct{}) {
@@ -231,6 +307,14 @@ func spawnMpv(videoPath string, hwnd uintptr, stop <-chan struct{}) {
 	sessionPipes = append(sessionPipes, pipe)
 	extra := append([]string(nil), extraMpvArgs...)
 	sessionMu.Unlock()
+
+	// mpv runs with --no-terminal and therefore prints nothing to stderr, so a
+	// bad file would otherwise loop forever exiting with status 2 and no reason.
+	// Validate once up front and bail with a clear, actionable message instead.
+	if !IsPlayableVideo(videoPath) {
+		log.Printf("mpv: skipping %q — not a playable video (corrupt, zero-byte, or missing); re-encode required", videoPath)
+		return
+	}
 
 	for {
 		select {
@@ -254,15 +338,17 @@ func spawnMpv(videoPath string, hwnd uintptr, stop <-chan struct{}) {
 		cmd := exec.Command("mpv", mpvArgs...)
 		ConfigureBackgroundCommand(cmd)
 
+		// Capture mpv stderr so we can log the reason for any unexpected exit.
+		var stderrBuf bytes.Buffer
+		cmd.Stderr = &stderrBuf
+
 		sessionMu.Lock()
 		sessionCmds = append(sessionCmds, cmd)
 		sessionMu.Unlock()
 
-		if err := cmd.Run(); err != nil {
-			log.Printf("mpv exited: %v", err)
-		}
+		runErr := cmd.Run()
 
-		// Remove from tracking list after exit.
+		// Remove from tracking list as soon as the process has exited.
 		sessionMu.Lock()
 		for i, c := range sessionCmds {
 			if c == cmd {
@@ -271,5 +357,35 @@ func spawnMpv(videoPath string, hwnd uintptr, stop <-chan struct{}) {
 			}
 		}
 		sessionMu.Unlock()
+
+		// A stop request kills mpv (exit status 1 on Windows). Check stop before
+		// classifying so a normal teardown does not log a spurious failure.
+		select {
+		case <-stop:
+			return
+		default:
+		}
+
+		if runErr == nil {
+			return // clean exit (e.g. mpv quit) — nothing to recover
+		}
+
+		code, msg, recoverable := classifyMpvExit(runErr)
+		if stderr := strings.TrimSpace(stderrBuf.String()); stderr != "" {
+			log.Printf("mpv exited (code %d): %s\n%s", code, msg, stderr)
+		} else {
+			log.Printf("mpv exited (code %d): %s", code, msg)
+		}
+		if !recoverable {
+			return
+		}
+
+		// Brief pause before restarting to avoid a tight CPU-spinning loop on
+		// repeated transient crashes (e.g. renderer hiccup).
+		select {
+		case <-stop:
+			return
+		case <-time.After(time.Second):
+		}
 	}
 }
