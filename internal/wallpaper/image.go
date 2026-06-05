@@ -104,15 +104,15 @@ func CleanTempDir() error {
 		return fmt.Errorf("failed to read temp directory: %w", err)
 	}
 
-	var lastErr error
 	for _, entry := range dirEntries {
 		if err := os.RemoveAll(filepath.Join(tempDir, entry.Name())); err != nil {
-			// On Windows a file open by the browser or mpv cannot be deleted yet.
-			// Log and continue so the rest of the directory is still cleaned up.
-			fmt.Printf("Warning: could not remove temp file %s (in use?): %v\n", entry.Name(), err)
-			lastErr = err
+			// On Windows a file held open by the browser or mpv cannot be
+			// removed until the handle is released. Skip and continue so the
+			// rest of the directory is still cleaned up; the file will be
+			// removed on the next cleanup call or after the process exits.
+			fmt.Printf("Warning: skipping temp file %s (in use): %v\n", entry.Name(), err)
 		}
 	}
 
-	return lastErr
+	return nil
 }
