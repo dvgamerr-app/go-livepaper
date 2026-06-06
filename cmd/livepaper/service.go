@@ -418,6 +418,20 @@ func (s *AppService) BrowseFile() string {
 	return result
 }
 
+func (s *AppService) BrowseFiles() string {
+	results, err := s.app.Dialog.OpenFile().
+		SetTitle("Select Wallpapers or Videos").
+		AddFilter("All Media", "*.jpg;*.jpeg;*.png;*.bmp;*.webp;*.gif;*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v").
+		AddFilter("Images", "*.jpg;*.jpeg;*.png;*.bmp;*.webp;*.gif").
+		AddFilter("Videos", "*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v").
+		PromptForMultipleSelection()
+	if err != nil || len(results) == 0 {
+		return "[]"
+	}
+	b, _ := json.Marshal(results)
+	return string(b)
+}
+
 func (s *AppService) IsVideoFile(filePath string) bool {
 	return wp.IsVideoFile(filePath)
 }
@@ -947,7 +961,8 @@ func adminDo(method, url, token, contentType string, body io.Reader, contentLeng
 func (s *AppService) AdminListWallpapers(token string) string {
 	data, err := adminDo("GET", adminAPIBase+"/api/admin/wallpapers", token, "", nil, -1)
 	if err != nil {
-		return `{"error":"` + err.Error() + `"}`
+		b, _ := json.Marshal(map[string]string{"error": err.Error()})
+		return string(b)
 	}
 	return string(data)
 }

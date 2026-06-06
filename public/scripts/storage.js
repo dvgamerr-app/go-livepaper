@@ -1,6 +1,6 @@
 // Storage (Admin): wallpaper list, upload, delete.
 
-import { lp, call } from '/scripts/store.js'
+import { lp, call, API_BASE } from '/scripts/store.js'
 import { status, escapeHtml } from '/scripts/ui.js'
 
 // ── Load and render ────────────────────────────────────────────────────────────
@@ -11,8 +11,10 @@ export async function loadStorageWallpapers() {
   if (!tbody) return
   tbody.innerHTML = '<tr><td colspan="6" class="storage-empty">Loading…</td></tr>'
   try {
-    const raw = await call('AdminListWallpapers', lp.fn.getToken?.() || '')
-    const data = JSON.parse(raw)
+    const res = await fetch(`${API_BASE}/api/admin/wallpapers`, {
+      headers: lp.fn.authHeaders?.() || {},
+    })
+    const data = await res.json()
     if (data.error) throw new Error(data.error)
     lp.storageItems = Array.isArray(data) ? data : (data.items || [])
   } catch (e) {
@@ -92,7 +94,11 @@ async function onStorageAction(action, id, data) {
   if (action === 'toggle-publish') {
     const nowPublished = data.published === 'true'
     try {
-      await call('AdminPatchWallpaper', lp.fn.getToken?.() || '', id, JSON.stringify({ isPublished: !nowPublished }))
+      await fetch(`${API_BASE}/api/admin/wallpapers/${id}`, {
+        method: 'PATCH',
+        headers: { ...lp.fn.authHeaders?.(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublished: !nowPublished }),
+      })
       const it = lp.storageItems.find((i) => i.id === id)
       if (it) it.isPublished = !nowPublished
       renderStorageTable()
@@ -110,27 +116,189 @@ async function onStorageAction(action, id, data) {
 
 // ── Upload modal ───────────────────────────────────────────────────────────────
 
+// lp._uploadFiles: Array<{ filePath, title, thumb, thumbLoading, status, errorMsg }>
+
+const SVG_X = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+
 function openUploadModal() {
-  lp._uploadFilePath = ''
-  lp._uploadTier = 'free'
+  lp._uploadFiles = []
   const modal = document.getElementById('storage-upload-modal')
-  const fileLabel = document.getElementById('upload-file-label')
-  const thumbWrap = document.getElementById('upload-thumb-wrap')
-  const titleInput = document.getElementById('upload-title')
   const progressWrap = document.getElementById('upload-progress-wrap')
   const submitBtn = document.getElementById('upload-submit-btn')
-  if (fileLabel) fileLabel.textContent = 'Click to choose file…'
-  if (thumbWrap) thumbWrap.classList.add('hidden')
-  if (titleInput) titleInput.value = ''
+  const cancelBtn = document.getElementById('upload-cancel-btn')
   if (progressWrap) progressWrap.classList.add('hidden')
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Upload' }
-  document.querySelectorAll('.upload-tier-btn').forEach((b) => b.classList.toggle('active', b.dataset.tier === 'free'))
+  if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.textContent = 'Cancel' }
+  renderUploadFileList()
   if (modal) modal.hidden = false
 }
 
 function closeUploadModal() {
   const modal = document.getElementById('storage-upload-modal')
   if (modal) modal.hidden = true
+  lp._uploadFiles = []
+}
+
+function renderUploadFileList() {
+  const list = document.getElementById('upload-file-list')
+  const submitBtn = document.getElementById('upload-submit-btn')
+  if (!list) return
+  if (!lp._uploadFiles.length) {
+    list.classList.add('hidden')
+    if (submitBtn) submitBtn.disabled = true
+    return
+  }
+  list.classList.remove('hidden')
+  list.innerHTML = ''
+  lp._uploadFiles.forEach((file, idx) => {
+    const item = document.createElement('div')
+    item.className = 'upload-file-item'
+    item.dataset.index = idx
+    const thumbHtml = file.thumbLoading
+      ? '<div class="upload-thumb-skel"></div>'
+      : file.thumb
+        ? `<img src="${file.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:4px">`
+        : '<div style="width:100%;height:100%;background:#1a1a1d;border-radius:4px"></div>'
+    const statusClass = file.status === 'uploading' ? 'uploading'
+      : file.status === 'done' ? 'done'
+      : file.status === 'error' ? 'error' : ''
+    const statusText = file.status === 'uploading' ? 'Uploading…'
+      : file.status === 'done' ? 'Done'
+      : file.status === 'error' ? (file.errorMsg || 'Failed')
+      : ''
+    const canRemove = file.status === 'idle' || file.status === 'error'
+    item.innerHTML = `
+      <div class="upload-item-thumb">${thumbHtml}</div>
+      <div class="upload-item-info">
+        <input type="text" class="upload-item-title" value="${escapeHtml(file.title)}" placeholder="Title…" ${file.status !== 'idle' ? 'disabled' : ''}>
+        <span class="upload-item-status ${statusClass}">${escapeHtml(statusText)}</span>
+      </div>
+      <button class="upload-item-remove" data-idx="${idx}" ${canRemove ? '' : 'disabled'} title="Remove">${SVG_X}</button>`
+    item.querySelector('.upload-item-title')?.addEventListener('input', (e) => {
+      if (lp._uploadFiles[idx]) lp._uploadFiles[idx].title = e.target.value
+    })
+    item.querySelector('.upload-item-remove')?.addEventListener('click', () => {
+      lp._uploadFiles.splice(idx, 1)
+      renderUploadFileList()
+    })
+    list.appendChild(item)
+  })
+  const hasIdle = lp._uploadFiles.some((f) => f.status === 'idle')
+  if (submitBtn) {
+    submitBtn.disabled = !hasIdle
+    const idleCount = lp._uploadFiles.filter((f) => f.status === 'idle').length
+    submitBtn.textContent = idleCount > 1 ? `Upload ${idleCount} files` : 'Upload'
+  }
+}
+
+function updateFileThumb(idx) {
+  const item = document.querySelector(`.upload-file-item[data-index="${idx}"]`)
+  if (!item) return
+  const thumbCell = item.querySelector('.upload-item-thumb')
+  if (!thumbCell) return
+  const file = lp._uploadFiles[idx]
+  if (!file) return
+  if (file.thumb) {
+    thumbCell.innerHTML = `<img src="${file.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:4px">`
+  } else {
+    thumbCell.innerHTML = '<div style="width:100%;height:100%;background:#1a1a1d;border-radius:4px"></div>'
+  }
+}
+
+function updateFileStatus(idx, s, msg) {
+  if (lp._uploadFiles[idx]) { lp._uploadFiles[idx].status = s; lp._uploadFiles[idx].errorMsg = msg || '' }
+  const item = document.querySelector(`.upload-file-item[data-index="${idx}"]`)
+  if (!item) return
+  const statusEl = item.querySelector('.upload-item-status')
+  const titleEl = item.querySelector('.upload-item-title')
+  const removeBtn = item.querySelector('.upload-item-remove')
+  if (statusEl) {
+    statusEl.className = `upload-item-status ${s === 'uploading' ? 'uploading' : s === 'done' ? 'done' : s === 'error' ? 'error' : ''}`
+    statusEl.textContent = s === 'uploading' ? 'Uploading…' : s === 'done' ? 'Done' : s === 'error' ? (msg || 'Failed') : ''
+  }
+  if (titleEl) titleEl.disabled = s !== 'idle'
+  if (removeBtn) removeBtn.disabled = !(s === 'idle' || s === 'error')
+}
+
+async function addFilesFromBrowse() {
+  let raw
+  try { raw = await call('BrowseFiles') } catch { return }
+  let paths
+  try { paths = JSON.parse(raw) } catch { return }
+  if (!Array.isArray(paths) || !paths.length) return
+
+  for (const filePath of paths) {
+    const label = filePath.replace(/\\/g, '/').split('/').pop()
+    const title = label.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
+    const idx = lp._uploadFiles.length
+    lp._uploadFiles.push({ filePath, title, thumb: null, thumbLoading: true, status: 'idle', errorMsg: '' })
+  }
+  renderUploadFileList()
+
+  // Generate thumbnails async — update each cell as they arrive
+  const startIdx = lp._uploadFiles.length - paths.length
+  for (let i = 0; i < paths.length; i++) {
+    const idx = startIdx + i
+    const file = lp._uploadFiles[idx]
+    if (!file) continue
+    try {
+      const thumb = await call('GetThumbnail', file.filePath)
+      if (lp._uploadFiles[idx]) {
+        lp._uploadFiles[idx].thumb = thumb || null
+        lp._uploadFiles[idx].thumbLoading = false
+        updateFileThumb(idx)
+      }
+    } catch {
+      if (lp._uploadFiles[idx]) {
+        lp._uploadFiles[idx].thumbLoading = false
+        updateFileThumb(idx)
+      }
+    }
+  }
+}
+
+async function doUpload() {
+  const idleFiles = lp._uploadFiles.map((f, idx) => ({ ...f, idx })).filter((f) => f.status === 'idle')
+  if (!idleFiles.length) return
+
+  const progressWrap = document.getElementById('upload-progress-wrap')
+  const progressBar = document.getElementById('upload-progress-bar')
+  const progressLabel = document.getElementById('upload-progress-label')
+  const submitBtn = document.getElementById('upload-submit-btn')
+  const cancelBtn = document.getElementById('upload-cancel-btn')
+
+  if (progressWrap) progressWrap.classList.remove('hidden')
+  if (submitBtn) submitBtn.disabled = true
+  if (cancelBtn) cancelBtn.disabled = true
+
+  let done = 0
+  for (const file of idleFiles) {
+    if (progressLabel) progressLabel.textContent = `Uploading ${done + 1} of ${idleFiles.length}…`
+    if (progressBar) progressBar.style.width = `${Math.round((done / idleFiles.length) * 100)}%`
+    updateFileStatus(file.idx, 'uploading')
+    try {
+      await call('AdminUploadWallpaper', lp.fn.getToken?.() || '', file.filePath, file.title.trim() || 'Untitled', 'premium')
+      updateFileStatus(file.idx, 'done')
+      done++
+    } catch (e) {
+      updateFileStatus(file.idx, 'error', String(e).replace(/^Error:\s*/i, '').substring(0, 60))
+    }
+  }
+
+  if (progressBar) progressBar.style.width = '100%'
+  if (progressLabel) progressLabel.textContent = `${done} of ${idleFiles.length} uploaded`
+  if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.textContent = done > 0 ? 'Close' : 'Cancel' }
+
+  const stillIdle = lp._uploadFiles.some((f) => f.status === 'idle')
+  if (submitBtn && stillIdle) submitBtn.disabled = false
+
+  if (done === idleFiles.length) {
+    setTimeout(() => {
+      closeUploadModal()
+      status('Uploaded!', 'success')
+      setTimeout(() => { status(''); loadStorageWallpapers() }, 1200)
+    }, 800)
+  }
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────────
@@ -144,7 +312,10 @@ document.getElementById('storage-delete-confirm')?.addEventListener('click', asy
   btn.disabled = true; btn.textContent = 'Deleting…'
   document.getElementById('storage-delete-modal').hidden = true
   try {
-    await call('AdminDeleteWallpaper', lp.fn.getToken?.() || '', id)
+    await fetch(`${API_BASE}/api/admin/wallpapers/${id}?purge=true`, {
+      method: 'DELETE',
+      headers: lp.fn.authHeaders?.() || {},
+    })
     lp.storageItems = lp.storageItems.filter((i) => i.id !== id)
     renderStorageTable()
     const countEl = document.getElementById('storage-count')
@@ -153,71 +324,11 @@ document.getElementById('storage-delete-confirm')?.addEventListener('click', asy
   } catch (err) { status(`Delete failed: ${err}`, 'error') }
   btn.disabled = false; btn.textContent = 'Delete permanently'
 })
+
 document.getElementById('storage-upload-btn')?.addEventListener('click', openUploadModal)
 document.getElementById('upload-cancel-btn')?.addEventListener('click', closeUploadModal)
-document.getElementById('upload-file-zone')?.addEventListener('click', async () => {
-  let filePath
-  try { filePath = await call('BrowseFile') } catch { return }
-  if (!filePath) return
-  lp._uploadFilePath = filePath
-  const label = filePath.replace(/\\/g, '/').split('/').pop()
-  const fileLabel = document.getElementById('upload-file-label')
-  if (fileLabel) fileLabel.textContent = label
-  const titleInput = document.getElementById('upload-title')
-  if (titleInput && !titleInput.value) {
-    titleInput.value = label.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
-  }
-  const thumbWrap = document.getElementById('upload-thumb-wrap')
-  const thumbImg = document.getElementById('upload-thumb-img')
-  const fileInfo = document.getElementById('upload-file-info')
-  const thumbNote = document.getElementById('upload-thumb-note')
-  const submitBtn = document.getElementById('upload-submit-btn')
-  if (thumbNote) thumbNote.textContent = 'Generating thumbnail…'
-  if (thumbWrap) { thumbWrap.classList.remove('hidden'); thumbWrap.classList.add('flex') }
-  try {
-    const thumb = await call('GetThumbnail', filePath)
-    if (thumbImg && thumb) thumbImg.src = thumb
-    if (fileInfo) fileInfo.textContent = label
-    const isVid = await call('IsVideoFile', filePath)
-    if (thumbNote) thumbNote.textContent = isVid ? 'GIF thumbnail will be generated for upload' : 'JPEG thumbnail generated'
-  } catch { if (thumbNote) thumbNote.textContent = 'Preview unavailable' }
-  if (submitBtn) submitBtn.disabled = false
-})
-document.querySelectorAll('.upload-tier-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    lp._uploadTier = btn.dataset.tier
-    document.querySelectorAll('.upload-tier-btn').forEach((b) => b.classList.toggle('active', b === btn))
-  })
-})
-document.getElementById('upload-submit-btn')?.addEventListener('click', async () => {
-  if (!lp._uploadFilePath) return
-  const title = document.getElementById('upload-title')?.value?.trim() || 'Untitled'
-  const submitBtn = document.getElementById('upload-submit-btn')
-  const progressWrap = document.getElementById('upload-progress-wrap')
-  const progressBar = document.getElementById('upload-progress-bar')
-  const progressLabel = document.getElementById('upload-progress-label')
-  submitBtn.disabled = true
-  if (progressWrap) progressWrap.classList.remove('hidden')
-  const steps = ['Generating thumbnail…', 'Creating entry…', 'Uploading thumbnail…', 'Uploading original…', 'Done!']
-  let step = 0
-  const tick = () => {
-    if (progressBar) progressBar.style.width = `${Math.round((step / (steps.length - 1)) * 100)}%`
-    if (progressLabel) progressLabel.textContent = steps[step] || '…'
-    step++
-  }
-  tick()
-  try {
-    await call('AdminUploadWallpaper', lp.fn.getToken?.() || '', lp._uploadFilePath, title, lp._uploadTier)
-    tick(); tick(); tick(); tick()
-    closeUploadModal()
-    status('Uploaded!', 'success')
-    setTimeout(() => { status(''); loadStorageWallpapers() }, 1200)
-  } catch (e) {
-    if (progressLabel) progressLabel.textContent = `Failed: ${e}`
-    if (progressBar) progressBar.style.background = 'var(--lp-danger)'
-    submitBtn.disabled = false
-  }
-})
+document.getElementById('upload-file-zone')?.addEventListener('click', addFilesFromBrowse)
+document.getElementById('upload-submit-btn')?.addEventListener('click', doUpload)
 
 // Register in cross-module registry
 lp.fn.loadStorageWallpapers = loadStorageWallpapers

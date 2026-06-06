@@ -66,9 +66,8 @@ export const lp = {
   _pvOverlay: null,
   _pvKeyHandler: null,
 
-  // Upload modal state
-  _uploadFilePath: '',
-  _uploadTier: 'free',
+  // Upload modal state (multi-file)
+  _uploadFiles: [],
 
   // Settings hotkey capture
   capturing: null,
