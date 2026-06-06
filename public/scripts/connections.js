@@ -1,6 +1,6 @@
 // Connections: GitHub integration, star status.
 
-import { lp, call, API_BASE, GH_REPO_DEFAULT } from '/scripts/store.js'
+import { lp, call, apiFetch, GH_REPO_DEFAULT } from '/scripts/store.js'
 import { status } from '/scripts/ui.js'
 
 // ── Show connections panel ─────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ document.getElementById('conn-recheck-btn')?.addEventListener('click', async () 
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…' }
   lp.fn.invalidateConnections?.()
   try {
-    const r = await (await fetch(`${API_BASE}/api/billing/star-check`, { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
+    const r = await (await apiFetch('/api/billing/star-check', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
     const starStatus = document.getElementById('conn-star-status')
     const starBtn2 = document.getElementById('conn-star-btn')
     if (starStatus) {

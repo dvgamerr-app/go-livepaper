@@ -1,15 +1,19 @@
 // Billing: subscription status, pricing UI, star discount.
 
-import { lp, call, API_BASE, GH_REPO_DEFAULT } from '/scripts/store.js'
+import { lp, call, apiFetch, GH_REPO_DEFAULT } from '/scripts/store.js'
 import { status, track, escapeHtml } from '/scripts/ui.js'
 
 // ── Connections shared data ────────────────────────────────────────────────────
 
 export function prefetchConnections() {
   if (!lp.fn.getToken?.() || lp.connectionsPromise) return
-  lp.connectionsPromise = fetch(`${API_BASE}/api/connections`, { headers: lp.fn.authHeaders?.() || {} })
-    .then((r) => r.json())
+  lp.connectionsPromise = apiFetch('/api/connections', { headers: lp.fn.authHeaders?.() || {} })
+    .then((r) => (r.ok ? r.json() : null))
     .catch(() => null)
+    .then((data) => {
+      if (!data) lp.connectionsPromise = null
+      return data
+    })
 }
 
 export function invalidateConnections() {
@@ -29,15 +33,32 @@ export async function onShowBilling() {
     return
   }
   signin.classList.add('hidden'); signin.classList.remove('flex')
+  if (lp.currentUser?.subscriptionTier === 'admin') {
+    renderBillingAdmin()
+    return
+  }
   let st = null
   try {
-    st = await (await fetch(`${API_BASE}/api/billing/status`, { headers: lp.fn.authHeaders?.() || {} })).json()
+    const res = await apiFetch('/api/billing/status', { headers: lp.fn.authHeaders?.() || {} })
+    st = res.ok ? await res.json() : null
   } catch (_) {}
   if (st && st.tier === 'premium' && st.subscription && st.subscription.status === 'active') {
     renderBillingActive(st.subscription)
   } else {
     await renderBillingFree()
   }
+}
+
+export function renderBillingAdmin() {
+  document.getElementById('billing-active').classList.remove('hidden')
+  document.getElementById('billing-free').classList.add('hidden')
+  const planEl = document.getElementById('billing-active-plan')
+  if (planEl) {
+    const infoLine = planEl.closest('p')
+    if (infoLine) infoLine.textContent = 'Admin access'
+  }
+  document.getElementById('billing-active-starred')?.classList.add('hidden')
+  document.getElementById('billing-cancel-btn')?.classList.add('hidden')
 }
 
 export function renderBillingActive(sub) {
@@ -116,7 +137,7 @@ document.getElementById('billing-star-btn')?.addEventListener('click', () => {
 document.getElementById('billing-recheck-btn')?.addEventListener('click', async () => {
   invalidateConnections()
   try {
-    const r = await (await fetch(`${API_BASE}/api/billing/star-check`, { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
+    const r = await (await apiFetch('/api/billing/star-check', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
     if (lp.billingPricing) { lp.billingPricing.starred = r.starred; lp.billingPricing.priceUsd = r.priceUsd }
     applyPricingUI(lp.billingPricing || { priceUsd: r.priceUsd, baseUsd: 9, starred: r.starred })
     status(r.starred ? 'Star confirmed — $4/mo unlocked' : 'No star found yet — star the repo first', r.starred ? 'success' : 'error')
@@ -126,7 +147,7 @@ document.getElementById('billing-subscribe-btn')?.addEventListener('click', asyn
   const btn = document.getElementById('billing-subscribe-btn')
   btn.disabled = true
   try {
-    const r = await (await fetch(`${API_BASE}/api/billing/subscribe`, { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
+    const r = await (await apiFetch('/api/billing/subscribe', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
     if (r && r.ok) {
       status('Community access active', 'success')
       track('subscribe', { priceUsd: r.subscription && r.subscription.priceUsd })
@@ -138,7 +159,7 @@ document.getElementById('billing-subscribe-btn')?.addEventListener('click', asyn
 })
 document.getElementById('billing-cancel-btn')?.addEventListener('click', async () => {
   try {
-    await fetch(`${API_BASE}/api/billing/cancel`, { method: 'POST', headers: lp.fn.authHeaders?.() || {} })
+    await apiFetch('/api/billing/cancel', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })
     status('Subscription canceled', '')
     await lp.fn.checkSession?.()
     onShowBilling()

@@ -80,7 +80,17 @@ export const lp = {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-export const API_BASE = 'https://sso.dvgamerr.app'
+export const API_BASE_KEY = 'livepaper_api_base'
+
+function resolveApiBase() {
+  try {
+    const override = localStorage.getItem(API_BASE_KEY)?.trim().replace(/\/+$/, '')
+    if (override) return override
+  } catch (_) {}
+  return 'https://sso.dvgamerr.app'
+}
+
+export const API_BASE = resolveApiBase()
 export const TOKEN_KEY = 'livepaper_auth_token'
 export const USER_KEY = 'livepaper_auth_user'
 export const DOWNLOADED_KEY = 'livepaper_downloaded_v1'
@@ -91,3 +101,13 @@ export const IDB_NAME = 'livepaper'
 export const IDB_VERSION = 2
 export const STORE_RECENT = 'recent'
 export const RECENT_LIMIT = 50
+
+export async function apiFetch(path, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(`${API_BASE}${path}`, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}

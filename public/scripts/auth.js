@@ -23,7 +23,8 @@ export function authHeaders() {
 }
 
 export function isPremium() {
-  return !!(lp.currentUser && lp.currentUser.subscriptionTier === 'premium')
+  const t = lp.currentUser?.subscriptionTier
+  return t === 'premium' || t === 'admin'
 }
 
 // ── Gravatar ──────────────────────────────────────────────────────────────────
@@ -48,7 +49,10 @@ export async function updateProfileUI(user) {
   if (user) {
     setCachedUser(user)
     if (nameEl) nameEl.textContent = user.name || user.email
-    if (tierEl) tierEl.textContent = user.subscriptionTier === 'premium' ? 'Premium' : 'Free'
+    if (tierEl) {
+      const t = user.subscriptionTier
+      tierEl.textContent = t === 'admin' ? 'Admin' : t === 'premium' ? 'Premium' : 'Free'
+    }
     if (loginBtn) loginBtn.classList.add('hidden')
     if (chevron) chevron.classList.remove('hidden')
     if (avatarImg && user.email) {
@@ -226,6 +230,19 @@ async function startSSO(provider, { onSuccess, onFail, silent = false } = {}) {
 document.getElementById('sso-github')?.addEventListener('click', () => startSSO('github'))
 document.getElementById('sso-google')?.addEventListener('click', () => startSSO('google'))
 
+// ── Admin UI ──────────────────────────────────────────────────────────────────
+
+export function refreshAdminUI() {
+  const isAdmin = lp.currentUser?.subscriptionTier === 'admin'
+  const section = document.getElementById('admin-sidebar-section')
+  const items = document.getElementById('admin-nav-items')
+  if (section) section.classList.toggle('hidden', !isAdmin)
+  if (items) {
+    items.classList.toggle('hidden', !isAdmin)
+    items.classList.toggle('flex', isAdmin)
+  }
+}
+
 // ── Auth-dependent UI refresh ─────────────────────────────────────────────────
 
 export function refreshAuthDependentUI() {
@@ -255,4 +272,5 @@ lp.fn.updateProfileUI = updateProfileUI
 lp.fn.checkSession = checkSession
 lp.fn.openLoginModal = openLoginModal
 lp.fn.refreshAuthDependentUI = refreshAuthDependentUI
+lp.fn.refreshAdminUI = refreshAdminUI
 lp.fn.startSSO = startSSO
