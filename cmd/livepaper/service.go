@@ -932,7 +932,7 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 
 const adminAPIBase = "https://sso.dvgamerr.app"
 
-func adminDo(method, url, token, contentType string, body io.Reader, contentLength int64) ([]byte, error) {
+func adminDo(method, url, token, contentType string, body io.Reader, contentLength int64, timeout ...time.Duration) ([]byte, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
@@ -944,7 +944,11 @@ func adminDo(method, url, token, contentType string, body io.Reader, contentLeng
 	if contentLength >= 0 {
 		req.ContentLength = contentLength
 	}
-	client := &http.Client{Timeout: 600 * time.Second}
+	t := 30 * time.Second
+	if len(timeout) > 0 {
+		t = timeout[0]
+	}
+	client := &http.Client{Timeout: t}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -1061,7 +1065,7 @@ func (s *AppService) AdminUploadWallpaper(token, filePath, title, tier string) (
 	id := meta.ID
 
 	// Step 2: upload thumbnail
-	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=thumbnail", adminAPIBase, id), token, thumbCT, bytes.NewReader(thumbBytes), int64(len(thumbBytes))); err != nil {
+	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=thumbnail", adminAPIBase, id), token, thumbCT, bytes.NewReader(thumbBytes), int64(len(thumbBytes)), 600*time.Second); err != nil {
 		return id, fmt.Errorf("thumbnail upload: %w", err)
 	}
 
@@ -1072,7 +1076,7 @@ func (s *AppService) AdminUploadWallpaper(token, filePath, title, tier string) (
 	}
 	defer f.Close()
 	fi, _ := f.Stat()
-	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=original", adminAPIBase, id), token, origCT, f, fi.Size()); err != nil {
+	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=original", adminAPIBase, id), token, origCT, f, fi.Size(), 600*time.Second); err != nil {
 		return id, fmt.Errorf("original upload: %w", err)
 	}
 
@@ -1103,7 +1107,7 @@ func (s *AppService) AdminReplaceFile(token, id, uploadType, filePath string) er
 	if err != nil {
 		return err
 	}
-	_, err = adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=%s", adminAPIBase, id, uploadType), token, ct, bytes.NewReader(data), int64(len(data)))
+	_, err = adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=%s", adminAPIBase, id, uploadType), token, ct, bytes.NewReader(data), int64(len(data)), 600*time.Second)
 	return err
 }
 

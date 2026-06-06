@@ -23,10 +23,13 @@ import { Plus } from '@lucide/astro'
       <button
         id="upload-file-zone"
         type="button"
-        class="border-lp-border flex w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed bg-white/[0.02] py-4 transition-colors hover:border-lp-accent hover:bg-lp-accent-soft"
+        class="border-lp-border flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed bg-white/[0.02] py-5 transition-colors hover:border-lp-accent hover:bg-lp-accent-soft active:scale-[0.99]"
       >
-        <Plus size={18} stroke-width={1.5} class="text-lp-muted" aria-hidden="true" />
-        <span class="text-lp-muted text-[11px]">Click to add files</span>
+        <Plus size={20} stroke-width={1.5} class="text-lp-muted" aria-hidden="true" />
+        <div class="flex flex-col items-center gap-0.5">
+          <span class="text-lp-text zone-label text-[12px] font-medium">Click to add files</span>
+          <span class="text-lp-muted text-[10px]">Images &amp; videos — PNG, JPG, MP4, MKV…</span>
+        </div>
       </button>
     </div>
 

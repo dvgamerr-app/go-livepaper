@@ -14,6 +14,7 @@ export async function loadStorageWallpapers() {
     const res = await fetch(`${API_BASE}/api/admin/wallpapers`, {
       headers: lp.fn.authHeaders?.() || {},
     })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     if (data.error) throw new Error(data.error)
     lp.storageItems = Array.isArray(data) ? data : (data.items || [])
@@ -94,11 +95,7 @@ async function onStorageAction(action, id, data) {
   if (action === 'toggle-publish') {
     const nowPublished = data.published === 'true'
     try {
-      await fetch(`${API_BASE}/api/admin/wallpapers/${id}`, {
-        method: 'PATCH',
-        headers: { ...lp.fn.authHeaders?.(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublished: !nowPublished }),
-      })
+      await call('AdminPatchWallpaper', lp.fn.getToken?.() || '', id, JSON.stringify({ isPublished: !nowPublished }))
       const it = lp.storageItems.find((i) => i.id === id)
       if (it) it.isPublished = !nowPublished
       renderStorageTable()
@@ -118,7 +115,9 @@ async function onStorageAction(action, id, data) {
 
 // lp._uploadFiles: Array<{ filePath, title, thumb, thumbLoading, status, errorMsg }>
 
-const SVG_X = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+const SVG_X     = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+const SVG_CHECK = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+const SVG_WARN  = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
 
 function openUploadModal() {
   lp._uploadFiles = []
@@ -139,13 +138,22 @@ function closeUploadModal() {
   lp._uploadFiles = []
 }
 
+function statusHtml(s, msg) {
+  if (s === 'uploading') return 'Uploading…'
+  if (s === 'done')      return `${SVG_CHECK} Uploaded`
+  if (s === 'error')     return `${SVG_WARN} ${escapeHtml(msg || 'Failed')}`
+  return ''
+}
+
 function renderUploadFileList() {
   const list = document.getElementById('upload-file-list')
   const submitBtn = document.getElementById('upload-submit-btn')
+  const zoneLabel = document.querySelector('#upload-file-zone .zone-label')
   if (!list) return
+  if (zoneLabel) zoneLabel.textContent = lp._uploadFiles.length ? 'Add more files…' : 'Click to add files'
   if (!lp._uploadFiles.length) {
     list.classList.add('hidden')
-    if (submitBtn) submitBtn.disabled = true
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Upload' }
     return
   }
   list.classList.remove('hidden')
@@ -162,16 +170,12 @@ function renderUploadFileList() {
     const statusClass = file.status === 'uploading' ? 'uploading'
       : file.status === 'done' ? 'done'
       : file.status === 'error' ? 'error' : ''
-    const statusText = file.status === 'uploading' ? 'Uploading…'
-      : file.status === 'done' ? 'Done'
-      : file.status === 'error' ? (file.errorMsg || 'Failed')
-      : ''
     const canRemove = file.status === 'idle' || file.status === 'error'
     item.innerHTML = `
       <div class="upload-item-thumb">${thumbHtml}</div>
       <div class="upload-item-info">
         <input type="text" class="upload-item-title" value="${escapeHtml(file.title)}" placeholder="Title…" ${file.status !== 'idle' ? 'disabled' : ''}>
-        <span class="upload-item-status ${statusClass}">${escapeHtml(statusText)}</span>
+        <span class="upload-item-status ${statusClass}">${statusHtml(file.status, file.errorMsg)}</span>
       </div>
       <button class="upload-item-remove" data-idx="${idx}" ${canRemove ? '' : 'disabled'} title="Remove">${SVG_X}</button>`
     item.querySelector('.upload-item-title')?.addEventListener('input', (e) => {
@@ -183,11 +187,10 @@ function renderUploadFileList() {
     })
     list.appendChild(item)
   })
-  const hasIdle = lp._uploadFiles.some((f) => f.status === 'idle')
+  const idleCount = lp._uploadFiles.filter((f) => f.status === 'idle').length
   if (submitBtn) {
-    submitBtn.disabled = !hasIdle
-    const idleCount = lp._uploadFiles.filter((f) => f.status === 'idle').length
-    submitBtn.textContent = idleCount > 1 ? `Upload ${idleCount} files` : 'Upload'
+    submitBtn.disabled = idleCount === 0
+    submitBtn.textContent = idleCount > 0 ? `Upload ${idleCount} file${idleCount !== 1 ? 's' : ''}` : 'Upload'
   }
 }
 
@@ -214,7 +217,7 @@ function updateFileStatus(idx, s, msg) {
   const removeBtn = item.querySelector('.upload-item-remove')
   if (statusEl) {
     statusEl.className = `upload-item-status ${s === 'uploading' ? 'uploading' : s === 'done' ? 'done' : s === 'error' ? 'error' : ''}`
-    statusEl.textContent = s === 'uploading' ? 'Uploading…' : s === 'done' ? 'Done' : s === 'error' ? (msg || 'Failed') : ''
+    statusEl.innerHTML = statusHtml(s, msg)
   }
   if (titleEl) titleEl.disabled = s !== 'idle'
   if (removeBtn) removeBtn.disabled = !(s === 'idle' || s === 'error')
@@ -312,10 +315,7 @@ document.getElementById('storage-delete-confirm')?.addEventListener('click', asy
   btn.disabled = true; btn.textContent = 'Deleting…'
   document.getElementById('storage-delete-modal').hidden = true
   try {
-    await fetch(`${API_BASE}/api/admin/wallpapers/${id}?purge=true`, {
-      method: 'DELETE',
-      headers: lp.fn.authHeaders?.() || {},
-    })
+    await call('AdminDeleteWallpaper', lp.fn.getToken?.() || '', id)
     lp.storageItems = lp.storageItems.filter((i) => i.id !== id)
     renderStorageTable()
     const countEl = document.getElementById('storage-count')

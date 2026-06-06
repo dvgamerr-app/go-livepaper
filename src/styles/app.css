@@ -1933,7 +1933,9 @@ html[data-window-theme='solid'] body {
   border-radius: 8px;
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--lp-border);
+  transition: border-color 0.15s;
 }
+.upload-file-item:hover { border-color: var(--lp-border-strong); }
 
 .upload-item-thumb {
   width: 80px;
@@ -1994,10 +1996,18 @@ html[data-window-theme='solid'] body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
-.upload-item-status.uploading { color: var(--lp-accent); }
+.upload-item-status.uploading { color: var(--lp-accent); animation: status-pulse 1.5s ease-in-out infinite; }
 .upload-item-status.done      { color: var(--lp-success); }
 .upload-item-status.error     { color: var(--lp-danger); }
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
 
 .upload-item-remove {
   width: 22px;
