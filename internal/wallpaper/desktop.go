@@ -17,6 +17,7 @@ const (
 	wsExToolwindow          uintptr = 0x00000080
 	wsExNoActivate          uintptr = 0x08000000
 	wsExLayered             uintptr = 0x00080000
+	wsExTransparent         uintptr = 0x00000020
 	wsExNoRedirectionBitmap uintptr = 0x00200000
 	lwaAlpha                uintptr = 0x2
 	wmSysCommand                    = 0x0112
@@ -238,7 +239,7 @@ func CreateDesktopWindow(screenX, screenY, w, h int) (hwnd, progmanRef uintptr, 
 	setWindowPosW.Call(hwnd, 0, 0, 0, 0, 0,
 		swpNoMove|swpNoSize|swpNoZOrder|swpFrameChanged|swpNoActivate)
 
-	setWindowLongPtrW.Call(hwnd, gwlpExStyle, wsExLayered)
+	setWindowLongPtrW.Call(hwnd, gwlpExStyle, wsExLayered|wsExTransparent)
 	setLayeredWindowAttributesW.Call(hwnd, 0, 0, lwaAlpha) // start invisible; fadeInWindow animates to 255
 
 	shellViewClass, _ := windows.UTF16PtrFromString("SHELLDLL_DefView")

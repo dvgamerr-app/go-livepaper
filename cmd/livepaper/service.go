@@ -932,6 +932,10 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 
 const adminAPIBase = "https://sso.dvgamerr.app"
 
+var adminTransport = &http.Transport{
+	DisableKeepAlives: true,
+}
+
 func adminDo(method, url, token, contentType string, body io.Reader, contentLength int64, timeout ...time.Duration) ([]byte, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
@@ -948,7 +952,7 @@ func adminDo(method, url, token, contentType string, body io.Reader, contentLeng
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
-	client := &http.Client{Timeout: t}
+	client := &http.Client{Timeout: t, Transport: adminTransport}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

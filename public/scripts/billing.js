@@ -70,6 +70,7 @@ export function renderBillingActive(sub) {
     ? new Date(sub.currentPeriodEnd).toLocaleDateString()
     : '—'
   document.getElementById('billing-active-starred').classList.toggle('hidden', !sub.starred)
+  document.getElementById('billing-cancel-btn')?.classList.remove('hidden')
 }
 
 export async function renderBillingFree() {
@@ -158,12 +159,17 @@ document.getElementById('billing-subscribe-btn')?.addEventListener('click', asyn
   btn.disabled = false
 })
 document.getElementById('billing-cancel-btn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('billing-cancel-btn')
+  btn.disabled = true
   try {
-    await apiFetch('/api/billing/cancel', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })
-    status('Subscription canceled', '')
+    const res = await apiFetch('/api/billing/cancel', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })
+    const r = await res.json()
+    if (!res.ok || !r.ok) throw new Error(r.error || 'cancel failed')
+    status('Subscription canceled', 'success', 3000)
     await lp.fn.checkSession?.()
-    onShowBilling()
-  } catch (_) { status('Cancel failed', 'error') }
+    await onShowBilling()
+  } catch (_) { status('Cancel failed', 'error', 3000) }
+  btn.disabled = false
 })
 
 // Register in cross-module registry

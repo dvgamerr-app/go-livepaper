@@ -19,7 +19,7 @@ export async function loadStorageWallpapers() {
     if (data.error) throw new Error(data.error)
     lp.storageItems = Array.isArray(data) ? data : (data.items || [])
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="storage-empty text-lp-danger">Failed: ${escapeHtml(String(e))}</td></tr>`
+    tbody.innerHTML = `<tr><td colspan="4" class="storage-empty text-lp-danger">Failed: ${escapeHtml(String(e))}</td></tr>`
     return
   }
   renderStorageTable()
@@ -30,14 +30,12 @@ export function renderStorageTable() {
   const tbody = document.getElementById('storage-tbody')
   if (!tbody) return
   if (!lp.storageItems.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="storage-empty">No wallpapers yet. Click Upload to add one.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="4" class="storage-empty">No wallpapers yet. Click Upload to add one.</td></tr>'
     return
   }
   tbody.innerHTML = ''
   lp.storageItems.forEach((it) => {
-    const isVideo = (it.contentType || '').startsWith('video/')
     const isPublished = it.isPublished !== false
-    const tier = it.tier || 'free'
     const shortId = it.id ? it.id.slice(0, 16) + '…' : '—'
     const tr = document.createElement('tr')
     tr.innerHTML = `
@@ -46,12 +44,9 @@ export function renderStorageTable() {
         <div class="storage-title" title="${escapeHtml(it.title || '')}">${escapeHtml(it.title || 'Untitled')}</div>
         <div class="storage-id">${escapeHtml(shortId)}</div>
       </td>
-      <td><span class="tier-badge ${tier}">${tier}</span></td>
-      <td class="storage-type">${isVideo ? '🎬 Video' : '🖼 Image'}</td>
       <td>
-        <span class="storage-status ${isPublished ? 'published' : 'hidden'}">
+        <span class="storage-status ${isPublished ? 'published' : 'hidden'}" title="${isPublished ? 'Live' : 'Hidden'}">
           <svg width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>
-          ${isPublished ? 'Live' : 'Hidden'}
         </span>
       </td>
       <td>
@@ -72,10 +67,64 @@ export function renderStorageTable() {
           </button>
         </div>
       </td>`
+    const titleEl = tr.querySelector('.storage-title')
+    titleEl.addEventListener('click', () => startEditTitle(titleEl, it.id, it))
     tr.querySelectorAll('[data-action]').forEach((btn) => {
       btn.addEventListener('click', () => onStorageAction(btn.dataset.action, btn.dataset.id, btn.dataset))
     })
     tbody.appendChild(tr)
+  })
+}
+
+function startEditTitle(el, id, it) {
+  const originalTitle = it.title || ''
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.value = originalTitle
+  input.className = 'storage-title-input'
+  el.replaceWith(input)
+  input.focus()
+  input.select()
+
+  let done = false
+
+  const restore = () => {
+    const div = document.createElement('div')
+    div.className = 'storage-title'
+    div.title = it.title || ''
+    div.textContent = it.title || 'Untitled'
+    div.addEventListener('click', () => startEditTitle(div, id, it))
+    input.replaceWith(div)
+  }
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      done = true
+      it.title = originalTitle
+      restore()
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      input.blur()
+    }
+  })
+
+  input.addEventListener('blur', async () => {
+    if (done) return
+    done = true
+    const newTitle = input.value.trim()
+    if (newTitle && newTitle !== originalTitle) {
+      try {
+        await call('AdminPatchWallpaper', lp.fn.getToken?.() || '', id, JSON.stringify({ title: newTitle }))
+        it.title = newTitle
+        status('Saved', 'success')
+        setTimeout(() => status(''), 1200)
+      } catch (e) {
+        it.title = originalTitle
+        status(`Failed: ${e}`, 'error')
+      }
+    }
+    restore()
   })
 }
 
