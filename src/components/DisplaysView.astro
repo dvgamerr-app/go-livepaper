@@ -5,7 +5,9 @@ import { ChevronLeft, ChevronRight } from '@lucide/astro'
 
 <div id="main-content" class="flex flex-1 flex-col overflow-hidden">
   <!-- Top bar -->
-  <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6">
+  <div
+    class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
+  >
     <div class="wails-drag">
       <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Display Workspace</h1>
       <p class="text-lp-muted mt-px text-[11px]" id="monitor-subtitle">Loading displays…</p>
@@ -20,14 +22,21 @@ import { ChevronLeft, ChevronRight } from '@lucide/astro'
       aria-hidden="true"
       class="pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-[0.08]"
       style="background-image:linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to top, black, transparent)"
-    ></div>
-    <div class="absolute inset-0 flex items-center justify-center overflow-hidden p-12" id="content">
+    >
+    </div>
+    <div
+      class="absolute inset-0 flex items-center justify-center overflow-hidden p-12"
+      id="content"
+    >
       <div class="loading">Loading monitors…</div>
     </div>
   </div>
 
   <!-- Recent Wallpaper gallery -->
-  <div class="gallery-section wails-no-drag border-lp-border flex flex-col overflow-hidden border-t" id="gallery-section">
+  <div
+    class="gallery-section wails-no-drag border-lp-border flex flex-col overflow-hidden border-t"
+    id="gallery-section"
+  >
     <div class="flex shrink-0 items-center justify-between px-6 py-2.5">
       <div>
         <h2 class="text-[13px] font-semibold tracking-tight">Recent Wallpaper</h2>

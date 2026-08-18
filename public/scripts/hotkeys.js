@@ -7,7 +7,10 @@ import { status } from '/scripts/ui.js'
 
 async function cycleGallery(dir) {
   const localItems = lp.galleryItems.filter((it) => !it.remote)
-  if (!localItems.length) { status('No local wallpapers to cycle', 'error'); return }
+  if (!localItems.length) {
+    status('No local wallpapers to cycle', 'error')
+    return
+  }
   lp.galleryCursor = (lp.galleryCursor + dir + localItems.length) % localItems.length
   const entry = localItems[lp.galleryCursor]
   const target = lp.monitors.find((m) => m.primary) || lp.monitors[0]
@@ -20,12 +23,20 @@ async function cycleGallery(dir) {
       cached = await call('PreprocessVideo', entry.filePath, target.width, target.height)
     }
     await call('ApplyWallpapers', [{ monitorIndex: target.index, filePath: cached }])
-    lp.state[target.index] = { filePath: entry.filePath, cachedPath: cached, isVideo: entry.isVideo, ready: true, thumbnail: entry.thumbnail }
+    lp.state[target.index] = {
+      filePath: entry.filePath,
+      cachedPath: cached,
+      isVideo: entry.isVideo,
+      ready: true,
+      thumbnail: entry.thumbnail,
+    }
     lp.fn.commitApply?.()
     lp.fn.applyThumb?.(target.index, entry.thumbnail, entry.filePath, entry.isVideo)
     lp.fn.refreshApply?.()
     status('Applied!', 'success', 2000)
-  } catch (e) { status(`Failed: ${e}`, 'error') }
+  } catch (e) {
+    status(`Failed: ${e}`, 'error')
+  }
 }
 
 // ── Wails events ───────────────────────────────────────────────────────────────
@@ -60,8 +71,13 @@ async function updateGPUStats() {
   }
 }
 
-setTimeout(() => { updateGPUStats(); setInterval(updateGPUStats, 2000) }, 1500)
+setTimeout(() => {
+  updateGPUStats()
+  setInterval(updateGPUStats, 2000)
+}, 1500)
 
 // ── Telemetry on apply ─────────────────────────────────────────────────────────
 
-document.getElementById('apply-btn')?.addEventListener('click', () => lp.fn.track?.('wallpaper_applied'))
+document
+  .getElementById('apply-btn')
+  ?.addEventListener('click', () => lp.fn.track?.('wallpaper_applied'))

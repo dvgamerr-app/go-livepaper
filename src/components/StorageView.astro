@@ -3,14 +3,16 @@ import { Upload } from '@lucide/astro'
 ---
 
 <div id="storage-panel" class="hidden flex-1 flex-col overflow-hidden">
-  <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6">
+  <div
+    class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
+  >
     <div class="wails-drag">
       <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Storage</h1>
       <p class="text-lp-muted mt-px text-[11px]" id="storage-count">Loading wallpapers…</p>
     </div>
     <button
       id="storage-upload-btn"
-      class="wails-no-drag inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-lp-accent px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#4a9fff]"
+      class="wails-no-drag bg-lp-accent inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#4a9fff]"
     >
       <Upload size={13} strokeWidth={2.5} aria-hidden="true" />
       Upload

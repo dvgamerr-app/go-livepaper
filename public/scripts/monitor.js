@@ -11,8 +11,14 @@ import { pruneAndRefresh, refreshGallery } from '/scripts/gallery.js'
 function getMonitorViewport() {
   const cs = getComputedStyle(contentEl)
   return {
-    width: Math.max(1, Math.floor(contentEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))),
-    height: Math.max(1, Math.floor(contentEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))),
+    width: Math.max(
+      1,
+      Math.floor(contentEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight))
+    ),
+    height: Math.max(
+      1,
+      Math.floor(contentEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))
+    ),
     labelHeight: 28,
   }
 }
@@ -85,7 +91,9 @@ function buildStage(layout) {
       if (s?.filePath) call('CancelEncoding', s.filePath)
     }
     cancelBtn?.addEventListener('click', doCancel)
-    cancelBtn?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') doCancel(e) })
+    cancelBtn?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') doCancel(e)
+    })
 
     block.addEventListener('dragover', (e) => {
       if (!e.dataTransfer.types.includes('application/livepaper')) return
@@ -104,15 +112,30 @@ function buildStage(layout) {
       const s = lp.state[m.index]
       if (s?.isVideo && !s?.ready) return
       let entry
-      try { entry = JSON.parse(e.dataTransfer.getData('application/livepaper')) } catch { return }
+      try {
+        entry = JSON.parse(e.dataTransfer.getData('application/livepaper'))
+      } catch {
+        return
+      }
 
-      if (entry.remote) { await lp.fn.applyRemoteEntryToMonitor?.(entry, m); return }
+      if (entry.remote) {
+        await lp.fn.applyRemoteEntryToMonitor?.(entry, m)
+        return
+      }
 
       const isNonGifVideo = entry.isVideo && extOf(entry.filePath) !== 'gif'
-      const resolutionMismatch = isNonGifVideo && (!entry.width || !entry.height || entry.width !== m.width || entry.height !== m.height)
+      const resolutionMismatch =
+        isNonGifVideo &&
+        (!entry.width || !entry.height || entry.width !== m.width || entry.height !== m.height)
 
       if (resolutionMismatch) {
-        lp.state[m.index] = { filePath: entry.filePath, cachedPath: entry.filePath, isVideo: true, ready: false, thumbnail: entry.thumbnail }
+        lp.state[m.index] = {
+          filePath: entry.filePath,
+          cachedPath: entry.filePath,
+          isVideo: true,
+          ready: false,
+          thumbnail: entry.thumbnail,
+        }
         applyThumb(m.index, entry.thumbnail, entry.filePath, true)
         lp.pendingChanges = true
         refreshApply()
@@ -121,13 +144,23 @@ function buildStage(layout) {
           const cached = await call('PreprocessVideo', entry.filePath, m.width, m.height)
           lp.state[m.index].cachedPath = cached
           lp.state[m.index].ready = true
-        } catch (_) { cancelEncode(m.index); status('Encoding cancelled.', ''); return }
+        } catch (_) {
+          cancelEncode(m.index)
+          status('Encoding cancelled.', '')
+          return
+        }
         setEncoding(m.index, false, 100)
         refreshApply()
         return
       }
 
-      lp.state[m.index] = { filePath: entry.filePath, cachedPath: entry.cachedPath || entry.filePath, isVideo: entry.isVideo, ready: true, thumbnail: entry.thumbnail }
+      lp.state[m.index] = {
+        filePath: entry.filePath,
+        cachedPath: entry.cachedPath || entry.filePath,
+        isVideo: entry.isVideo,
+        ready: true,
+        thumbnail: entry.thumbnail,
+      }
       applyThumb(m.index, entry.thumbnail, entry.filePath, entry.isVideo)
       lp.pendingChanges = true
       refreshApply()
@@ -157,9 +190,16 @@ function reapplyStageState() {
     if (bd) {
       const e = extOf(s.filePath)
       bd.style.display = 'inline'
-      if (s.isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
-      else if (e === 'gif') { bd.textContent = 'GIF'; bd.className = 'mon-badge gif' }
-      else { bd.textContent = 'IMG'; bd.className = 'mon-badge image' }
+      if (s.isVideo && e !== 'gif') {
+        bd.textContent = 'VIDEO'
+        bd.className = 'mon-badge video'
+      } else if (e === 'gif') {
+        bd.textContent = 'GIF'
+        bd.className = 'mon-badge gif'
+      } else {
+        bd.textContent = 'IMG'
+        bd.className = 'mon-badge image'
+      }
     }
     if (s.isVideo && !s.ready) setEncoding(idx, true, 0)
   }
@@ -167,7 +207,12 @@ function reapplyStageState() {
 
 export async function renderMonitorLayout() {
   const viewport = getMonitorViewport()
-  const layout = await call('GetMonitorLayout', viewport.width, viewport.height, viewport.labelHeight)
+  const layout = await call(
+    'GetMonitorLayout',
+    viewport.width,
+    viewport.height,
+    viewport.labelHeight
+  )
   lp.monitors = layout?.monitors || []
   contentEl.innerHTML = ''
   contentEl.appendChild(buildStage(layout))
@@ -186,9 +231,16 @@ export function applyThumb(idx, thumbnail, filePath, isVideo) {
   const bd = document.getElementById(`bd-${idx}`)
   if (bd) {
     bd.style.display = 'inline'
-    if (isVideo && e !== 'gif') { bd.textContent = 'VIDEO'; bd.className = 'mon-badge video' }
-    else if (e === 'gif') { bd.textContent = 'GIF'; bd.className = 'mon-badge gif' }
-    else { bd.textContent = 'IMG'; bd.className = 'mon-badge image' }
+    if (isVideo && e !== 'gif') {
+      bd.textContent = 'VIDEO'
+      bd.className = 'mon-badge video'
+    } else if (e === 'gif') {
+      bd.textContent = 'GIF'
+      bd.className = 'mon-badge gif'
+    } else {
+      bd.textContent = 'IMG'
+      bd.className = 'mon-badge image'
+    }
   }
 }
 
@@ -212,7 +264,10 @@ export function resetMonitor(idx) {
   const bg = document.getElementById(`bg-${idx}`)
   if (bg) bg.src = ''
   const bd = document.getElementById(`bd-${idx}`)
-  if (bd) { bd.style.display = 'none'; bd.className = 'mon-badge' }
+  if (bd) {
+    bd.style.display = 'none'
+    bd.className = 'mon-badge'
+  }
   const mp = document.getElementById(`mp-${idx}`)
   if (mp) mp.classList.remove('active')
 }
@@ -226,10 +281,16 @@ export function cancelEncode(idx) {
   } else {
     resetMonitor(idx)
   }
-  const allIdxs = new Set([...Object.keys(lp.state).map(Number), ...Object.keys(lp.lastAppliedState).map(Number)])
+  const allIdxs = new Set([
+    ...Object.keys(lp.state).map(Number),
+    ...Object.keys(lp.lastAppliedState).map(Number),
+  ])
   let dirty = false
   for (const i of allIdxs) {
-    if ((lp.state[i]?.filePath || '') !== (lp.lastAppliedState[i]?.filePath || '')) { dirty = true; break }
+    if ((lp.state[i]?.filePath || '') !== (lp.lastAppliedState[i]?.filePath || '')) {
+      dirty = true
+      break
+    }
   }
   lp.pendingChanges = dirty
   refreshApply()
@@ -240,7 +301,12 @@ export function cancelEncode(idx) {
 export async function browse(idx, w, h) {
   status('Opening file picker…')
   let filePath
-  try { filePath = await call('BrowseFile') } catch (e) { status(`Dialog error: ${e}`, 'error'); return }
+  try {
+    filePath = await call('BrowseFile')
+  } catch (e) {
+    status(`Dialog error: ${e}`, 'error')
+    return
+  }
   status('')
   if (!filePath) return
 
@@ -258,7 +324,11 @@ export async function browse(idx, w, h) {
       const cached = await call('PreprocessVideo', filePath, w, h)
       lp.state[idx].cachedPath = cached
       lp.state[idx].ready = true
-    } catch (e) { cancelEncode(idx); status('Encoding cancelled.', ''); return }
+    } catch (e) {
+      cancelEncode(idx)
+      status('Encoding cancelled.', '')
+      return
+    }
     setEncoding(idx, false, 100)
     refreshApply()
   }
@@ -297,18 +367,30 @@ applyBtn.addEventListener('click', async () => {
     status('Applied!', 'success')
     commitApply()
     await Promise.all(
-      Object.entries(lp.state).filter(([, s]) => s.filePath).map(([idx, s]) => {
-        const monitor = lp.monitors.find((mo) => mo.index === parseInt(idx))
-        const w = monitor?.width || 0
-        const h = monitor?.height || 0
-        const isNonGifVideo = s.isVideo && extOf(s.filePath) !== 'gif'
-        const fileKey = isNonGifVideo ? `${s.filePath}|${w}x${h}` : s.filePath
-        return upsertRecent({ fileKey, filePath: s.filePath, cachedPath: s.cachedPath, isVideo: s.isVideo, thumbnail: s.thumbnail, width: w, height: h }).catch(() => {})
-      })
+      Object.entries(lp.state)
+        .filter(([, s]) => s.filePath)
+        .map(([idx, s]) => {
+          const monitor = lp.monitors.find((mo) => mo.index === parseInt(idx))
+          const w = monitor?.width || 0
+          const h = monitor?.height || 0
+          const isNonGifVideo = s.isVideo && extOf(s.filePath) !== 'gif'
+          const fileKey = isNonGifVideo ? `${s.filePath}|${w}x${h}` : s.filePath
+          return upsertRecent({
+            fileKey,
+            filePath: s.filePath,
+            cachedPath: s.cachedPath,
+            isVideo: s.isVideo,
+            thumbnail: s.thumbnail,
+            width: w,
+            height: h,
+          }).catch(() => {})
+        })
     )
     pruneAndRefresh()
     setTimeout(() => status(''), 3000)
-  } catch (e) { status(`Failed: ${e}`, 'error') }
+  } catch (e) {
+    status(`Failed: ${e}`, 'error')
+  }
   refreshApply()
 })
 
@@ -335,7 +417,9 @@ document.getElementById('clean-btn')?.addEventListener('click', async () => {
     await lp.fn.clearRecentHistory?.()
     await refreshGallery()
     status('Cache cleaned', 'success', 3000)
-  } catch (e) { status(`Clean failed: ${e}`, 'error') }
+  } catch (e) {
+    status(`Clean failed: ${e}`, 'error')
+  }
   btn.disabled = false
 })
 
@@ -343,7 +427,9 @@ resetBtn.addEventListener('click', async () => {
   resetBtn.disabled = true
   applyBtn.disabled = true
   status('Resetting…')
-  try { await call('ResetWallpapers') } catch (_) {}
+  try {
+    await call('ResetWallpapers')
+  } catch (_) {}
   for (const idx of Object.keys(lp.state).map(Number)) resetMonitor(idx)
   lp.lastAppliedState = {}
   lp.pendingChanges = false
@@ -359,14 +445,17 @@ resetBtn.addEventListener('click', async () => {
 export function saveState() {
   const saved = {}
   for (const [idx, s] of Object.entries(lp.state)) {
-    if (s.filePath) saved[idx] = { filePath: s.filePath, cachedPath: s.cachedPath, isVideo: s.isVideo }
+    if (s.filePath)
+      saved[idx] = { filePath: s.filePath, cachedPath: s.cachedPath, isVideo: s.isVideo }
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
 }
 
 export async function restoreState() {
   let saved
-  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') } catch (_) {}
+  try {
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+  } catch (_) {}
   if (!saved) return false
 
   for (const [idx, s] of Object.entries(saved)) {
@@ -377,7 +466,12 @@ export async function restoreState() {
     const cachedPath = s.cachedPath || s.filePath
     if (s.isVideo && !(await call('FileExists', cachedPath))) continue
     const mon = lp.monitors.find((m) => m.index === i)
-    const thumbnail = await call('GetMonitorThumbnail', s.filePath, mon?.width || 0, mon?.height || 0)
+    const thumbnail = await call(
+      'GetMonitorThumbnail',
+      s.filePath,
+      mon?.width || 0,
+      mon?.height || 0
+    )
     lp.state[i] = { filePath: s.filePath, cachedPath, isVideo: s.isVideo, ready: true, thumbnail }
     applyThumb(i, thumbnail, s.filePath, s.isVideo)
   }
@@ -398,7 +492,9 @@ export async function autoApply() {
       if (s.filePath) lp.lastAppliedState[parseInt(idx)] = { ...s }
     }
     status('Restored', 'success', 3000)
-  } catch (e) { status(`failed: ${e}`, 'error') }
+  } catch (e) {
+    status(`failed: ${e}`, 'error')
+  }
 }
 
 // ── Resize observer + titlebar buttons ───────────────────────────────────────
@@ -411,9 +507,15 @@ const ro = new ResizeObserver(() => {
   }, 80)
 })
 
-document.getElementById('tb-min')?.addEventListener('click', () => call('WindowMinimise').catch(() => {}))
-document.getElementById('tb-max')?.addEventListener('click', () => call('WindowToggleMaximise').catch(() => {}))
-document.getElementById('tb-close')?.addEventListener('click', () => call('WindowHide').catch(() => {}))
+document
+  .getElementById('tb-min')
+  ?.addEventListener('click', () => call('WindowMinimise').catch(() => {}))
+document
+  .getElementById('tb-max')
+  ?.addEventListener('click', () => call('WindowToggleMaximise').catch(() => {}))
+document
+  .getElementById('tb-close')
+  ?.addEventListener('click', () => call('WindowHide').catch(() => {}))
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -435,11 +537,14 @@ export async function init() {
 
   try {
     const deps = await call('CheckDependencies')
-    const missing = Object.entries(deps).filter(([, ok]) => !ok).map(([k]) => k)
+    const missing = Object.entries(deps)
+      .filter(([, ok]) => !ok)
+      .map(([k]) => k)
     if (missing.length > 0) {
       const warnEl = document.getElementById('dep-warn')
       const msgEl = document.getElementById('dep-warn-msg')
-      if (msgEl) msgEl.innerHTML = `Missing: <strong>${missing.map(escapeHtml).join(', ')}</strong> — video wallpapers won't work. Run <code class="code-inline">scripts\\install-deps.ps1</code> to install.`
+      if (msgEl)
+        msgEl.innerHTML = `Missing: <strong>${missing.map(escapeHtml).join(', ')}</strong> — video wallpapers won't work. Run <code class="code-inline">scripts\\install-deps.ps1</code> to install.`
       if (warnEl) warnEl.style.display = 'flex'
     }
   } catch (_) {}
@@ -447,7 +552,9 @@ export async function init() {
   ro.observe(contentEl)
 
   if (!lp.appSettings) {
-    try { lp.appSettings = await call('GetSettings') } catch (_) {}
+    try {
+      lp.appSettings = await call('GetSettings')
+    } catch (_) {}
   }
   const restoreEnabled = !lp.appSettings || lp.appSettings.restoreLastPlaylist !== false
   const hasRestored = restoreEnabled ? await restoreState() : false

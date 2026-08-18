@@ -28,11 +28,14 @@ export async function onShowBilling() {
   const active = document.getElementById('billing-active')
   if (!signin || !free || !active) return
   if (!lp.fn.getToken?.()) {
-    signin.classList.remove('hidden'); signin.classList.add('flex')
-    free.classList.add('hidden'); active.classList.add('hidden')
+    signin.classList.remove('hidden')
+    signin.classList.add('flex')
+    free.classList.add('hidden')
+    active.classList.add('hidden')
     return
   }
-  signin.classList.add('hidden'); signin.classList.remove('flex')
+  signin.classList.add('hidden')
+  signin.classList.remove('flex')
   if (lp.currentUser?.subscriptionTier === 'admin') {
     renderBillingAdmin()
     return
@@ -64,7 +67,8 @@ export function renderBillingAdmin() {
 export function renderBillingActive(sub) {
   document.getElementById('billing-active').classList.remove('hidden')
   document.getElementById('billing-free').classList.add('hidden')
-  document.getElementById('billing-active-plan').textContent = sub.plan === 'monthly' ? 'Monthly' : sub.plan || 'Monthly'
+  document.getElementById('billing-active-plan').textContent =
+    sub.plan === 'monthly' ? 'Monthly' : sub.plan || 'Monthly'
   document.getElementById('billing-active-price').textContent = `$${sub.priceUsd}`
   document.getElementById('billing-active-renew').textContent = sub.currentPeriodEnd
     ? new Date(sub.currentPeriodEnd).toLocaleDateString()
@@ -109,10 +113,15 @@ export function applyPricingUI(pr) {
     starCard?.classList.remove('border-lp-border', 'bg-lp-surface/40')
     starCard?.classList.add('border-[rgba(52,211,153,0.3)]', 'bg-[rgba(52,211,153,0.07)]')
     if (starIconWrap) {
-      starIconWrap.className = 'grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(52,211,153,0.15)] text-lp-success'
-      starIconWrap.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+      starIconWrap.className =
+        'grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(52,211,153,0.15)] text-lp-success'
+      starIconWrap.innerHTML =
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>'
     }
-    if (starTitle) { starTitle.textContent = 'Starred — $4/mo unlocked'; starTitle.className = 'text-lp-success text-[12.5px] font-semibold' }
+    if (starTitle) {
+      starTitle.textContent = 'Starred — $4/mo unlocked'
+      starTitle.className = 'text-lp-success text-[12.5px] font-semibold'
+    }
     starBtns?.classList.add('hidden')
   } else {
     note.textContent = 'Apply any community wallpaper.'
@@ -120,17 +129,24 @@ export function applyPricingUI(pr) {
     starCard?.classList.add('border-lp-border', 'bg-lp-surface/40')
     starCard?.classList.remove('border-[rgba(52,211,153,0.3)]', 'bg-[rgba(52,211,153,0.07)]')
     if (starIconWrap) {
-      starIconWrap.className = 'grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(250,204,21,0.14)] text-[#facc15]'
-      starIconWrap.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+      starIconWrap.className =
+        'grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[rgba(250,204,21,0.14)] text-[#facc15]'
+      starIconWrap.innerHTML =
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
     }
-    if (starTitle) { starTitle.textContent = 'Star the repo, save $5/mo'; starTitle.className = 'text-lp-text text-[12.5px] font-semibold' }
+    if (starTitle) {
+      starTitle.textContent = 'Star the repo, save $5/mo'
+      starTitle.className = 'text-lp-text text-[12.5px] font-semibold'
+    }
     starBtns?.classList.remove('hidden')
   }
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────────
 
-document.getElementById('billing-signin-btn')?.addEventListener('click', () => lp.fn.openLoginModal?.())
+document
+  .getElementById('billing-signin-btn')
+  ?.addEventListener('click', () => lp.fn.openLoginModal?.())
 document.getElementById('billing-star-btn')?.addEventListener('click', () => {
   const repo = (lp.billingPricing && lp.billingPricing.repo) || GH_REPO_DEFAULT
   call('OpenExternal', `https://github.com/${repo}`).catch(() => {})
@@ -138,37 +154,64 @@ document.getElementById('billing-star-btn')?.addEventListener('click', () => {
 document.getElementById('billing-recheck-btn')?.addEventListener('click', async () => {
   invalidateConnections()
   try {
-    const r = await (await apiFetch('/api/billing/star-check', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
-    if (lp.billingPricing) { lp.billingPricing.starred = r.starred; lp.billingPricing.priceUsd = r.priceUsd }
+    const r = await (
+      await apiFetch('/api/billing/star-check', {
+        method: 'POST',
+        headers: lp.fn.authHeaders?.() || {},
+      })
+    ).json()
+    if (lp.billingPricing) {
+      lp.billingPricing.starred = r.starred
+      lp.billingPricing.priceUsd = r.priceUsd
+    }
     applyPricingUI(lp.billingPricing || { priceUsd: r.priceUsd, baseUsd: 9, starred: r.starred })
-    status(r.starred ? 'Star confirmed — $4/mo unlocked' : 'No star found yet — star the repo first', r.starred ? 'success' : 'error')
-  } catch (_) { status('Could not verify star', 'error') }
+    status(
+      r.starred ? 'Star confirmed — $4/mo unlocked' : 'No star found yet — star the repo first',
+      r.starred ? 'success' : 'error'
+    )
+  } catch (_) {
+    status('Could not verify star', 'error')
+  }
 })
 document.getElementById('billing-subscribe-btn')?.addEventListener('click', async () => {
   const btn = document.getElementById('billing-subscribe-btn')
   btn.disabled = true
   try {
-    const r = await (await apiFetch('/api/billing/subscribe', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })).json()
+    const r = await (
+      await apiFetch('/api/billing/subscribe', {
+        method: 'POST',
+        headers: lp.fn.authHeaders?.() || {},
+      })
+    ).json()
     if (r && r.ok) {
       status('Community access active', 'success')
       track('subscribe', { priceUsd: r.subscription && r.subscription.priceUsd })
       await lp.fn.checkSession?.()
       onShowBilling()
-    } else { status('Subscription failed', 'error') }
-  } catch (_) { status('Subscription failed', 'error') }
+    } else {
+      status('Subscription failed', 'error')
+    }
+  } catch (_) {
+    status('Subscription failed', 'error')
+  }
   btn.disabled = false
 })
 document.getElementById('billing-cancel-btn')?.addEventListener('click', async () => {
   const btn = document.getElementById('billing-cancel-btn')
   btn.disabled = true
   try {
-    const res = await apiFetch('/api/billing/cancel', { method: 'POST', headers: lp.fn.authHeaders?.() || {} })
+    const res = await apiFetch('/api/billing/cancel', {
+      method: 'POST',
+      headers: lp.fn.authHeaders?.() || {},
+    })
     const r = await res.json()
     if (!res.ok || !r.ok) throw new Error(r.error || 'cancel failed')
     status('Subscription canceled', 'success', 3000)
     await lp.fn.checkSession?.()
     await onShowBilling()
-  } catch (_) { status('Cancel failed', 'error', 3000) }
+  } catch (_) {
+    status('Cancel failed', 'error', 3000)
+  }
   btn.disabled = false
 })
 

@@ -17,20 +17,22 @@ export async function loadStorageWallpapers() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     if (data.error) throw new Error(data.error)
-    lp.storageItems = Array.isArray(data) ? data : (data.items || [])
+    lp.storageItems = Array.isArray(data) ? data : data.items || []
   } catch (e) {
     tbody.innerHTML = `<tr><td colspan="4" class="storage-empty text-lp-danger">Failed: ${escapeHtml(String(e))}</td></tr>`
     return
   }
   renderStorageTable()
-  if (countEl) countEl.textContent = `${lp.storageItems.length} wallpaper${lp.storageItems.length !== 1 ? 's' : ''}`
+  if (countEl)
+    countEl.textContent = `${lp.storageItems.length} wallpaper${lp.storageItems.length !== 1 ? 's' : ''}`
 }
 
 export function renderStorageTable() {
   const tbody = document.getElementById('storage-tbody')
   if (!tbody) return
   if (!lp.storageItems.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="storage-empty">No wallpapers yet. Click Upload to add one.</td></tr>'
+    tbody.innerHTML =
+      '<tr><td colspan="4" class="storage-empty">No wallpapers yet. Click Upload to add one.</td></tr>'
     return
   }
   tbody.innerHTML = ''
@@ -58,9 +60,11 @@ export function renderStorageTable() {
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </button>
           <button class="storage-action-btn" title="${isPublished ? 'Hide' : 'Show'}" data-action="toggle-publish" data-id="${escapeHtml(it.id)}" data-published="${isPublished}">
-            ${isPublished
-              ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-              : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'}
+            ${
+              isPublished
+                ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+                : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+            }
           </button>
           <button class="storage-action-btn danger" title="Delete" data-action="delete" data-id="${escapeHtml(it.id)}" data-title="${escapeHtml(it.title || 'Untitled')}">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -70,7 +74,9 @@ export function renderStorageTable() {
     const titleEl = tr.querySelector('.storage-title')
     titleEl.addEventListener('click', () => startEditTitle(titleEl, it.id, it))
     tr.querySelectorAll('[data-action]').forEach((btn) => {
-      btn.addEventListener('click', () => onStorageAction(btn.dataset.action, btn.dataset.id, btn.dataset))
+      btn.addEventListener('click', () =>
+        onStorageAction(btn.dataset.action, btn.dataset.id, btn.dataset)
+      )
     })
     tbody.appendChild(tr)
   })
@@ -115,7 +121,12 @@ function startEditTitle(el, id, it) {
     const newTitle = input.value.trim()
     if (newTitle && newTitle !== originalTitle) {
       try {
-        await call('AdminPatchWallpaper', lp.fn.getToken?.() || '', id, JSON.stringify({ title: newTitle }))
+        await call(
+          'AdminPatchWallpaper',
+          lp.fn.getToken?.() || '',
+          id,
+          JSON.stringify({ title: newTitle })
+        )
         it.title = newTitle
         status('Saved', 'success')
         setTimeout(() => status(''), 1200)
@@ -132,23 +143,39 @@ async function onStorageAction(action, id, data) {
   if (action === 'replace-thumb' || action === 'replace-orig') {
     const uploadType = action === 'replace-thumb' ? 'thumbnail' : 'original'
     let filePath
-    try { filePath = await call('BrowseFile') } catch { return }
+    try {
+      filePath = await call('BrowseFile')
+    } catch {
+      return
+    }
     if (!filePath) return
     status(`Replacing ${uploadType}…`)
     try {
       await call('AdminReplaceFile', lp.fn.getToken?.() || '', id, uploadType, filePath)
       status('Replaced!', 'success')
-      setTimeout(() => { status(''); loadStorageWallpapers() }, 1500)
-    } catch (e) { status(`Failed: ${e}`, 'error') }
+      setTimeout(() => {
+        status('')
+        loadStorageWallpapers()
+      }, 1500)
+    } catch (e) {
+      status(`Failed: ${e}`, 'error')
+    }
   }
   if (action === 'toggle-publish') {
     const nowPublished = data.published === 'true'
     try {
-      await call('AdminPatchWallpaper', lp.fn.getToken?.() || '', id, JSON.stringify({ isPublished: !nowPublished }))
+      await call(
+        'AdminPatchWallpaper',
+        lp.fn.getToken?.() || '',
+        id,
+        JSON.stringify({ isPublished: !nowPublished })
+      )
       const it = lp.storageItems.find((i) => i.id === id)
       if (it) it.isPublished = !nowPublished
       renderStorageTable()
-    } catch (e) { status(`Failed: ${e}`, 'error') }
+    } catch (e) {
+      status(`Failed: ${e}`, 'error')
+    }
   }
   if (action === 'delete') {
     const modal = document.getElementById('storage-delete-modal')
@@ -164,9 +191,9 @@ async function onStorageAction(action, id, data) {
 
 // lp._uploadFiles: Array<{ filePath, title, thumb, thumbLoading, status, errorMsg }>
 
-const SVG_X     = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+const SVG_X = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
 const SVG_CHECK = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
-const SVG_WARN  = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+const SVG_WARN = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
 
 function openUploadModal() {
   lp._uploadFiles = []
@@ -175,8 +202,14 @@ function openUploadModal() {
   const submitBtn = document.getElementById('upload-submit-btn')
   const cancelBtn = document.getElementById('upload-cancel-btn')
   if (progressWrap) progressWrap.classList.add('hidden')
-  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Upload' }
-  if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.textContent = 'Cancel' }
+  if (submitBtn) {
+    submitBtn.disabled = true
+    submitBtn.textContent = 'Upload'
+  }
+  if (cancelBtn) {
+    cancelBtn.disabled = false
+    cancelBtn.textContent = 'Cancel'
+  }
   renderUploadFileList()
   if (modal) modal.hidden = false
 }
@@ -189,8 +222,8 @@ function closeUploadModal() {
 
 function statusHtml(s, msg) {
   if (s === 'uploading') return 'Uploading…'
-  if (s === 'done')      return `${SVG_CHECK} Uploaded`
-  if (s === 'error')     return `${SVG_WARN} ${escapeHtml(msg || 'Failed')}`
+  if (s === 'done') return `${SVG_CHECK} Uploaded`
+  if (s === 'error') return `${SVG_WARN} ${escapeHtml(msg || 'Failed')}`
   return ''
 }
 
@@ -199,10 +232,14 @@ function renderUploadFileList() {
   const submitBtn = document.getElementById('upload-submit-btn')
   const zoneLabel = document.querySelector('#upload-file-zone .zone-label')
   if (!list) return
-  if (zoneLabel) zoneLabel.textContent = lp._uploadFiles.length ? 'Add more files…' : 'Click to add files'
+  if (zoneLabel)
+    zoneLabel.textContent = lp._uploadFiles.length ? 'Add more files…' : 'Click to add files'
   if (!lp._uploadFiles.length) {
     list.classList.add('hidden')
-    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Upload' }
+    if (submitBtn) {
+      submitBtn.disabled = true
+      submitBtn.textContent = 'Upload'
+    }
     return
   }
   list.classList.remove('hidden')
@@ -216,9 +253,14 @@ function renderUploadFileList() {
       : file.thumb
         ? `<img src="${file.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:4px">`
         : '<div style="width:100%;height:100%;background:#1a1a1d;border-radius:4px"></div>'
-    const statusClass = file.status === 'uploading' ? 'uploading'
-      : file.status === 'done' ? 'done'
-      : file.status === 'error' ? 'error' : ''
+    const statusClass =
+      file.status === 'uploading'
+        ? 'uploading'
+        : file.status === 'done'
+          ? 'done'
+          : file.status === 'error'
+            ? 'error'
+            : ''
     const canRemove = file.status === 'idle' || file.status === 'error'
     item.innerHTML = `
       <div class="upload-item-thumb">${thumbHtml}</div>
@@ -239,7 +281,8 @@ function renderUploadFileList() {
   const idleCount = lp._uploadFiles.filter((f) => f.status === 'idle').length
   if (submitBtn) {
     submitBtn.disabled = idleCount === 0
-    submitBtn.textContent = idleCount > 0 ? `Upload ${idleCount} file${idleCount !== 1 ? 's' : ''}` : 'Upload'
+    submitBtn.textContent =
+      idleCount > 0 ? `Upload ${idleCount} file${idleCount !== 1 ? 's' : ''}` : 'Upload'
   }
 }
 
@@ -253,12 +296,16 @@ function updateFileThumb(idx) {
   if (file.thumb) {
     thumbCell.innerHTML = `<img src="${file.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:4px">`
   } else {
-    thumbCell.innerHTML = '<div style="width:100%;height:100%;background:#1a1a1d;border-radius:4px"></div>'
+    thumbCell.innerHTML =
+      '<div style="width:100%;height:100%;background:#1a1a1d;border-radius:4px"></div>'
   }
 }
 
 function updateFileStatus(idx, s, msg) {
-  if (lp._uploadFiles[idx]) { lp._uploadFiles[idx].status = s; lp._uploadFiles[idx].errorMsg = msg || '' }
+  if (lp._uploadFiles[idx]) {
+    lp._uploadFiles[idx].status = s
+    lp._uploadFiles[idx].errorMsg = msg || ''
+  }
   const item = document.querySelector(`.upload-file-item[data-index="${idx}"]`)
   if (!item) return
   const statusEl = item.querySelector('.upload-item-status')
@@ -274,16 +321,31 @@ function updateFileStatus(idx, s, msg) {
 
 async function addFilesFromBrowse() {
   let raw
-  try { raw = await call('BrowseFiles') } catch { return }
+  try {
+    raw = await call('BrowseFiles')
+  } catch {
+    return
+  }
   let paths
-  try { paths = JSON.parse(raw) } catch { return }
+  try {
+    paths = JSON.parse(raw)
+  } catch {
+    return
+  }
   if (!Array.isArray(paths) || !paths.length) return
 
   for (const filePath of paths) {
     const label = filePath.replace(/\\/g, '/').split('/').pop()
     const title = label.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
     const idx = lp._uploadFiles.length
-    lp._uploadFiles.push({ filePath, title, thumb: null, thumbLoading: true, status: 'idle', errorMsg: '' })
+    lp._uploadFiles.push({
+      filePath,
+      title,
+      thumb: null,
+      thumbLoading: true,
+      status: 'idle',
+      errorMsg: '',
+    })
   }
   renderUploadFileList()
 
@@ -310,7 +372,9 @@ async function addFilesFromBrowse() {
 }
 
 async function doUpload() {
-  const idleFiles = lp._uploadFiles.map((f, idx) => ({ ...f, idx })).filter((f) => f.status === 'idle')
+  const idleFiles = lp._uploadFiles
+    .map((f, idx) => ({ ...f, idx }))
+    .filter((f) => f.status === 'idle')
   if (!idleFiles.length) return
 
   const progressWrap = document.getElementById('upload-progress-wrap')
@@ -329,17 +393,32 @@ async function doUpload() {
     if (progressBar) progressBar.style.width = `${Math.round((done / idleFiles.length) * 100)}%`
     updateFileStatus(file.idx, 'uploading')
     try {
-      await call('AdminUploadWallpaper', lp.fn.getToken?.() || '', file.filePath, file.title.trim() || 'Untitled', 'premium')
+      await call(
+        'AdminUploadWallpaper',
+        lp.fn.getToken?.() || '',
+        file.filePath,
+        file.title.trim() || 'Untitled',
+        'premium'
+      )
       updateFileStatus(file.idx, 'done')
       done++
     } catch (e) {
-      updateFileStatus(file.idx, 'error', String(e).replace(/^Error:\s*/i, '').substring(0, 60))
+      updateFileStatus(
+        file.idx,
+        'error',
+        String(e)
+          .replace(/^Error:\s*/i, '')
+          .substring(0, 60)
+      )
     }
   }
 
   if (progressBar) progressBar.style.width = '100%'
   if (progressLabel) progressLabel.textContent = `${done} of ${idleFiles.length} uploaded`
-  if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.textContent = done > 0 ? 'Close' : 'Cancel' }
+  if (cancelBtn) {
+    cancelBtn.disabled = false
+    cancelBtn.textContent = done > 0 ? 'Close' : 'Cancel'
+  }
 
   const stillIdle = lp._uploadFiles.some((f) => f.status === 'idle')
   if (submitBtn && stillIdle) submitBtn.disabled = false
@@ -348,7 +427,10 @@ async function doUpload() {
     setTimeout(() => {
       closeUploadModal()
       status('Uploaded!', 'success')
-      setTimeout(() => { status(''); loadStorageWallpapers() }, 1200)
+      setTimeout(() => {
+        status('')
+        loadStorageWallpapers()
+      }, 1200)
     }, 800)
   }
 }
@@ -361,17 +443,22 @@ document.getElementById('storage-delete-cancel')?.addEventListener('click', () =
 document.getElementById('storage-delete-confirm')?.addEventListener('click', async (e) => {
   const id = e.currentTarget.dataset.deleteId
   const btn = e.currentTarget
-  btn.disabled = true; btn.textContent = 'Deleting…'
+  btn.disabled = true
+  btn.textContent = 'Deleting…'
   document.getElementById('storage-delete-modal').hidden = true
   try {
     await call('AdminDeleteWallpaper', lp.fn.getToken?.() || '', id)
     lp.storageItems = lp.storageItems.filter((i) => i.id !== id)
     renderStorageTable()
     const countEl = document.getElementById('storage-count')
-    if (countEl) countEl.textContent = `${lp.storageItems.length} wallpaper${lp.storageItems.length !== 1 ? 's' : ''}`
+    if (countEl)
+      countEl.textContent = `${lp.storageItems.length} wallpaper${lp.storageItems.length !== 1 ? 's' : ''}`
     status('Deleted', 'success', 2000)
-  } catch (err) { status(`Delete failed: ${err}`, 'error') }
-  btn.disabled = false; btn.textContent = 'Delete permanently'
+  } catch (err) {
+    status(`Delete failed: ${err}`, 'error')
+  }
+  btn.disabled = false
+  btn.textContent = 'Delete permanently'
 })
 
 document.getElementById('storage-upload-btn')?.addEventListener('click', openUploadModal)

@@ -25,7 +25,11 @@ export function buildGalleryCard(entry, index) {
     const ext = extOf(entry.filePath)
     badgeClass = entry.isVideo && ext !== 'gif' ? 'video' : ext === 'gif' ? 'gif' : 'image'
     badgeText = entry.isVideo && ext !== 'gif' ? 'VIDEO' : ext === 'gif' ? 'GIF' : 'IMG'
-    name = entry.filePath.replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '')
+    name = entry.filePath
+      .replace(/\\/g, '/')
+      .split('/')
+      .pop()
+      .replace(/\.[^.]+$/, '')
     if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
     lockHtml = ''
   }
@@ -34,9 +38,23 @@ export function buildGalleryCard(entry, index) {
 
   let payload
   if (entry.remote) {
-    payload = JSON.stringify({ remote: true, id: entry.id, downloadUrl: entry.downloadUrl, tier: entry.tier, thumbnail: entry.thumbnail, title: entry.title })
+    payload = JSON.stringify({
+      remote: true,
+      id: entry.id,
+      downloadUrl: entry.downloadUrl,
+      tier: entry.tier,
+      thumbnail: entry.thumbnail,
+      title: entry.title,
+    })
   } else {
-    payload = JSON.stringify({ filePath: entry.filePath, cachedPath: entry.cachedPath, isVideo: entry.isVideo, thumbnail: entry.thumbnail, width: entry.width || 0, height: entry.height || 0 })
+    payload = JSON.stringify({
+      filePath: entry.filePath,
+      cachedPath: entry.cachedPath,
+      isVideo: entry.isVideo,
+      thumbnail: entry.thumbnail,
+      width: entry.width || 0,
+      height: entry.height || 0,
+    })
   }
 
   card.draggable = true
@@ -72,12 +90,19 @@ export function buildGalleryCard(entry, index) {
     setActiveDot(index)
     _hovering = true
     if (!isLocalVideo) return
-    if (_gifUrl) { imgEl.src = _gifUrl; return }
+    if (_gifUrl) {
+      imgEl.src = _gifUrl
+      return
+    }
     if (_gifLoading) return
     _gifLoading = true
     try {
       const gif = await call('GetAnimatedThumbnail', entry.filePath)
-      if (gif) { _gifUrl = gif; entry._animGif = gif; if (_hovering) imgEl.src = gif }
+      if (gif) {
+        _gifUrl = gif
+        entry._animGif = gif
+        if (_hovering) imgEl.src = gif
+      }
     } catch (_) {}
     _gifLoading = false
   })
@@ -111,7 +136,8 @@ export function renderGalleryStrip() {
   strip.innerHTML = ''
 
   if (lp.galleryItems.length === 0) {
-    strip.innerHTML = '<div class="gallery-empty">No recent wallpapers yet — apply one to add it here</div>'
+    strip.innerHTML =
+      '<div class="gallery-empty">No recent wallpapers yet — apply one to add it here</div>'
     if (countEl) countEl.textContent = 'No wallpapers yet'
     if (dotsEl) dotsEl.innerHTML = ''
     return
@@ -120,7 +146,8 @@ export function renderGalleryStrip() {
   lp.galleryItems.forEach((entry, i) => strip.appendChild(buildGalleryCard(entry, i)))
 
   const n = lp.galleryItems.length
-  if (countEl) countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''} · Drag onto a display to apply`
+  if (countEl)
+    countEl.textContent = `${n} wallpaper${n !== 1 ? 's' : ''} · Drag onto a display to apply`
 
   if (dotsEl) {
     dotsEl.innerHTML = ''
@@ -130,7 +157,8 @@ export function renderGalleryStrip() {
       dot.setAttribute('aria-label', `Wallpaper ${i + 1}`)
       dot.addEventListener('click', () => {
         const cards = strip.querySelectorAll('.gallery-strip-card')
-        if (cards[i]) cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+        if (cards[i])
+          cards[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
         setActiveDot(i)
       })
       dotsEl.appendChild(dot)
@@ -146,11 +174,19 @@ async function loadRemoteGalleryItems() {
     const res = await fetch(`${API_BASE}/api/wallpapers?limit=${WALLPAPER_LIMIT}`)
     const data = await res.json()
     return (data?.items || []).map((it) => ({
-      remote: true, id: it.id, title: it.title, tier: it.tier || 'free',
-      contentType: it.contentType || '', downloadUrl: it.downloadUrl,
-      thumbnail: it.thumbnailUrl, width: it.width || 0, height: it.height || 0,
+      remote: true,
+      id: it.id,
+      title: it.title,
+      tier: it.tier || 'free',
+      contentType: it.contentType || '',
+      downloadUrl: it.downloadUrl,
+      thumbnail: it.thumbnailUrl,
+      width: it.width || 0,
+      height: it.height || 0,
     }))
-  } catch (_) { return [] }
+  } catch (_) {
+    return []
+  }
 }
 
 export async function refreshGallery() {
@@ -177,7 +213,10 @@ export function openGalleryPreview(items, index) {
   if (!entry) return
   if (entry.remote) {
     const full = lp.discoverItems.find((i) => i.id === entry.id)
-    if (full) { lp.fn.onDiscoverPreview?.(full, lp.discoverItems, lp.discoverItems.indexOf(full)); return }
+    if (full) {
+      lp.fn.onDiscoverPreview?.(full, lp.discoverItems, lp.discoverItems.indexOf(full))
+      return
+    }
   }
   lp._gpItems = items
   lp._gpIndex = index
@@ -197,8 +236,12 @@ function _renderGalleryPreview() {
 
   const isRemote = !!entry.remote
   const name = isRemote
-    ? (entry.title || 'Wallpaper')
-    : ((entry.filePath || '').replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '') || 'Wallpaper')
+    ? entry.title || 'Wallpaper'
+    : (entry.filePath || '')
+        .replace(/\\/g, '/')
+        .split('/')
+        .pop()
+        .replace(/\.[^.]+$/, '') || 'Wallpaper'
   const ext = entry.isVideo ? (extOf(entry.filePath || '') === 'gif' ? 'gif' : 'video') : 'image'
 
   const ov = document.createElement('div')
@@ -247,7 +290,13 @@ function _renderGalleryPreview() {
   ov.querySelector('#gp-apply').addEventListener('click', async () => {
     closeGP()
     if (isRemote) {
-      const synthetic = { id: entry.id, downloadUrl: entry.downloadUrl, title: entry.title, tags: [], tier: entry.tier }
+      const synthetic = {
+        id: entry.id,
+        downloadUrl: entry.downloadUrl,
+        title: entry.title,
+        tags: [],
+        tier: entry.tier,
+      }
       await lp.fn.onDiscoverApply?.(synthetic)
     } else {
       if (lp.monitors.length <= 1) {
@@ -286,12 +335,16 @@ function _renderGalleryPreview() {
 
 // ── Gallery wheel → horizontal scroll ────────────────────────────────────────
 
-document.getElementById('gallery-strip')?.addEventListener('wheel', (e) => {
-  if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-    e.preventDefault()
-    e.currentTarget.scrollLeft += e.deltaY * 3
-  }
-}, { passive: false })
+document.getElementById('gallery-strip')?.addEventListener(
+  'wheel',
+  (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault()
+      e.currentTarget.scrollLeft += e.deltaY * 3
+    }
+  },
+  { passive: false }
+)
 
 // Register in cross-module registry
 lp.fn.refreshGallery = refreshGallery

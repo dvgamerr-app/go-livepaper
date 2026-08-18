@@ -1,255 +1,441 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wallpaper Upload Guide — LivePaper Admin</title>
-  <style>
-    :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --border: #2a2d3a;
-      --accent: #6c6ef5;
-      --accent2: #4ecca3;
-      --text: #e2e4f0;
-      --muted: #8b8fa8;
-      --code-bg: #111420;
-      --success: #4ecca3;
-      --warn: #f5c842;
-      --danger: #f55a5a;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.65;
-      padding: 2rem 1rem;
-    }
-    .container { max-width: 860px; margin: 0 auto; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wallpaper Upload Guide — LivePaper Admin</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --border: #2a2d3a;
+        --accent: #6c6ef5;
+        --accent2: #4ecca3;
+        --text: #e2e4f0;
+        --muted: #8b8fa8;
+        --code-bg: #111420;
+        --success: #4ecca3;
+        --warn: #f5c842;
+        --danger: #f55a5a;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          'Segoe UI',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.65;
+        padding: 2rem 1rem;
+      }
+      .container {
+        max-width: 860px;
+        margin: 0 auto;
+      }
 
-    h1 { font-size: 2rem; font-weight: 700; margin-bottom: .4rem; }
-    h1 span { color: var(--accent); }
-    .subtitle { color: var(--muted); margin-bottom: 3rem; font-size: .95rem; }
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.4rem;
+      }
+      h1 span {
+        color: var(--accent);
+      }
+      .subtitle {
+        color: var(--muted);
+        margin-bottom: 3rem;
+        font-size: 0.95rem;
+      }
 
-    h2 { font-size: 1.25rem; font-weight: 600; margin: 2.5rem 0 .8rem; padding-bottom: .4rem;
-         border-bottom: 1px solid var(--border); }
-    h3 { font-size: 1rem; font-weight: 600; margin: 1.5rem 0 .5rem; color: var(--accent2); }
+      h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 2.5rem 0 0.8rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 1.5rem 0 0.5rem;
+        color: var(--accent2);
+      }
 
-    p { margin-bottom: .8rem; color: var(--text); }
+      p {
+        margin-bottom: 0.8rem;
+        color: var(--text);
+      }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.25rem 1.5rem;
-      margin-bottom: 1.25rem;
-    }
-    .card.warn  { border-color: var(--warn);   background: #1e1b10; }
-    .card.info  { border-color: var(--accent);  background: #13142a; }
-    .card.success { border-color: var(--success); background: #0f1e1a; }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.25rem;
+      }
+      .card.warn {
+        border-color: var(--warn);
+        background: #1e1b10;
+      }
+      .card.info {
+        border-color: var(--accent);
+        background: #13142a;
+      }
+      .card.success {
+        border-color: var(--success);
+        background: #0f1e1a;
+      }
 
-    .badge {
-      display: inline-block;
-      padding: .15rem .55rem;
-      border-radius: 999px;
-      font-size: .72rem;
-      font-weight: 700;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      margin-right: .35rem;
-    }
-    .badge.post   { background: #1e3a1e; color: #5af55a; }
-    .badge.put    { background: #3a2a1e; color: #f5a05a; }
-    .badge.get    { background: #1e2a3a; color: #5aaff5; }
-    .badge.delete { background: #3a1e1e; color: #f55a5a; }
-    .badge.admin  { background: #2a1e3a; color: #c85af5; }
-    .badge.free   { background: #1e3a2a; color: #4ecca3; }
-    .badge.premium{ background: #2a1e10; color: #f5c842; }
-    .badge.top    { background: #3a1e20; color: #f55a7a; }
+      .badge {
+        display: inline-block;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin-right: 0.35rem;
+      }
+      .badge.post {
+        background: #1e3a1e;
+        color: #5af55a;
+      }
+      .badge.put {
+        background: #3a2a1e;
+        color: #f5a05a;
+      }
+      .badge.get {
+        background: #1e2a3a;
+        color: #5aaff5;
+      }
+      .badge.delete {
+        background: #3a1e1e;
+        color: #f55a5a;
+      }
+      .badge.admin {
+        background: #2a1e3a;
+        color: #c85af5;
+      }
+      .badge.free {
+        background: #1e3a2a;
+        color: #4ecca3;
+      }
+      .badge.premium {
+        background: #2a1e10;
+        color: #f5c842;
+      }
+      .badge.top {
+        background: #3a1e20;
+        color: #f55a7a;
+      }
 
-    pre {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1.1rem 1.25rem;
-      overflow-x: auto;
-      font-size: .82rem;
-      line-height: 1.6;
-      margin: .75rem 0 1rem;
-    }
-    code { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
-    p code, li code {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: .1rem .4rem;
-      font-size: .85em;
-    }
+      pre {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.1rem 1.25rem;
+        overflow-x: auto;
+        font-size: 0.82rem;
+        line-height: 1.6;
+        margin: 0.75rem 0 1rem;
+      }
+      code {
+        font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      }
+      p code,
+      li code {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 0.1rem 0.4rem;
+        font-size: 0.85em;
+      }
 
-    .step-row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .step-num {
-      flex-shrink: 0;
-      width: 2rem;
-      height: 2rem;
-      background: var(--accent);
-      color: #fff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: .9rem;
-      margin-top: .1rem;
-    }
-    .step-body { flex: 1; }
-    .step-title { font-weight: 600; font-size: 1rem; margin-bottom: .3rem; }
+      .step-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .step-num {
+        flex-shrink: 0;
+        width: 2rem;
+        height: 2rem;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        margin-top: 0.1rem;
+      }
+      .step-body {
+        flex: 1;
+      }
+      .step-title {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.3rem;
+      }
 
-    .flow {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      flex-wrap: wrap;
-      margin: 1rem 0;
-      font-size: .88rem;
-    }
-    .flow-box {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: .3rem .8rem;
-      font-family: monospace;
-    }
-    .flow-arrow { color: var(--muted); font-size: 1.1rem; }
+      .flow {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+        font-size: 0.88rem;
+      }
+      .flow-box {
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.3rem 0.8rem;
+        font-family: monospace;
+      }
+      .flow-arrow {
+        color: var(--muted);
+        font-size: 1.1rem;
+      }
 
-    table { width: 100%; border-collapse: collapse; margin: .75rem 0 1rem; font-size: .87rem; }
-    th { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border);
-         color: var(--muted); font-weight: 600; }
-    td { padding: .5rem .75rem; border-bottom: 1px solid #1f2230; vertical-align: top; }
-    tr:last-child td { border-bottom: none; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.75rem 0 1rem;
+        font-size: 0.87rem;
+      }
+      th {
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--border);
+        color: var(--muted);
+        font-weight: 600;
+      }
+      td {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #1f2230;
+        vertical-align: top;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
 
-    .toc { list-style: none; padding: 0; margin: 0; }
-    .toc li { padding: .25rem 0; }
-    .toc a { color: var(--accent); text-decoration: none; font-size: .9rem; }
-    .toc a:hover { text-decoration: underline; }
+      .toc {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .toc li {
+        padding: 0.25rem 0;
+      }
+      .toc a {
+        color: var(--accent);
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+      .toc a:hover {
+        text-decoration: underline;
+      }
 
-    .section { margin-bottom: 3rem; }
+      .section {
+        margin-bottom: 3rem;
+      }
 
-    .tag-row { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .5rem; }
+      .tag-row {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.5rem;
+      }
 
-    ul, ol { padding-left: 1.5rem; margin-bottom: .8rem; }
-    li { margin-bottom: .25rem; }
+      ul,
+      ol {
+        padding-left: 1.5rem;
+        margin-bottom: 0.8rem;
+      }
+      li {
+        margin-bottom: 0.25rem;
+      }
 
-    .comment { color: #555d7a; }
-    .key { color: #c07af5; }
-    .str { color: #4ecca3; }
-    .num { color: #f5c842; }
-    .url-path { color: #f5a05a; }
-  </style>
-</head>
-<body>
-<div class="container">
+      .comment {
+        color: #555d7a;
+      }
+      .key {
+        color: #c07af5;
+      }
+      .str {
+        color: #4ecca3;
+      }
+      .num {
+        color: #f5c842;
+      }
+      .url-path {
+        color: #f5a05a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1><span>LivePaper</span> — Wallpaper Upload Guide</h1>
+      <p class="subtitle">
+        คู่มือสำหรับ admin ในการอัปโหลด wallpaper ขึ้น production (Cloudflare R2) ผ่าน REST API
+      </p>
 
-  <h1><span>LivePaper</span> — Wallpaper Upload Guide</h1>
-  <p class="subtitle">คู่มือสำหรับ admin ในการอัปโหลด wallpaper ขึ้น production (Cloudflare R2) ผ่าน REST API</p>
+      <div class="card info">
+        <strong>สารบัญ</strong>
+        <ul class="toc" style="margin-top: 0.6rem">
+          <li><a href="#overview">1. Overview &amp; Flow</a></li>
+          <li><a href="#auth">2. Authentication</a></li>
+          <li><a href="#step-create">3. Step 1 — สร้าง metadata row</a></li>
+          <li><a href="#step-upload">4. Step 2 &amp; 3 — อัปโหลด thumbnail + original</a></li>
+          <li><a href="#video">5. สำหรับไฟล์ Video (Live Wallpaper)</a></li>
+          <li><a href="#examples">6. ตัวอย่าง PowerShell Script</a></li>
+          <li><a href="#patch">7. อัปเดต metadata (PATCH)</a></li>
+          <li><a href="#tiers">8. Tier Reference</a></li>
+          <li><a href="#content-types">9. Content-Type Reference</a></li>
+        </ul>
+      </div>
 
-  <div class="card info">
-    <strong>สารบัญ</strong>
-    <ul class="toc" style="margin-top:.6rem">
-      <li><a href="#overview">1. Overview &amp; Flow</a></li>
-      <li><a href="#auth">2. Authentication</a></li>
-      <li><a href="#step-create">3. Step 1 — สร้าง metadata row</a></li>
-      <li><a href="#step-upload">4. Step 2 &amp; 3 — อัปโหลด thumbnail + original</a></li>
-      <li><a href="#video">5. สำหรับไฟล์ Video (Live Wallpaper)</a></li>
-      <li><a href="#examples">6. ตัวอย่าง PowerShell Script</a></li>
-      <li><a href="#patch">7. อัปเดต metadata (PATCH)</a></li>
-      <li><a href="#tiers">8. Tier Reference</a></li>
-      <li><a href="#content-types">9. Content-Type Reference</a></li>
-    </ul>
-  </div>
+      <!-- OVERVIEW -->
+      <div class="section" id="overview">
+        <h2>1. Overview &amp; Flow</h2>
+        <p>การอัปโหลด wallpaper แบ่งเป็น 3 ขั้นตอนเสมอ:</p>
 
-  <!-- OVERVIEW -->
-  <div class="section" id="overview">
-    <h2>1. Overview &amp; Flow</h2>
-    <p>การอัปโหลด wallpaper แบ่งเป็น 3 ขั้นตอนเสมอ:</p>
+        <div class="flow">
+          <div class="flow-box">POST /api/admin/wallpapers</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box">PUT .../upload?type=thumbnail</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box">PUT .../upload?type=original</div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-box" style="border-color: var(--success); color: var(--success)">
+            ✓ เสร็จ
+          </div>
+        </div>
 
-    <div class="flow">
-      <div class="flow-box">POST /api/admin/wallpapers</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-box">PUT .../upload?type=thumbnail</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-box">PUT .../upload?type=original</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-box" style="border-color:var(--success);color:var(--success)">✓ เสร็จ</div>
-    </div>
+        <table>
+          <tr>
+            <th>ขั้นตอน</th>
+            <th>Endpoint</th>
+            <th>หน้าที่</th>
+          </tr>
+          <tr>
+            <td><strong>1</strong></td>
+            <td><code>POST /api/admin/wallpapers</code></td>
+            <td>สร้าง row ใน D1 — ได้ <code>id</code> และ R2 keys กลับมา</td>
+          </tr>
+          <tr>
+            <td><strong>2</strong></td>
+            <td><code>PUT /api/admin/wallpapers/:id/upload?type=thumbnail</code></td>
+            <td>อัปโหลด thumbnail (webp แนะนำ 1920×1080)</td>
+          </tr>
+          <tr>
+            <td><strong>3</strong></td>
+            <td><code>PUT /api/admin/wallpapers/:id/upload?type=original</code></td>
+            <td>
+              อัปโหลดไฟล์ต้นฉบับ (png / mp4 ฯลฯ) — อัปเดต <code>size_bytes</code> +
+              <code>content_type</code> อัตโนมัติ
+            </td>
+          </tr>
+        </table>
 
-    <table>
-      <tr><th>ขั้นตอน</th><th>Endpoint</th><th>หน้าที่</th></tr>
-      <tr>
-        <td><strong>1</strong></td>
-        <td><code>POST /api/admin/wallpapers</code></td>
-        <td>สร้าง row ใน D1 — ได้ <code>id</code> และ R2 keys กลับมา</td>
-      </tr>
-      <tr>
-        <td><strong>2</strong></td>
-        <td><code>PUT /api/admin/wallpapers/:id/upload?type=thumbnail</code></td>
-        <td>อัปโหลด thumbnail (webp แนะนำ 1920×1080)</td>
-      </tr>
-      <tr>
-        <td><strong>3</strong></td>
-        <td><code>PUT /api/admin/wallpapers/:id/upload?type=original</code></td>
-        <td>อัปโหลดไฟล์ต้นฉบับ (png / mp4 ฯลฯ) — อัปเดต <code>size_bytes</code> + <code>content_type</code> อัตโนมัติ</td>
-      </tr>
-    </table>
+        <div class="card warn">
+          ⚠️ ต้องทำขั้นตอนตามลำดับ — <code>POST</code> ก่อนเสมอ เพราะ <code>PUT</code> ต้องการ
+          <code>id</code> ที่มีอยู่ใน DB
+        </div>
+      </div>
 
-    <div class="card warn">
-      ⚠️ ต้องทำขั้นตอนตามลำดับ — <code>POST</code> ก่อนเสมอ เพราะ <code>PUT</code> ต้องการ <code>id</code> ที่มีอยู่ใน DB
-    </div>
-  </div>
-
-  <!-- AUTH -->
-  <div class="section" id="auth">
-    <h2>2. Authentication</h2>
-    <p>ทุก admin endpoint ต้องส่ง header:</p>
-    <pre><code>Authorization: Bearer &lt;ADMIN_TOKEN&gt;</code></pre>
-    <p><code>ADMIN_TOKEN</code> ถูก set ไว้ใน Cloudflare Worker secrets:</p>
-    <pre><code><span class="comment"># set production secret</span>
+      <!-- AUTH -->
+      <div class="section" id="auth">
+        <h2>2. Authentication</h2>
+        <p>ทุก admin endpoint ต้องส่ง header:</p>
+        <pre><code>Authorization: Bearer &lt;ADMIN_TOKEN&gt;</code></pre>
+        <p><code>ADMIN_TOKEN</code> ถูก set ไว้ใน Cloudflare Worker secrets:</p>
+        <pre><code><span class="comment"># set production secret</span>
 bunx wrangler secret put ADMIN_TOKEN
 
 <span class="comment"># local dev — ใส่ใน .dev.vars</span>
 ADMIN_TOKEN=your_token_here</code></pre>
-    <p>Base URL production: <code>https://sso.dvgamerr.app</code></p>
-  </div>
+        <p>Base URL production: <code>https://sso.dvgamerr.app</code></p>
+      </div>
 
-  <!-- STEP 1 CREATE -->
-  <div class="section" id="step-create">
-    <h2>3. Step 1 — สร้าง metadata row</h2>
+      <!-- STEP 1 CREATE -->
+      <div class="section" id="step-create">
+        <h2>3. Step 1 — สร้าง metadata row</h2>
 
-    <div class="tag-row">
-      <span class="badge post">POST</span>
-      <code>/api/admin/wallpapers</code>
-      <span class="badge admin">admin</span>
-    </div>
+        <div class="tag-row">
+          <span class="badge post">POST</span>
+          <code>/api/admin/wallpapers</code>
+          <span class="badge admin">admin</span>
+        </div>
 
-    <h3>Request Body (JSON)</h3>
-    <table>
-      <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
-      <tr><td><code>title</code></td><td>string</td><td>✅</td><td>ชื่อ wallpaper</td></tr>
-      <tr><td><code>tier</code></td><td><code>"free" | "premium" | "top"</code></td><td>✅</td><td>ระดับการเข้าถึง</td></tr>
-      <tr><td><code>contentType</code></td><td>string</td><td>ควรระบุ</td><td>MIME type ของ original เช่น <code>video/mp4</code>, <code>image/png</code></td></tr>
-      <tr><td><code>thumbnailContentType</code></td><td>string</td><td>ควรระบุ</td><td>MIME type ของ thumbnail เช่น <code>image/webp</code></td></tr>
-      <tr><td><code>width</code></td><td>number</td><td>—</td><td>ความกว้าง original (pixels)</td></tr>
-      <tr><td><code>height</code></td><td>number</td><td>—</td><td>ความสูง original (pixels)</td></tr>
-      <tr><td><code>isPublished</code></td><td>boolean</td><td>—</td><td>default <code>true</code></td></tr>
-      <tr><td><code>id</code></td><td>string</td><td>—</td><td>ระบุ id เอง (รูปแบบ <code>wp_&lt;16hex&gt;</code>) หรือจะให้ระบบ generate ให้</td></tr>
-    </table>
+        <h3>Request Body (JSON)</h3>
+        <table>
+          <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Required</th>
+            <th>Description</th>
+          </tr>
+          <tr>
+            <td><code>title</code></td>
+            <td>string</td>
+            <td>✅</td>
+            <td>ชื่อ wallpaper</td>
+          </tr>
+          <tr>
+            <td><code>tier</code></td>
+            <td><code>"free" | "premium" | "top"</code></td>
+            <td>✅</td>
+            <td>ระดับการเข้าถึง</td>
+          </tr>
+          <tr>
+            <td><code>contentType</code></td>
+            <td>string</td>
+            <td>ควรระบุ</td>
+            <td>MIME type ของ original เช่น <code>video/mp4</code>, <code>image/png</code></td>
+          </tr>
+          <tr>
+            <td><code>thumbnailContentType</code></td>
+            <td>string</td>
+            <td>ควรระบุ</td>
+            <td>MIME type ของ thumbnail เช่น <code>image/webp</code></td>
+          </tr>
+          <tr>
+            <td><code>width</code></td>
+            <td>number</td>
+            <td>—</td>
+            <td>ความกว้าง original (pixels)</td>
+          </tr>
+          <tr>
+            <td><code>height</code></td>
+            <td>number</td>
+            <td>—</td>
+            <td>ความสูง original (pixels)</td>
+          </tr>
+          <tr>
+            <td><code>isPublished</code></td>
+            <td>boolean</td>
+            <td>—</td>
+            <td>default <code>true</code></td>
+          </tr>
+          <tr>
+            <td><code>id</code></td>
+            <td>string</td>
+            <td>—</td>
+            <td>ระบุ id เอง (รูปแบบ <code>wp_&lt;16hex&gt;</code>) หรือจะให้ระบบ generate ให้</td>
+          </tr>
+        </table>
 
-    <h3>Response</h3>
-    <pre><code>{
+        <h3>Response</h3>
+        <pre><code>{
   <span class="key">"id"</span>: <span class="str">"wp_a1b2c3d4e5f60718"</span>,
   <span class="key">"thumbnailKey"</span>: <span class="str">"thumbnails/wp_a1b2c3d4e5f60718.webp"</span>,
   <span class="key">"originalKey"</span>: <span class="str">"originals/wp_a1b2c3d4e5f60718.mp4"</span>,
@@ -259,8 +445,8 @@ ADMIN_TOKEN=your_token_here</code></pre>
   }
 }</code></pre>
 
-    <h3>curl example</h3>
-    <pre><code>curl -X POST https://sso.dvgamerr.app/api/admin/wallpapers \
+        <h3>curl example</h3>
+        <pre><code>curl -X POST https://sso.dvgamerr.app/api/admin/wallpapers \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -271,111 +457,120 @@ ADMIN_TOKEN=your_token_here</code></pre>
     "width": 3840,
     "height": 2160
   }'</code></pre>
-  </div>
+      </div>
 
-  <!-- STEP 2+3 UPLOAD -->
-  <div class="section" id="step-upload">
-    <h2>4. Step 2 &amp; 3 — อัปโหลด thumbnail และ original</h2>
+      <!-- STEP 2+3 UPLOAD -->
+      <div class="section" id="step-upload">
+        <h2>4. Step 2 &amp; 3 — อัปโหลด thumbnail และ original</h2>
 
-    <div class="tag-row">
-      <span class="badge put">PUT</span>
-      <code>/api/admin/wallpapers/:id/upload?type=thumbnail</code>
-    </div>
-    <div class="tag-row" style="margin-top:.5rem">
-      <span class="badge put">PUT</span>
-      <code>/api/admin/wallpapers/:id/upload?type=original</code>
-    </div>
+        <div class="tag-row">
+          <span class="badge put">PUT</span>
+          <code>/api/admin/wallpapers/:id/upload?type=thumbnail</code>
+        </div>
+        <div class="tag-row" style="margin-top: 0.5rem">
+          <span class="badge put">PUT</span>
+          <code>/api/admin/wallpapers/:id/upload?type=original</code>
+        </div>
 
-    <p>ส่ง body เป็น <strong>raw bytes</strong> ของไฟล์ — ไม่ใช่ multipart form</p>
+        <p>ส่ง body เป็น <strong>raw bytes</strong> ของไฟล์ — ไม่ใช่ multipart form</p>
 
-    <table>
-      <tr><th>Header</th><th>Value</th><th>หมายเหตุ</th></tr>
-      <tr>
-        <td><code>Authorization</code></td>
-        <td><code>Bearer &lt;ADMIN_TOKEN&gt;</code></td>
-        <td>required</td>
-      </tr>
-      <tr>
-        <td><code>Content-Type</code></td>
-        <td>MIME type ของไฟล์</td>
-        <td>ถูก store ใน R2 httpMetadata และ DB (type=original)</td>
-      </tr>
-    </table>
+        <table>
+          <tr>
+            <th>Header</th>
+            <th>Value</th>
+            <th>หมายเหตุ</th>
+          </tr>
+          <tr>
+            <td><code>Authorization</code></td>
+            <td><code>Bearer &lt;ADMIN_TOKEN&gt;</code></td>
+            <td>required</td>
+          </tr>
+          <tr>
+            <td><code>Content-Type</code></td>
+            <td>MIME type ของไฟล์</td>
+            <td>ถูก store ใน R2 httpMetadata และ DB (type=original)</td>
+          </tr>
+        </table>
 
-    <h3>Response</h3>
-    <pre><code>{
+        <h3>Response</h3>
+        <pre><code>{
   <span class="key">"id"</span>:   <span class="str">"wp_a1b2c3d4e5f60718"</span>,
   <span class="key">"key"</span>:  <span class="str">"originals/wp_a1b2c3d4e5f60718.mp4"</span>,
   <span class="key">"size"</span>: <span class="num">53411840</span>,
   <span class="key">"etag"</span>: <span class="str">"\"abc123...\""</span>
 }</code></pre>
 
-    <h3>curl — thumbnail</h3>
-    <pre><code>curl -X PUT "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx/upload?type=thumbnail" \
+        <h3>curl — thumbnail</h3>
+        <pre><code>curl -X PUT "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx/upload?type=thumbnail" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: image/webp" \
   --data-binary @thumb.webp</code></pre>
 
-    <h3>curl — original</h3>
-    <pre><code>curl -X PUT "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx/upload?type=original" \
+        <h3>curl — original</h3>
+        <pre><code>curl -X PUT "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx/upload?type=original" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: video/mp4" \
   --data-binary @video.mp4</code></pre>
-  </div>
+      </div>
 
-  <!-- VIDEO -->
-  <div class="section" id="video">
-    <h2>5. สำหรับไฟล์ Video (Live Wallpaper)</h2>
-    <p>วิดีโอต้องมี thumbnail ก่อนอัปโหลด — ใช้ ffmpeg extract frame:</p>
+      <!-- VIDEO -->
+      <div class="section" id="video">
+        <h2>5. สำหรับไฟล์ Video (Live Wallpaper)</h2>
+        <p>วิดีโอต้องมี thumbnail ก่อนอัปโหลด — ใช้ ffmpeg extract frame:</p>
 
-    <pre><code><span class="comment"># extract frame ที่ 5 วินาที → webp 1920x1080</span>
+        <pre><code><span class="comment"># extract frame ที่ 5 วินาที → webp 1920x1080</span>
 ffmpeg -ss 5 -i "video.mp4" -vframes 1 -vf "scale=1920:1080" -q:v 80 thumb.webp</code></pre>
 
-    <div class="card info">
-      💡 แนะนำ thumbnail ขนาด <strong>1920×1080</strong> (16:9) format <strong>WebP</strong> เพื่อ performance ดีบนหน้า Browse Wallpaper
-    </div>
+        <div class="card info">
+          💡 แนะนำ thumbnail ขนาด <strong>1920×1080</strong> (16:9) format
+          <strong>WebP</strong> เพื่อ performance ดีบนหน้า Browse Wallpaper
+        </div>
 
-    <h3>ตรวจสอบ dimensions ด้วย ffprobe</h3>
-    <pre><code>ffprobe -v quiet -print_format json -show_streams video.mp4</code></pre>
+        <h3>ตรวจสอบ dimensions ด้วย ffprobe</h3>
+        <pre><code>ffprobe -v quiet -print_format json -show_streams video.mp4</code></pre>
 
-    <h3>ลำดับ upload สำหรับ video</h3>
-    <div class="step-row">
-      <div class="step-num">1</div>
-      <div class="step-body">
-        <div class="step-title">Extract thumbnail ด้วย ffmpeg</div>
-        <p>ได้ไฟล์ <code>.webp</code> ขนาด 1920×1080</p>
+        <h3>ลำดับ upload สำหรับ video</h3>
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Extract thumbnail ด้วย ffmpeg</div>
+            <p>ได้ไฟล์ <code>.webp</code> ขนาด 1920×1080</p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">POST สร้าง metadata</div>
+            <p>
+              <code>contentType: "video/mp4"</code>, <code>thumbnailContentType: "image/webp"</code>
+            </p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">PUT thumbnail → R2</div>
+            <p><code>?type=thumbnail</code> + <code>Content-Type: image/webp</code></p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">PUT original video → R2</div>
+            <p><code>?type=original</code> + <code>Content-Type: video/mp4</code></p>
+            <p style="color: var(--muted); font-size: 0.85rem">
+              ไฟล์ใหญ่ (50+ MB) อาจใช้เวลาสักครู่
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="step-row">
-      <div class="step-num">2</div>
-      <div class="step-body">
-        <div class="step-title">POST สร้าง metadata</div>
-        <p><code>contentType: "video/mp4"</code>, <code>thumbnailContentType: "image/webp"</code></p>
-      </div>
-    </div>
-    <div class="step-row">
-      <div class="step-num">3</div>
-      <div class="step-body">
-        <div class="step-title">PUT thumbnail → R2</div>
-        <p><code>?type=thumbnail</code> + <code>Content-Type: image/webp</code></p>
-      </div>
-    </div>
-    <div class="step-row">
-      <div class="step-num">4</div>
-      <div class="step-body">
-        <div class="step-title">PUT original video → R2</div>
-        <p><code>?type=original</code> + <code>Content-Type: video/mp4</code></p>
-        <p style="color:var(--muted);font-size:.85rem">ไฟล์ใหญ่ (50+ MB) อาจใช้เวลาสักครู่</p>
-      </div>
-    </div>
-  </div>
 
-  <!-- POWERSHELL EXAMPLES -->
-  <div class="section" id="examples">
-    <h2>6. ตัวอย่าง PowerShell Script</h2>
+      <!-- POWERSHELL EXAMPLES -->
+      <div class="section" id="examples">
+        <h2>6. ตัวอย่าง PowerShell Script</h2>
 
-    <h3>Upload image wallpaper (PNG)</h3>
-    <pre><code>$BASE  = "https://sso.dvgamerr.app"
+        <h3>Upload image wallpaper (PNG)</h3>
+        <pre><code>$BASE  = "https://sso.dvgamerr.app"
 $TOKEN = $env:ADMIN_TOKEN   <span class="comment"># หรือใส่ตรงๆ</span>
 $HEADERS = @{ Authorization = "Bearer $TOKEN" }
 
@@ -410,8 +605,8 @@ Invoke-RestMethod -Method PUT "$BASE/api/admin/wallpapers/$id/upload?type=origin
 
 Write-Host "Done! Wallpaper ID: $id"</code></pre>
 
-    <h3>Upload video (MP4 Live Wallpaper)</h3>
-    <pre><code>$BASE      = "https://sso.dvgamerr.app"
+        <h3>Upload video (MP4 Live Wallpaper)</h3>
+        <pre><code>$BASE      = "https://sso.dvgamerr.app"
 $TOKEN     = $env:ADMIN_TOKEN
 $HEADERS   = @{ Authorization = "Bearer $TOKEN" }
 $videoPath = "D:\path\to\video.mp4"
@@ -445,82 +640,133 @@ Invoke-RestMethod -Method PUT "$BASE/api/admin/wallpapers/$id/upload?type=origin
   -Headers $HEADERS -ContentType "video/mp4" -Body $vidBytes
 
 Write-Host "Live wallpaper uploaded: $id"</code></pre>
-  </div>
+      </div>
 
-  <!-- PATCH -->
-  <div class="section" id="patch">
-    <h2>7. อัปเดต metadata (PATCH)</h2>
+      <!-- PATCH -->
+      <div class="section" id="patch">
+        <h2>7. อัปเดต metadata (PATCH)</h2>
 
-    <div class="tag-row">
-      <span class="badge put">PATCH</span>
-      <code>/api/admin/wallpapers/:id</code>
-      <span class="badge admin">admin</span>
-    </div>
+        <div class="tag-row">
+          <span class="badge put">PATCH</span>
+          <code>/api/admin/wallpapers/:id</code>
+          <span class="badge admin">admin</span>
+        </div>
 
-    <p>ทุก field เป็น optional — ส่งเฉพาะ field ที่ต้องการเปลี่ยน:</p>
+        <p>ทุก field เป็น optional — ส่งเฉพาะ field ที่ต้องการเปลี่ยน:</p>
 
-    <pre><code>curl -X PATCH "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx" \
+        <pre><code>curl -X PATCH "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{ "tier": "premium", "isPublished": true }'</code></pre>
 
-    <h3>PowerShell</h3>
-    <pre><code>Invoke-RestMethod -Method PATCH "$BASE/api/admin/wallpapers/$id" `
+        <h3>PowerShell</h3>
+        <pre><code>Invoke-RestMethod -Method PATCH "$BASE/api/admin/wallpapers/$id" `
   -Headers @{ Authorization = "Bearer $TOKEN" } `
   -ContentType "application/json" `
   -Body (ConvertTo-Json @{ tier = "premium"; isPublished = $true })</code></pre>
 
-    <h3>Delete (+ purge R2)</h3>
-    <pre><code>curl -X DELETE "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx?purge=true" \
+        <h3>Delete (+ purge R2)</h3>
+        <pre><code>curl -X DELETE "https://sso.dvgamerr.app/api/admin/wallpapers/wp_xxx?purge=true" \
   -H "Authorization: Bearer $ADMIN_TOKEN"</code></pre>
-  </div>
+      </div>
 
-  <!-- TIERS -->
-  <div class="section" id="tiers">
-    <h2>8. Tier Reference</h2>
-    <table>
-      <tr><th>Tier</th><th>การเข้าถึง</th><th>ใช้สำหรับ</th></tr>
-      <tr>
-        <td><span class="badge free">free</span></td>
-        <td>ทุกคน (ไม่ต้อง login)</td>
-        <td>wallpaper ทั่วไป, static</td>
-      </tr>
-      <tr>
-        <td><span class="badge premium">premium</span></td>
-        <td>ต้อง login + subscription premium</td>
-        <td>wallpaper คุณภาพสูง, 4K</td>
-      </tr>
-      <tr>
-        <td><span class="badge top">top</span></td>
-        <td>ต้อง login + subscription top</td>
-        <td>live wallpaper (video), exclusive</td>
-      </tr>
-    </table>
-    <p>User ที่ไม่มีสิทธิ์จะได้รับ <code>HTTP 402 Payment Required</code> เมื่อพยายาม download</p>
-  </div>
+      <!-- TIERS -->
+      <div class="section" id="tiers">
+        <h2>8. Tier Reference</h2>
+        <table>
+          <tr>
+            <th>Tier</th>
+            <th>การเข้าถึง</th>
+            <th>ใช้สำหรับ</th>
+          </tr>
+          <tr>
+            <td><span class="badge free">free</span></td>
+            <td>ทุกคน (ไม่ต้อง login)</td>
+            <td>wallpaper ทั่วไป, static</td>
+          </tr>
+          <tr>
+            <td><span class="badge premium">premium</span></td>
+            <td>ต้อง login + subscription premium</td>
+            <td>wallpaper คุณภาพสูง, 4K</td>
+          </tr>
+          <tr>
+            <td><span class="badge top">top</span></td>
+            <td>ต้อง login + subscription top</td>
+            <td>live wallpaper (video), exclusive</td>
+          </tr>
+        </table>
+        <p>
+          User ที่ไม่มีสิทธิ์จะได้รับ <code>HTTP 402 Payment Required</code> เมื่อพยายาม download
+        </p>
+      </div>
 
-  <!-- CONTENT TYPES -->
-  <div class="section" id="content-types">
-    <h2>9. Content-Type Reference</h2>
-    <table>
-      <tr><th>ไฟล์</th><th>contentType</th><th>extension</th><th>หมายเหตุ</th></tr>
-      <tr><td>PNG image</td><td><code>image/png</code></td><td>.png</td><td>static wallpaper คุณภาพสูง</td></tr>
-      <tr><td>JPEG image</td><td><code>image/jpeg</code></td><td>.jpg</td><td>ไฟล์เล็กกว่า PNG</td></tr>
-      <tr><td>WebP image</td><td><code>image/webp</code></td><td>.webp</td><td>แนะนำสำหรับ thumbnail</td></tr>
-      <tr><td>AVIF image</td><td><code>image/avif</code></td><td>.avif</td><td>compression ดีที่สุด</td></tr>
-      <tr><td>MP4 video</td><td><code>video/mp4</code></td><td>.mp4</td><td>live wallpaper (H.264)</td></tr>
-      <tr><td>อื่นๆ</td><td>ใดก็ได้</td><td>.bin</td><td>fallback extension</td></tr>
-    </table>
+      <!-- CONTENT TYPES -->
+      <div class="section" id="content-types">
+        <h2>9. Content-Type Reference</h2>
+        <table>
+          <tr>
+            <th>ไฟล์</th>
+            <th>contentType</th>
+            <th>extension</th>
+            <th>หมายเหตุ</th>
+          </tr>
+          <tr>
+            <td>PNG image</td>
+            <td><code>image/png</code></td>
+            <td>.png</td>
+            <td>static wallpaper คุณภาพสูง</td>
+          </tr>
+          <tr>
+            <td>JPEG image</td>
+            <td><code>image/jpeg</code></td>
+            <td>.jpg</td>
+            <td>ไฟล์เล็กกว่า PNG</td>
+          </tr>
+          <tr>
+            <td>WebP image</td>
+            <td><code>image/webp</code></td>
+            <td>.webp</td>
+            <td>แนะนำสำหรับ thumbnail</td>
+          </tr>
+          <tr>
+            <td>AVIF image</td>
+            <td><code>image/avif</code></td>
+            <td>.avif</td>
+            <td>compression ดีที่สุด</td>
+          </tr>
+          <tr>
+            <td>MP4 video</td>
+            <td><code>video/mp4</code></td>
+            <td>.mp4</td>
+            <td>live wallpaper (H.264)</td>
+          </tr>
+          <tr>
+            <td>อื่นๆ</td>
+            <td>ใดก็ได้</td>
+            <td>.bin</td>
+            <td>fallback extension</td>
+          </tr>
+        </table>
 
-    <div class="card success">
-      ✅ สรุป: สำหรับ video live wallpaper ให้ใช้ <code>contentType: "video/mp4"</code> และ
-      <code>thumbnailContentType: "image/webp"</code> — thumbnail ต้อง generate ด้วย ffmpeg ก่อนเสมอ
+        <div class="card success">
+          ✅ สรุป: สำหรับ video live wallpaper ให้ใช้ <code>contentType: "video/mp4"</code> และ
+          <code>thumbnailContentType: "image/webp"</code> — thumbnail ต้อง generate ด้วย ffmpeg
+          ก่อนเสมอ
+        </div>
+      </div>
+
+      <p
+        style="
+          color: var(--muted);
+          font-size: 0.8rem;
+          margin-top: 2rem;
+          padding-top: 1rem;
+          border-top: 1px solid var(--border);
+        "
+      >
+        LivePaper Admin Docs · Backend: Cloudflare Workers + D1 + R2 · เอกสารนี้อยู่ที่
+        <code>docs/upload-wallpaper.html</code>
+      </p>
     </div>
-  </div>
-
-  <p style="color:var(--muted);font-size:.8rem;margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
-    LivePaper Admin Docs · Backend: Cloudflare Workers + D1 + R2 · เอกสารนี้อยู่ที่ <code>docs/upload-wallpaper.html</code>
-  </p>
-</div>
-</body>
+  </body>
 </html>

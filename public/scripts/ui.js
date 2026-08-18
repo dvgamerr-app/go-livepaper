@@ -102,7 +102,10 @@ export function escapeHtml(s) {
 
 export function debounce(fn, ms) {
   let t
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms) }
+  return (...a) => {
+    clearTimeout(t)
+    t = setTimeout(() => fn(...a), ms)
+  }
 }
 
 export function extOf(p) {
@@ -111,7 +114,9 @@ export function extOf(p) {
 
 export function resolutionBadgeText(w, h) {
   if (!w || !h) return ''
-  function gcd(a, b) { return b ? gcd(b, a % b) : a }
+  function gcd(a, b) {
+    return b ? gcd(b, a % b) : a
+  }
   const g = gcd(w, h)
   let ratio = `${w / g}:${h / g}`
   const r = w / h
