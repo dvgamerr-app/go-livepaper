@@ -188,6 +188,9 @@ rawY = normalizedY + vdMinY
 - `bun run` บน Windows ที่ใช้ `cmd /c scripts/build-test.bat` จะโดน `cmd` มอง `/` เป็น option ของ path; ถ้าจะเรียก `.bat` ผ่าน `cmd /c` ให้ส่ง path แบบ quoted command
 - อัดคำสั่ง `nu -c "^git diff ..."` ที่ quote ซ้อนหนัก ๆ เข้า `multi_tool_use.parallel` อาจล้มตั้งแต่ launcher setup; รันคำสั่ง inspection แบบเดี่ยวแทน
 - `rtk go build -o livepaper-test.exe ./cmd/livepaper` ใน session นี้ compile ผ่านแต่ไม่ควรสมมติว่า artifact จะอยู่ที่ `livepaper-test.exe`; อย่าใช้ path นี้เป็นขั้นล้างไฟล์ต่อ
+- อย่าวาง `if (...) { ... } else { ... }` เป็น element ตรง ๆ ภายใน PowerShell array expression `@(...)`; PowerShell จะพยายามเรียก `if` เป็นคำสั่ง ให้ใช้ subexpression `$(if (...) { ... } else { ... })` หรือแยก statement ออกมาก่อน
+- เมื่อ parser ใช้ named return แล้วสะสมค่าไประหว่างทาง อย่าคืนค่าที่สะสมพร้อม `ok=false`; กรณี `parseCombo` ที่มีแต่ modifier เคยคืน modifier flags ทั้งที่ parse ไม่สำเร็จ ให้ invalid path คืน `(0, 0, false)` เสมอ
+- อย่าใช้ PowerShell here-string pipe เข้า `git apply --cached` เพื่อ stage เฉพาะบรรทัด Unicode ในไฟล์ที่ worktree มี diff อื่นค้างอยู่โดยคาดว่า context จะตรงเสมอ; ครั้งนี้ patch ใช้กับ index ไม่สำเร็จ ให้สร้าง blob จาก `HEAD` แล้วอัปเดต index แบบเจาะจงแทน
 
 ## Manual Verification
 
