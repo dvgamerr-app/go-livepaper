@@ -12,7 +12,8 @@ export async function renderLibrary() {
   if (!grid) return
   const items = await loadGalleryItems()
   if (items.length === 0) {
-    grid.innerHTML = '<div class="lib-empty">No wallpapers yet — download from Discover to add them here</div>'
+    grid.innerHTML =
+      '<div class="lib-empty">No wallpapers yet — download from Discover to add them here</div>'
     if (countEl) countEl.textContent = 'Your downloaded wallpapers'
     return
   }
@@ -21,7 +22,12 @@ export async function renderLibrary() {
     const card = document.createElement('div')
     card.className = 'lib-card'
     const ext = entry.isVideo ? (extOf(entry.filePath || '') === 'gif' ? 'gif' : 'video') : 'image'
-    const name = (entry.filePath || '').replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '') || 'Wallpaper'
+    const name =
+      (entry.filePath || '')
+        .replace(/\\/g, '/')
+        .split('/')
+        .pop()
+        .replace(/\.[^.]+$/, '') || 'Wallpaper'
     card.innerHTML = `
       <img src="${entry.thumbnail || ''}" alt="${escapeHtml(name)}" loading="lazy" draggable="false">
       <span class="lib-card-type ${ext}">${ext.toUpperCase()}</span>
@@ -36,7 +42,10 @@ export async function renderLibrary() {
       e.stopPropagation()
       if (lp.monitors.length <= 1) {
         const target = lp.monitors[0]
-        if (!target) { status('No display detected', 'error'); return }
+        if (!target) {
+          status('No display detected', 'error')
+          return
+        }
         await applyLocalEntryToMonitor(target, entry)
       } else {
         showLibraryMonitorPicker(entry)
@@ -57,18 +66,29 @@ export async function applyLocalEntryToMonitor(m, entry) {
     status('Encoding…')
     try {
       cached = await call('PreprocessVideo', entry.filePath, m.width, m.height)
-    } catch (_) { status('Encoding cancelled.'); return }
+    } catch (_) {
+      status('Encoding cancelled.')
+      return
+    }
   }
   status('Applying…')
   try {
     await call('ApplyWallpapers', [{ monitorIndex: m.index, filePath: cached }])
-    lp.state[m.index] = { filePath: entry.filePath, cachedPath: cached, isVideo: entry.isVideo, ready: true, thumbnail: entry.thumbnail }
+    lp.state[m.index] = {
+      filePath: entry.filePath,
+      cachedPath: cached,
+      isVideo: entry.isVideo,
+      ready: true,
+      thumbnail: entry.thumbnail,
+    }
     lp.fn.commitApply?.()
     showView('displays')
     lp.fn.applyThumb?.(m.index, entry.thumbnail, entry.filePath, entry.isVideo)
     lp.fn.refreshApply?.()
     status('Applied!', 'success', 3000)
-  } catch (e) { status(`Failed: ${e}`, 'error') }
+  } catch (e) {
+    status(`Failed: ${e}`, 'error')
+  }
 }
 
 // ── Monitor picker for local items ─────────────────────────────────────────────
@@ -114,7 +134,11 @@ export function _buildMonitorOption(m, newThumb) {
   opt.className = 'monitor-option'
   const currentThumb = lp.state[m.index]?.thumbnail || ''
   const currentName = lp.state[m.index]?.filePath
-    ? (lp.state[m.index].filePath.replace(/\\/g, '/').split('/').pop().replace(/\.[^.]+$/, '') || 'Current')
+    ? lp.state[m.index].filePath
+        .replace(/\\/g, '/')
+        .split('/')
+        .pop()
+        .replace(/\.[^.]+$/, '') || 'Current'
     : 'No wallpaper'
   opt.innerHTML = `
     <div class="monitor-option-preview">
@@ -137,7 +161,10 @@ export async function applyToMonitor(m, path, isVideo, thumbnail, it) {
     status('Encoding…')
     try {
       cached = await call('PreprocessVideo', path, m.width, m.height)
-    } catch (_) { status('Encoding cancelled.'); return }
+    } catch (_) {
+      status('Encoding cancelled.')
+      return
+    }
   }
   status('Applying…')
   try {
@@ -149,12 +176,19 @@ export async function applyToMonitor(m, path, isVideo, thumbnail, it) {
     lp.fn.refreshApply?.()
     await upsertRecent({
       fileKey: `discover:${it.id}|${m.width}x${m.height}`,
-      filePath: path, cachedPath: cached, isVideo, thumbnail, width: m.width, height: m.height,
+      filePath: path,
+      cachedPath: cached,
+      isVideo,
+      thumbnail,
+      width: m.width,
+      height: m.height,
     }).catch(() => {})
     lp.fn.pruneAndRefresh?.()
     status('Applied!', 'success', 3000)
     lp.fn.track?.('discover_apply', { id: it.id })
-  } catch (e) { status(`Failed: ${e}`, 'error') }
+  } catch (e) {
+    status(`Failed: ${e}`, 'error')
+  }
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────────

@@ -1,21 +1,19 @@
 ---
 import { Upload } from '@lucide/astro'
+import ViewHeader from './ViewHeader.astro'
 ---
 
 <div id="storage-panel" class="hidden flex-1 flex-col overflow-hidden">
-  <div class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6">
-    <div class="wails-drag">
-      <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Storage</h1>
-      <p class="text-lp-muted mt-px text-[11px]" id="storage-count">Loading wallpapers…</p>
-    </div>
+  <ViewHeader title="Storage" subtitle="Loading wallpapers…" subtitleId="storage-count">
     <button
+      slot="actions"
       id="storage-upload-btn"
-      class="wails-no-drag inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] bg-lp-accent px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#4a9fff]"
+      class="wails-no-drag bg-lp-accent inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.12] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#4a9fff]"
     >
-      <Upload size={13} strokeWidth={2.5} aria-hidden="true" />
+      <Upload size={13} stroke-width={2.5} aria-hidden="true" />
       Upload
     </button>
-  </div>
+  </ViewHeader>
   <div class="wails-no-drag lp-scroll flex-1 overflow-y-auto">
     <div class="px-6 py-4">
       <table class="storage-table w-full" id="storage-table">

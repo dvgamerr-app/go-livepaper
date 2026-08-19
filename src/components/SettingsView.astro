@@ -35,7 +35,7 @@ const communityFeatures = [
       class="wails-no-drag text-lp-muted hover:text-lp-text grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded border-0 bg-transparent transition-colors duration-[120ms] hover:bg-white/[0.06]"
       aria-label="Back to displays"
     >
-      <ChevronLeft size={14} strokeWidth={2} aria-hidden="true" />
+      <ChevronLeft size={14} stroke-width={2} aria-hidden="true" />
     </button>
     <div class="wails-drag">
       <h1 class="text-sm font-semibold tracking-[-0.01em]">Settings</h1>
@@ -79,12 +79,28 @@ const communityFeatures = [
               <p class="setting-desc">Interface language.</p>
             </div>
             <div class="lp-select" data-setting="language" aria-label="Interface language">
-              <button type="button" class="lp-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <button
+                type="button"
+                class="lp-select-trigger"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+              >
                 <span class="lp-select-val">English (US)</span>
-                <ChevronDown class="lp-select-caret" size={11} strokeWidth={2} aria-hidden="true" />
+                <ChevronDown
+                  class="lp-select-caret"
+                  size={11}
+                  stroke-width={2}
+                  aria-hidden="true"
+                />
               </button>
               <div class="lp-select-dropdown" role="listbox" hidden>
-                <button type="button" class="lp-select-item selected" data-value="en-US" role="option" aria-selected="true">English (US)</button>
+                <button
+                  type="button"
+                  class="lp-select-item selected"
+                  data-value="en-US"
+                  role="option"
+                  aria-selected="true">English (US)</button
+                >
               </div>
             </div>
           </div>
@@ -99,8 +115,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="telemetry"
               class="lp-toggle"
-              aria-label="Telemetry"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Telemetry"></button>
           </div>
         </div>
 
@@ -124,7 +139,7 @@ const communityFeatures = [
               class="text-lp-muted enabled:hover:text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-white/[0.08] bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 enabled:hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-[0.35]"
               id="clean-btn"
             >
-              <Trash2 size={13} strokeWidth={2} aria-hidden="true" />
+              <Trash2 size={13} stroke-width={2} aria-hidden="true" />
               Clean Cache
             </button>
           </div>
@@ -138,7 +153,7 @@ const communityFeatures = [
               id="reset-btn"
               disabled
             >
-              <RotateCcw size={13} strokeWidth={2} aria-hidden="true" />
+              <RotateCcw size={13} stroke-width={2} aria-hidden="true" />
               Reset
             </button>
           </div>
@@ -152,7 +167,9 @@ const communityFeatures = [
           <div class="setting-item">
             <div class="min-w-0">
               <p class="setting-label">Hardware decoding</p>
-              <p class="setting-desc">Use GPU to decode video. Disabling uses CPU decoding with lighter GPU rendering.</p>
+              <p class="setting-desc">
+                Use GPU to decode video. Disabling uses CPU decoding with lighter GPU rendering.
+              </p>
             </div>
             <button
               type="button"
@@ -160,8 +177,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="gpuAcceleration"
               class="lp-toggle"
-              aria-label="Hardware decoding"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Hardware decoding"></button>
           </div>
           <div class="setting-item">
             <div class="min-w-0">
@@ -188,13 +204,34 @@ const communityFeatures = [
               <p class="setting-label">Render adapter</p>
               <p class="setting-desc">Choose which GPU renders live wallpapers.</p>
             </div>
-            <div class="lp-select" data-setting="gpuAdapter" id="gpu-adapter-select" aria-label="Render adapter">
-              <button type="button" class="lp-select-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <div
+              class="lp-select"
+              data-setting="gpuAdapter"
+              id="gpu-adapter-select"
+              aria-label="Render adapter"
+            >
+              <button
+                type="button"
+                class="lp-select-trigger"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+              >
                 <span class="lp-select-val">Auto</span>
-                <ChevronDown class="lp-select-caret" size={11} strokeWidth={2} aria-hidden="true" />
+                <ChevronDown
+                  class="lp-select-caret"
+                  size={11}
+                  stroke-width={2}
+                  aria-hidden="true"
+                />
               </button>
               <div class="lp-select-dropdown" role="listbox" hidden>
-                <button type="button" class="lp-select-item selected" data-value="" role="option" aria-selected="true">Auto</button>
+                <button
+                  type="button"
+                  class="lp-select-item selected"
+                  data-value=""
+                  role="option"
+                  aria-selected="true">Auto</button
+                >
               </div>
             </div>
           </div>
@@ -213,8 +250,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="pauseOnGame"
               class="lp-toggle"
-              aria-label="Pause on game detection"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Pause on game detection"></button>
           </div>
           <div class="setting-item">
             <div class="min-w-0">
@@ -227,8 +263,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="pauseOnBattery"
               class="lp-toggle"
-              aria-label="Pause on battery saver"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Pause on battery saver"></button>
           </div>
           <div class="setting-item">
             <div class="min-w-0">
@@ -241,8 +276,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="reduceMotionOnFocus"
               class="lp-toggle"
-              aria-label="Reduce motion on focus"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Reduce motion on focus"></button>
           </div>
         </div>
 
@@ -254,9 +288,18 @@ const communityFeatures = [
               <p class="setting-desc">Background material for the Live Paper window.</p>
             </div>
             <div class="flex gap-1.5" role="group" aria-label="Window theme">
-              <button type="button" class="theme-card" data-setting="windowTheme" data-value="mica">Warm</button>
-              <button type="button" class="theme-card" data-setting="windowTheme" data-value="acrylic">Acrylic</button>
-              <button type="button" class="theme-card" data-setting="windowTheme" data-value="solid">Solid</button>
+              <button type="button" class="theme-card" data-setting="windowTheme" data-value="mica"
+                >Warm</button
+              >
+              <button
+                type="button"
+                class="theme-card"
+                data-setting="windowTheme"
+                data-value="acrylic">Acrylic</button
+              >
+              <button type="button" class="theme-card" data-setting="windowTheme" data-value="solid"
+                >Solid</button
+              >
             </div>
           </div>
         </div>
@@ -277,8 +320,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="launchAtLogin"
               class="lp-toggle"
-              aria-label="Launch at login"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Launch at login"></button>
           </div>
           <div class="setting-item">
             <div class="min-w-0">
@@ -291,8 +333,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="startMinimized"
               class="lp-toggle"
-              aria-label="Start minimized to tray"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Start minimized to tray"></button>
           </div>
           <div class="setting-item">
             <div class="min-w-0">
@@ -305,8 +346,7 @@ const communityFeatures = [
               aria-checked="false"
               data-setting="restoreLastPlaylist"
               class="lp-toggle"
-              aria-label="Restore last wallpapers"><span class="lp-toggle-knob"></span></button
-            >
+              aria-label="Restore last wallpapers"></button>
           </div>
         </div>
       </section>
@@ -450,7 +490,7 @@ const communityFeatures = [
           class="border-lp-border bg-lp-surface/40 hidden flex-col items-center gap-4 rounded-xl border p-10 text-center"
         >
           <span class="grid h-12 w-12 place-items-center rounded-xl bg-white/[0.06]">
-            <Lock size={22} color="rgba(255,255,255,0.7)" strokeWidth={1.75} aria-hidden="true" />
+            <Lock size={22} color="rgba(255,255,255,0.7)" stroke-width={1.75} aria-hidden="true" />
           </span>
           <div>
             <p class="text-lp-text text-[14px] font-semibold">Sign in to subscribe</p>
@@ -473,7 +513,7 @@ const communityFeatures = [
           >
             <div class="flex items-center gap-2.5">
               <span class="bg-lp-success grid h-6 w-6 place-items-center rounded-full text-black">
-                <Check size={14} strokeWidth={3} aria-hidden="true" />
+                <Check size={14} stroke-width={3} aria-hidden="true" />
               </span>
               <h2 class="text-[15px] font-semibold">Community access active</h2>
             </div>
@@ -507,7 +547,9 @@ const communityFeatures = [
               <Star size={18} fill="currentColor" aria-hidden="true" />
             </span>
             <div class="min-w-0 flex-1">
-              <p class="text-lp-text text-[12.5px] font-semibold" id="billing-star-title">Star the repo, save $5/mo</p>
+              <p class="text-lp-text text-[12.5px] font-semibold" id="billing-star-title">
+                Star the repo, save $5/mo
+              </p>
               <p class="text-lp-muted text-[11px] leading-snug" id="billing-star-status">
                 Star <span class="font-mono" id="billing-repo">dvgamerr/go-livepaper</span> on GitHub
                 to drop the price from $9 to $4.
@@ -546,7 +588,12 @@ const communityFeatures = [
                 {
                   freeFeatures.map((f) => (
                     <li class="text-lp-text flex items-center gap-2 text-[12px]">
-                      <Check class="text-lp-success shrink-0" size={13} strokeWidth={2.5} aria-hidden="true" />
+                      <Check
+                        class="text-lp-success shrink-0"
+                        size={13}
+                        stroke-width={2.5}
+                        aria-hidden="true"
+                      />
                       {f}
                     </li>
                   ))
@@ -582,7 +629,12 @@ const communityFeatures = [
                 {
                   communityFeatures.map((f) => (
                     <li class="text-lp-text flex items-center gap-2 text-[12px]">
-                      <Check class="text-lp-accent shrink-0" size={13} strokeWidth={2.5} aria-hidden="true" />
+                      <Check
+                        class="text-lp-accent shrink-0"
+                        size={13}
+                        stroke-width={2.5}
+                        aria-hidden="true"
+                      />
                       {f}
                     </li>
                   ))
@@ -597,7 +649,7 @@ const communityFeatures = [
               <p
                 class="text-lp-muted mt-3 flex items-center justify-center gap-1.5 text-center text-[10px]"
               >
-                <Lock size={11} strokeWidth={2} aria-hidden="true" />
+                <Lock size={11} stroke-width={2} aria-hidden="true" />
                 Secure checkout · Cancel anytime
               </p>
             </div>

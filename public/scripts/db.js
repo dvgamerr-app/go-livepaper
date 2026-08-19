@@ -1,6 +1,13 @@
 // IndexedDB (recent wallpaper history) + localStorage (downloaded items) helpers.
 
-import { lp, IDB_NAME, IDB_VERSION, STORE_RECENT, RECENT_LIMIT, DOWNLOADED_KEY } from '/scripts/store.js'
+import {
+  lp,
+  IDB_NAME,
+  IDB_VERSION,
+  STORE_RECENT,
+  RECENT_LIMIT,
+  DOWNLOADED_KEY,
+} from '/scripts/store.js'
 
 // ── IndexedDB ─────────────────────────────────────────────────────────────────
 
@@ -28,8 +35,10 @@ export async function upsertRecent(entry) {
     getReq.onsuccess = () => {
       const existing = getReq.result
       const record = { ...entry, appliedAt: Date.now() }
-      if (existing) { record.id = existing.id; store.put(record) }
-      else store.add(record)
+      if (existing) {
+        record.id = existing.id
+        store.put(record)
+      } else store.add(record)
     }
     tx.oncomplete = () => resolve()
     tx.onerror = (e) => reject(e.target.error)
@@ -49,7 +58,9 @@ export async function pruneRecent() {
       store.openCursor().onsuccess = (ce) => {
         const cursor = ce.target.result
         if (!cursor || deleted >= del) return
-        cursor.delete(); deleted++; cursor.continue()
+        cursor.delete()
+        deleted++
+        cursor.continue()
       }
     }
     tx.oncomplete = () => resolve()
@@ -64,8 +75,10 @@ export async function loadGalleryItems() {
     const items = []
     store.openCursor(null, 'prev').onsuccess = (e) => {
       const cursor = e.target.result
-      if (cursor) { items.push(cursor.value); cursor.continue() }
-      else resolve(items)
+      if (cursor) {
+        items.push(cursor.value)
+        cursor.continue()
+      } else resolve(items)
     }
     tx.onerror = () => resolve([])
   })
@@ -84,7 +97,11 @@ export async function clearRecentHistory() {
 // ── Downloaded wallpapers tracking (localStorage) ─────────────────────────────
 
 export function getDownloadedMap() {
-  try { return JSON.parse(localStorage.getItem(DOWNLOADED_KEY) || '{}') } catch { return {} }
+  try {
+    return JSON.parse(localStorage.getItem(DOWNLOADED_KEY) || '{}')
+  } catch {
+    return {}
+  }
 }
 
 export function setDownloadedItem(id, info) {
@@ -93,8 +110,12 @@ export function setDownloadedItem(id, info) {
   localStorage.setItem(DOWNLOADED_KEY, JSON.stringify(m))
 }
 
-export function getDownloadedItem(id) { return getDownloadedMap()[id] || null }
-export function isDownloaded(id) { return !!getDownloadedItem(id) }
+export function getDownloadedItem(id) {
+  return getDownloadedMap()[id] || null
+}
+export function isDownloaded(id) {
+  return !!getDownloadedItem(id)
+}
 
 // Register in cross-module registry
 lp.fn.upsertRecent = upsertRecent

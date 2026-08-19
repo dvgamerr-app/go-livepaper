@@ -1,19 +1,32 @@
 // Authentication: token management, session check, profile UI, SSO, user dropdown.
 
 import { lp, call, API_BASE, TOKEN_KEY, USER_KEY } from '/scripts/store.js'
-import { status } from '/scripts/ui.js'
 
 // ── Token management ──────────────────────────────────────────────────────────
 
-export function getToken() { return localStorage.getItem(TOKEN_KEY) }
-export function setToken(t) { localStorage.setItem(TOKEN_KEY, t) }
-export function clearToken() { localStorage.removeItem(TOKEN_KEY) }
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY)
+}
+export function setToken(t) {
+  localStorage.setItem(TOKEN_KEY, t)
+}
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY)
+}
 
 function getCachedUser() {
-  try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null') } catch { return null }
+  try {
+    return JSON.parse(localStorage.getItem(USER_KEY) || 'null')
+  } catch {
+    return null
+  }
 }
-function setCachedUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)) }
-function clearCachedUser() { localStorage.removeItem(USER_KEY) }
+function setCachedUser(u) {
+  localStorage.setItem(USER_KEY, JSON.stringify(u))
+}
+function clearCachedUser() {
+  localStorage.removeItem(USER_KEY)
+}
 
 export function authHeaders() {
   const t = getToken()
@@ -32,7 +45,9 @@ export function isPremium() {
 async function gravatarUrl(email) {
   const e = email.trim().toLowerCase()
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(e))
-  const hash = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
+  const hash = Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
   return `https://www.gravatar.com/avatar/${hash}?s=56&d=mp`
 }
 
@@ -67,20 +82,29 @@ export async function updateProfileUI(user) {
     if (tierEl) tierEl.textContent = 'Free Lifetime'
     if (loginBtn) loginBtn.classList.remove('hidden')
     if (chevron) chevron.classList.add('hidden')
-    if (avatarImg) { avatarImg.src = ''; avatarImg.classList.add('hidden') }
+    if (avatarImg) {
+      avatarImg.src = ''
+      avatarImg.classList.add('hidden')
+    }
   }
   lp.fn.refreshAuthDependentUI?.()
 }
 
 export async function checkSession() {
-  if (!getToken()) { clearCachedUser(); return updateProfileUI(null) }
+  if (!getToken()) {
+    clearCachedUser()
+    return updateProfileUI(null)
+  }
   const cached = getCachedUser()
   if (cached) await updateProfileUI(cached)
   try {
     const res = await fetch(`${API_BASE}/api/auth/get-session`, { headers: authHeaders() })
     const data = await res.json()
     if (data?.user) await updateProfileUI(data.user)
-    else { clearToken(); await updateProfileUI(null) }
+    else {
+      clearToken()
+      await updateProfileUI(null)
+    }
   } catch (_) {}
 }
 
@@ -162,7 +186,11 @@ document.getElementById('signout-confirm-btn')?.addEventListener('click', async 
   btn.disabled = true
   btn.textContent = '…'
   try {
-    await fetch(`${API_BASE}/api/auth/sign-out`, { method: 'POST', headers: authHeaders(), body: '{}' })
+    await fetch(`${API_BASE}/api/auth/sign-out`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: '{}',
+    })
   } catch (_) {}
   clearToken()
   await updateProfileUI(null)
@@ -172,14 +200,25 @@ document.getElementById('signout-confirm-btn')?.addEventListener('click', async 
 })
 
 loginCloseBtn?.addEventListener('click', closeLoginModal)
-loginModal?.addEventListener('click', (e) => { if (e.target === loginModal) closeLoginModal() })
-document.getElementById('sso-cancel')?.addEventListener('click', () => { stopPoll(); setWaiting(false) })
+loginModal?.addEventListener('click', (e) => {
+  if (e.target === loginModal) closeLoginModal()
+})
+document.getElementById('sso-cancel')?.addEventListener('click', () => {
+  stopPoll()
+  setWaiting(false)
+})
 
 // ── SSO — external browser + state polling ────────────────────────────────────
 
 function stopPoll() {
-  if (lp.pollTimer) { clearInterval(lp.pollTimer); lp.pollTimer = null }
-  if (lp.pollTimeout) { clearTimeout(lp.pollTimeout); lp.pollTimeout = null }
+  if (lp.pollTimer) {
+    clearInterval(lp.pollTimer)
+    lp.pollTimer = null
+  }
+  if (lp.pollTimeout) {
+    clearTimeout(lp.pollTimeout)
+    lp.pollTimeout = null
+  }
   lp.activeState = null
 }
 
@@ -192,7 +231,8 @@ async function startSSO(provider, { onSuccess, onFail, silent = false } = {}) {
   call('OpenExternal', url).catch(() => {})
 
   if (!silent) {
-    if (ssoWaitLabel) ssoWaitLabel.textContent = `Waiting for ${provider === 'github' ? 'GitHub' : 'Google'}…`
+    if (ssoWaitLabel)
+      ssoWaitLabel.textContent = `Waiting for ${provider === 'github' ? 'GitHub' : 'Google'}…`
     setWaiting(true)
   }
 
@@ -212,7 +252,10 @@ async function startSSO(provider, { onSuccess, onFail, silent = false } = {}) {
         lp.pollPauseUntil = Date.now() + 10_000
       } else if (res.status >= 400 && res.status < 500 && res.status !== 404) {
         stopPoll()
-        if (!silent) { setWaiting(false); showSSOError('Sign-in failed — please try again.') }
+        if (!silent) {
+          setWaiting(false)
+          showSSOError('Sign-in failed — please try again.')
+        }
         if (onFail) onFail('failed')
       }
     } catch (_) {}
@@ -221,7 +264,10 @@ async function startSSO(provider, { onSuccess, onFail, silent = false } = {}) {
   lp.pollTimeout = setTimeout(() => {
     if (lp.activeState === capturedState) {
       stopPoll()
-      if (!silent) { setWaiting(false); showSSOError('Sign-in timed out — please try again.') }
+      if (!silent) {
+        setWaiting(false)
+        showSSOError('Sign-in timed out — please try again.')
+      }
       if (onFail) onFail('timeout')
     }
   }, 180_000)
@@ -251,7 +297,10 @@ export function refreshAuthDependentUI() {
   if (lic) {
     const prem = isPremium()
     lic.textContent = prem ? 'Community' : 'Free Lifetime'
-    if (licDesc) licDesc.textContent = prem ? 'Community access — apply community wallpapers.' : 'Free — all local features, unlimited.'
+    if (licDesc)
+      licDesc.textContent = prem
+        ? 'Community access — apply community wallpapers.'
+        : 'Free — all local features, unlimited.'
   }
   lp.fn.refreshDiscoverLock?.()
   lp.fn.refreshGalleryLocks?.()

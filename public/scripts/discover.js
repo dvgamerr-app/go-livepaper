@@ -2,11 +2,11 @@
 
 import { lp, call, API_BASE, WALLPAPER_LIMIT } from '/scripts/store.js'
 import { status, escapeHtml, track, openSettingsTab } from '/scripts/ui.js'
-import { isDownloaded, setDownloadedItem, getDownloadedItem, upsertRecent } from '/scripts/db.js'
+import { isDownloaded, setDownloadedItem, getDownloadedItem } from '/scripts/db.js'
 
-const DC_SVG_LOCK  = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
-const DC_SVG_DL    = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
-const DC_SVG_STAR  = `<svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+const DC_SVG_LOCK = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+const DC_SVG_DL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
+const DC_SVG_STAR = `<svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
 const DC_SVG_CHECK = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>`
 
 function fmtCount(n) {
@@ -20,7 +20,9 @@ function fmtCount(n) {
 
 export function refreshDiscoverLock() {
   const prem = lp.fn.isPremium?.() ?? false
-  document.querySelectorAll('.dc-feat-lock-note').forEach((el) => el.classList.toggle('hidden', prem))
+  document
+    .querySelectorAll('.dc-feat-lock-note')
+    .forEach((el) => el.classList.toggle('hidden', prem))
   document.querySelectorAll('.dc-download:not(.downloaded)').forEach((b) => {
     b.classList.toggle('unlocked', prem)
     b.classList.toggle('locked', !prem)
@@ -63,7 +65,11 @@ export function renderDiscoverPills() {
   const allTags = [...new Set(lp.discoverItems.flatMap((i) => i.tags || []))]
   const staticFilters = [
     { id: 'all', label: 'All', icon: '' },
-    { id: 'trending', label: 'Trending', icon: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>` },
+    {
+      id: 'trending',
+      label: 'Trending',
+      icon: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+    },
     { id: 'new', label: 'New', icon: '' },
   ]
   const pills = [...staticFilters, ...allTags.map((t) => ({ id: t, label: t, icon: '' }))]
@@ -75,9 +81,9 @@ export function renderDiscoverPills() {
     btn.innerHTML = p.icon + p.label
     btn.addEventListener('click', () => {
       lp.discoverActiveFilter = p.id
-      container.querySelectorAll('.discover-pill').forEach((el) =>
-        el.classList.toggle('active', el.dataset.filter === p.id)
-      )
+      container
+        .querySelectorAll('.discover-pill')
+        .forEach((el) => el.classList.toggle('active', el.dataset.filter === p.id))
       renderDiscover(document.getElementById('discover-search')?.value || '')
     })
     container.appendChild(btn)
@@ -89,7 +95,9 @@ export function renderDiscoverFeatured(it) {
   const container = document.getElementById('discover-featured')
   if (!container) return
   const isLocked = !(lp.fn.isPremium?.() ?? false)
-  const dlText = it.downloadCount ? fmtCount(it.downloadCount) + ' downloads' : 'Community wallpaper'
+  const dlText = it.downloadCount
+    ? fmtCount(it.downloadCount) + ' downloads'
+    : 'Community wallpaper'
   const ratingText = it.avgRating != null ? ` · ★ ${Number(it.avgRating).toFixed(1)}` : ''
   const featDl = isDownloaded(it.id)
   const featBtnClass = isLocked ? 'locked' : 'unlocked'
@@ -165,11 +173,17 @@ export function renderDiscover(search) {
     const dl = isDownloaded(it.id)
     let dlBtnClass, dlBtnLabel, dlBtnSvg
     if (dl) {
-      dlBtnClass = 'dc-download downloaded'; dlBtnLabel = 'Apply wallpaper'; dlBtnSvg = DC_SVG_CHECK
+      dlBtnClass = 'dc-download downloaded'
+      dlBtnLabel = 'Apply wallpaper'
+      dlBtnSvg = DC_SVG_CHECK
     } else if (prem) {
-      dlBtnClass = 'dc-download unlocked'; dlBtnLabel = 'Download wallpaper'; dlBtnSvg = DC_SVG_DL
+      dlBtnClass = 'dc-download unlocked'
+      dlBtnLabel = 'Download wallpaper'
+      dlBtnSvg = DC_SVG_DL
     } else {
-      dlBtnClass = 'dc-download locked'; dlBtnLabel = 'Subscribe to download'; dlBtnSvg = DC_SVG_LOCK
+      dlBtnClass = 'dc-download locked'
+      dlBtnLabel = 'Subscribe to download'
+      dlBtnSvg = DC_SVG_LOCK
     }
     card.innerHTML = `
       <img alt="" loading="lazy" draggable="false">
@@ -210,7 +224,10 @@ export function renderDiscover(search) {
 // ── Rate ───────────────────────────────────────────────────────────────────────
 
 export function onDiscoverRate(card, it) {
-  if (!lp.fn.getToken?.()) { lp.fn.openLoginModal?.(); return }
+  if (!lp.fn.getToken?.()) {
+    lp.fn.openLoginModal?.()
+    return
+  }
   if (card.querySelector('.dc-rate-picker')) return
   const picker = document.createElement('div')
   picker.className = 'dc-rate-picker'
@@ -232,7 +249,10 @@ export function onDiscoverRate(card, it) {
       try {
         const res = await fetch(`${API_BASE}/api/wallpapers/${it.id}/rate`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', authorization: `Bearer ${lp.fn.getToken()}` },
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${lp.fn.getToken()}`,
+          },
           body: JSON.stringify({ score: Number(star.dataset.score) }),
         })
         if (res.ok) {
@@ -250,7 +270,10 @@ export function onDiscoverRate(card, it) {
     })
   })
   const closePicker = (e) => {
-    if (!picker.contains(e.target)) { picker.remove(); document.removeEventListener('click', closePicker) }
+    if (!picker.contains(e.target)) {
+      picker.remove()
+      document.removeEventListener('click', closePicker)
+    }
   }
   card.appendChild(picker)
   setTimeout(() => document.addEventListener('click', closePicker), 0)
@@ -274,7 +297,10 @@ function _renderPreview() {
   const baseItems = lp._pvSearch
     ? lp.discoverItems.filter((i) => {
         const q = lp._pvSearch.toLowerCase()
-        return (i.title || '').toLowerCase().includes(q) || (i.tags || []).some((t) => t.toLowerCase().includes(q))
+        return (
+          (i.title || '').toLowerCase().includes(q) ||
+          (i.tags || []).some((t) => t.toLowerCase().includes(q))
+        )
       })
     : lp._pvItems
   if (baseItems.length === 0) return
@@ -286,17 +312,22 @@ function _renderPreview() {
   const tags = it.tags || []
   let actionClass, actionHtml
   if (dl) {
-    actionClass = 'dc-preview-btn success'; actionHtml = `${DC_SVG_CHECK} Apply Wallpaper`
+    actionClass = 'dc-preview-btn success'
+    actionHtml = `${DC_SVG_CHECK} Apply Wallpaper`
   } else if (isLocked) {
-    actionClass = 'dc-preview-btn locked'; actionHtml = `${DC_SVG_LOCK} Unlock to Download`
+    actionClass = 'dc-preview-btn locked'
+    actionHtml = `${DC_SVG_LOCK} Unlock to Download`
   } else {
-    actionClass = 'dc-preview-btn primary'; actionHtml = `${DC_SVG_DL} Download`
+    actionClass = 'dc-preview-btn primary'
+    actionHtml = `${DC_SVG_DL} Download`
   }
   const tagsHtml = tags.map((t) => `<span class="dc-preview-tag">${escapeHtml(t)}</span>`).join('')
   const metaHtml = [
     avgRating ? `${DC_SVG_STAR} ${avgRating}` : '',
     it.downloadCount ? `${DC_SVG_DL} ${fmtCount(it.downloadCount)}` : '',
-  ].filter(Boolean).join('<span class="meta-sep">·</span>')
+  ]
+    .filter(Boolean)
+    .join('<span class="meta-sep">·</span>')
   const ov = document.createElement('div')
   ov.className = 'dc-preview-overlay'
   ov.innerHTML = `
@@ -339,10 +370,20 @@ function _renderPreview() {
   }
   ov.querySelector('.dc-preview-close')?.addEventListener('click', closePreview)
   ov.querySelector('#pv-action').addEventListener('click', async () => {
-    if (isLocked) { closePreview(); openSettingsTab('billing'); return }
+    if (isLocked) {
+      closePreview()
+      openSettingsTab('billing')
+      return
+    }
     const btn = ov.querySelector('#pv-action')
-    if (dl) { closePreview(); await onDiscoverApply(it) }
-    else { await onDiscoverDownload(it, btn); lp._pvItems = baseItems; _renderPreview() }
+    if (dl) {
+      closePreview()
+      await onDiscoverApply(it)
+    } else {
+      await onDiscoverDownload(it, btn)
+      lp._pvItems = baseItems
+      _renderPreview()
+    }
   })
   ov.querySelector('#pv-back').addEventListener('click', () => {
     lp._pvItems = baseItems
@@ -381,23 +422,36 @@ function _renderPreview() {
 // ── Download ───────────────────────────────────────────────────────────────────
 
 export async function onDiscoverDownload(it, btn) {
-  if (!lp.fn.getToken?.()) { lp.fn.openLoginModal?.(); return }
-  if (!(lp.fn.isPremium?.() ?? false)) { openSettingsTab('billing'); return }
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="lp-loading-text">Downloading…</span>' }
+  if (!lp.fn.getToken?.()) {
+    lp.fn.openLoginModal?.()
+    return
+  }
+  if (!(lp.fn.isPremium?.() ?? false)) {
+    openSettingsTab('billing')
+    return
+  }
+  if (btn) {
+    btn.disabled = true
+    btn.innerHTML = '<span class="lp-loading-text">Downloading…</span>'
+  }
   status('Downloading…')
   let path
   try {
     path = await call('DownloadToTemp', it.downloadUrl, lp.fn.getToken(), it.id)
   } catch (e) {
-    if (String(e).includes('premium_required')) { openSettingsTab('billing'); status('') }
-    else status('Download failed', 'error')
-    if (btn) { btn.disabled = false; btn.innerHTML = DC_SVG_DL }
+    if (String(e).includes('premium_required')) {
+      openSettingsTab('billing')
+      status('')
+    } else status('Download failed', 'error')
+    if (btn) {
+      btn.disabled = false
+      btn.innerHTML = DC_SVG_DL
+    }
     return
   }
   const isVideo = await call('IsVideoFile', path)
   const thumbnail = await call('GetThumbnail', path)
   setDownloadedItem(it.id, { path, thumbnail, title: it.title, isVideo, tags: it.tags || [] })
-  await upsertRecent({ fileKey: `discover:${it.id}`, filePath: path, cachedPath: path, isVideo, thumbnail, width: 0, height: 0 }).catch(() => {})
   lp.fn.pruneAndRefresh?.()
   status('Downloaded!', 'success', 2500)
   track('discover_download', { id: it.id })
@@ -406,24 +460,38 @@ export async function onDiscoverDownload(it, btn) {
     btn.className = 'dc-download downloaded'
     btn.setAttribute('aria-label', 'Apply wallpaper')
     btn.innerHTML = DC_SVG_CHECK
-    btn.onclick = (e) => { e.stopPropagation(); onDiscoverApply(it) }
-  }
-  document.querySelectorAll(`.discover-card[data-discover-id="${it.id}"] .dc-download`).forEach((b) => {
-    if (b !== btn) {
-      b.className = 'dc-download downloaded'
-      b.setAttribute('aria-label', 'Apply wallpaper')
-      b.innerHTML = DC_SVG_CHECK
-      b.onclick = (e) => { e.stopPropagation(); onDiscoverApply(it) }
+    btn.onclick = (e) => {
+      e.stopPropagation()
+      onDiscoverApply(it)
     }
-  })
+  }
+  document
+    .querySelectorAll(`.discover-card[data-discover-id="${it.id}"] .dc-download`)
+    .forEach((b) => {
+      if (b !== btn) {
+        b.className = 'dc-download downloaded'
+        b.setAttribute('aria-label', 'Apply wallpaper')
+        b.innerHTML = DC_SVG_CHECK
+        b.onclick = (e) => {
+          e.stopPropagation()
+          onDiscoverApply(it)
+        }
+      }
+    })
   if (lp.currentView === 'library') lp.fn.renderLibrary?.()
 }
 
 // ── Apply ──────────────────────────────────────────────────────────────────────
 
 export async function onDiscoverApply(it) {
-  if (!lp.fn.getToken?.()) { lp.fn.openLoginModal?.(); return }
-  if (!(lp.fn.isPremium?.() ?? false)) { openSettingsTab('billing'); return }
+  if (!lp.fn.getToken?.()) {
+    lp.fn.openLoginModal?.()
+    return
+  }
+  if (!(lp.fn.isPremium?.() ?? false)) {
+    openSettingsTab('billing')
+    return
+  }
   let dlInfo = getDownloadedItem(it.id)
   if (dlInfo) {
     const exists = await call('FileExists', dlInfo.path).catch(() => false)
@@ -437,7 +505,10 @@ export async function onDiscoverApply(it) {
   const { path, isVideo, thumbnail } = dlInfo
   if (lp.monitors.length <= 1) {
     const target = lp.monitors[0]
-    if (!target) { status('No display detected', 'error'); return }
+    if (!target) {
+      status('No display detected', 'error')
+      return
+    }
     await lp.fn.applyToMonitor?.(target, path, isVideo, thumbnail, it)
   } else {
     lp.fn.showMonitorPicker?.(it, path, isVideo, thumbnail)
@@ -452,14 +523,19 @@ export async function applyRemoteEntryToMonitor(entry, m) {
     openSettingsTab('billing')
     return
   }
-  if (!(lp.fn.isPremium?.() ?? false)) { openSettingsTab('billing'); return }
+  if (!(lp.fn.isPremium?.() ?? false)) {
+    openSettingsTab('billing')
+    return
+  }
   status('Downloading…')
   let path
   try {
     path = await call('DownloadToTemp', entry.downloadUrl, lp.fn.getToken(), entry.id)
   } catch (e) {
-    if (String(e).includes('premium_required')) { openSettingsTab('billing'); status('') }
-    else status('Download failed', 'error')
+    if (String(e).includes('premium_required')) {
+      openSettingsTab('billing')
+      status('')
+    } else status('Download failed', 'error')
     return
   }
   const isVideo = await call('IsVideoFile', path)
@@ -488,7 +564,9 @@ export async function applyRemoteEntryToMonitor(entry, m) {
 
 // ── Event listeners ────────────────────────────────────────────────────────────
 
-document.getElementById('discover-search')?.addEventListener('input', (e) => renderDiscover(e.target.value))
+document
+  .getElementById('discover-search')
+  ?.addEventListener('input', (e) => renderDiscover(e.target.value))
 document.getElementById('discover-refresh')?.addEventListener('click', () => {
   lp.discoverLoaded = false
   lp.discoverActiveFilter = 'all'

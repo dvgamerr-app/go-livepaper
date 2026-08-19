@@ -1,34 +1,35 @@
 ---
-
+import ModalShell from './ModalShell.astro'
 ---
 
-<div
+<ModalShell
   id="signout-confirm-modal"
-  class="wails-no-drag fixed inset-0 z-[200] flex items-center justify-center bg-black/60"
-  hidden
+  labelledBy="signout-title"
+  overlayClass="z-[200] bg-black/60"
+  panelClass="w-[300px]"
 >
-  <div
-    class="border-lp-border-strong w-[300px] overflow-hidden rounded-xl border bg-[#18181b] shadow-[0_24px_64px_rgba(0,0,0,0.7)]"
-    role="dialog"
-    aria-modal="true"
-  >
-    <div class="px-5 pt-5 pb-5">
-      <p class="text-lp-text mb-1 text-[13px] font-semibold">Sign out of Live Paper?</p>
-      <p class="text-lp-muted mb-4 text-[11px] leading-relaxed">You'll need to sign in again to access your account.</p>
-      <div class="flex items-center justify-end gap-2">
-        <button
-          id="signout-cancel-btn"
-          class="text-lp-muted hover:text-lp-text cursor-pointer rounded-md border border-white/[0.08] bg-transparent px-3 py-1.5 text-[12px] transition-colors duration-[120ms] hover:bg-white/[0.04]"
-        >
-          Cancel
-        </button>
-        <button
-          id="signout-confirm-btn"
-          class="cursor-pointer rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] text-red-400 transition-colors duration-[120ms] hover:bg-red-500/20 hover:text-red-300"
-        >
-          Sign out
-        </button>
-      </div>
+  <div class="px-5 pt-5 pb-5">
+    <p id="signout-title" class="text-lp-text mb-1 text-[13px] font-semibold">
+      Sign out of Live Paper?
+    </p>
+    <p class="text-lp-muted mb-4 text-[11px] leading-relaxed">
+      You'll need to sign in again to access your account.
+    </p>
+    <div class="flex items-center justify-end gap-2">
+      <button
+        id="signout-cancel-btn"
+        type="button"
+        class="text-lp-muted hover:text-lp-text cursor-pointer rounded-md border border-white/[0.08] bg-transparent px-3 py-1.5 text-[12px] transition-colors duration-[120ms] hover:bg-white/[0.04]"
+      >
+        Cancel
+      </button>
+      <button
+        id="signout-confirm-btn"
+        type="button"
+        class="cursor-pointer rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] text-red-400 transition-colors duration-[120ms] hover:bg-red-500/20 hover:text-red-300"
+      >
+        Sign out
+      </button>
     </div>
   </div>
-</div>
+</ModalShell>

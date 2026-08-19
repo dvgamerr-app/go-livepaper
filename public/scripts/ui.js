@@ -1,6 +1,6 @@
 // UI helpers: status bar, view router, text utilities, telemetry.
 
-import { lp, call, API_BASE } from '/scripts/store.js'
+import { lp, API_BASE } from '/scripts/store.js'
 
 const contentEl = document.getElementById('content')
 const applyBtn = document.getElementById('apply-btn')
@@ -8,6 +8,8 @@ const resetBtn = document.getElementById('reset-btn')
 const discardBtn = document.getElementById('discard-btn')
 const statusEl = document.getElementById('status')
 const dotEl = document.getElementById('ab-dot')
+const pendingActions = document.getElementById('footer-pending-actions')
+const pauseBtn = document.getElementById('pause-wallpaper-btn')
 
 export { contentEl, applyBtn, resetBtn, discardBtn }
 
@@ -27,24 +29,25 @@ export function status(msg, type, clearAfter) {
 // ── Footer mode ───────────────────────────────────────────────────────────────
 
 export function setFooterMode(mode) {
-  const pendingActions = document.getElementById('footer-pending-actions')
-  const pauseBtn = document.getElementById('pause-wallpaper-btn')
-  if (mode === 'pending') {
-    pendingActions?.classList.remove('hidden')
-    pendingActions?.classList.add('flex')
-    pauseBtn?.classList.add('hidden')
-  } else {
-    pendingActions?.classList.add('hidden')
-    pendingActions?.classList.remove('flex')
-    pauseBtn?.classList.remove('hidden')
-  }
+  const isPending = mode === 'pending'
+  pendingActions?.classList.toggle('hidden', !isPending)
+  pendingActions?.classList.toggle('flex', isPending)
+  pauseBtn?.classList.toggle('hidden', isPending)
 }
 
 // ── Apply button state ────────────────────────────────────────────────────────
 
 export function refreshApply() {
-  const anySelected = Object.values(lp.state).some((s) => s.filePath)
-  const anyProcessing = Object.values(lp.state).some((s) => s.filePath && s.isVideo && !s.ready)
+  let anySelected = false
+  let anyProcessing = false
+  for (const assignment of Object.values(lp.state)) {
+    if (!assignment.filePath) continue
+    anySelected = true
+    if (assignment.isVideo && !assignment.ready) {
+      anyProcessing = true
+      break
+    }
+  }
   applyBtn.disabled = !anySelected || anyProcessing
   resetBtn.disabled = !anySelected || anyProcessing
   setFooterMode(lp.pendingChanges && anySelected && !anyProcessing ? 'pending' : 'applied')
@@ -59,13 +62,16 @@ const VIEW_PANELS = {
   library: 'library-panel',
   storage: 'storage-panel',
 }
+const viewPanels = Object.entries(VIEW_PANELS).map(([name, id]) => [
+  name,
+  document.getElementById(id),
+])
 
 export function showView(name) {
   if (!VIEW_PANELS[name]) return
-  for (const [v, pid] of Object.entries(VIEW_PANELS)) {
-    const el = document.getElementById(pid)
+  for (const [viewName, el] of viewPanels) {
     if (!el) continue
-    const on = v === name
+    const on = viewName === name
     el.classList.toggle('hidden', !on)
     el.classList.toggle('flex', on)
     el.classList.toggle('lp-view', on)
@@ -102,7 +108,10 @@ export function escapeHtml(s) {
 
 export function debounce(fn, ms) {
   let t
-  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms) }
+  return (...a) => {
+    clearTimeout(t)
+    t = setTimeout(() => fn(...a), ms)
+  }
 }
 
 export function extOf(p) {
@@ -111,7 +120,9 @@ export function extOf(p) {
 
 export function resolutionBadgeText(w, h) {
   if (!w || !h) return ''
-  function gcd(a, b) { return b ? gcd(b, a % b) : a }
+  function gcd(a, b) {
+    return b ? gcd(b, a % b) : a
+  }
   const g = gcd(w, h)
   let ratio = `${w / g}:${h / g}`
   const r = w / h

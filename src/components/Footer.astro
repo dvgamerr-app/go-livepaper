@@ -30,18 +30,13 @@ import { Check, Pause } from '@lucide/astro'
         id="apply-btn"
         disabled
       >
-        <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+        <Check size={14} stroke-width={2.5} aria-hidden="true" />
         Apply Wallpapers
       </button>
     </div>
     <!-- Applied mode: default, shown after apply/discard -->
-    <button
-      id="pause-wallpaper-btn"
-      type="button"
-      class="lp-pause-action"
-      aria-pressed="false"
-    >
-      <Pause id="pause-wallpaper-icon" size={14} strokeWidth={2} aria-hidden="true" />
+    <button id="pause-wallpaper-btn" type="button" class="lp-pause-action" aria-pressed="false">
+      <Pause id="pause-wallpaper-icon" size={14} stroke-width={2} aria-hidden="true" />
       <span id="pause-wallpaper-label">Pause</span>
     </button>
   </div>

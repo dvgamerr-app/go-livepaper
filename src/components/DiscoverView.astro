@@ -1,28 +1,23 @@
 ---
 import { RotateCcw, Search } from '@lucide/astro'
+import ViewHeader from './ViewHeader.astro'
 // Community wallpaper browser. Grid is populated by the inline script in
 // index.astro from the backend (`/api/wallpapers`). Everyone can browse; Apply
 // is gated behind a community subscription.
 ---
 
 <div id="discover-panel" class="hidden flex-1 flex-col overflow-hidden">
-  <!-- Header -->
-  <div
-    class="border-lp-border wails-drag flex h-[52px] shrink-0 items-center justify-between border-b px-6"
-  >
-    <div class="wails-drag">
-      <h1 class="text-sm leading-tight font-semibold tracking-[-0.01em]">Discover</h1>
-      <p class="text-lp-muted mt-px text-[11px]">Community live wallpapers from the Workshop</p>
-    </div>
+  <ViewHeader title="Discover" subtitle="Community live wallpapers from the Workshop">
     <button
+      slot="actions"
       id="discover-refresh"
       class="wails-no-drag text-lp-muted hover:text-lp-text grid h-9 w-9 cursor-pointer place-items-center rounded-md border border-white/[0.08] bg-transparent transition-colors hover:bg-white/[0.05]"
       aria-label="Refresh"
       title="Refresh"
     >
-      <RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
+      <RotateCcw size={14} stroke-width={2} aria-hidden="true" />
     </button>
-  </div>
+  </ViewHeader>
 
   <div class="wails-no-drag lp-scroll flex-1 overflow-y-auto">
     <!-- Search + filter pills -->
@@ -30,7 +25,12 @@ import { RotateCcw, Search } from '@lucide/astro'
       class="border-lp-border bg-lp-bg/80 sticky top-0 z-10 border-b px-6 pt-4 pb-3 backdrop-blur-xl"
     >
       <div class="relative max-w-md">
-        <Search class="text-lp-muted absolute top-1/2 left-3 -translate-y-1/2" size={14} strokeWidth={2} aria-hidden="true" />
+        <Search
+          class="text-lp-muted absolute top-1/2 left-3 -translate-y-1/2"
+          size={14}
+          stroke-width={2}
+          aria-hidden="true"
+        />
         <input
           id="discover-search"
           type="search"
@@ -43,7 +43,7 @@ import { RotateCcw, Search } from '@lucide/astro'
     </div>
 
     <!-- Featured banner + subscription notice: populated by JS after load -->
-    <div id="discover-featured" class="px-6 pt-5 hidden"></div>
+    <div id="discover-featured" class="hidden px-6 pt-5"></div>
 
     <!-- Grid -->
     <div class="px-6 py-5">

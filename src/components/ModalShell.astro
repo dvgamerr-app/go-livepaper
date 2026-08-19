@@ -1,0 +1,28 @@
+---
+interface Props {
+  id: string
+  labelledBy?: string
+  overlayClass: string
+  panelClass: string
+}
+
+const { id, labelledBy, overlayClass, panelClass } = Astro.props
+---
+
+<div
+  {id}
+  hidden
+  class:list={['wails-no-drag fixed inset-0 flex items-center justify-center', overlayClass]}
+>
+  <div
+    class:list={[
+      'border-lp-border-strong overflow-hidden rounded-xl border bg-[#18181b] shadow-[0_24px_64px_rgba(0,0,0,0.7)]',
+      panelClass,
+    ]}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby={labelledBy}
+  >
+    <slot />
+  </div>
+</div>

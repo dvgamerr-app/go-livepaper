@@ -1,0 +1,17 @@
+---
+interface Props {
+  title: string
+  subtitle: string
+  subtitleId?: string
+}
+
+const { title, subtitle, subtitleId } = Astro.props
+---
+
+<header class="lp-view-header wails-drag">
+  <div class="wails-drag">
+    <h1 class="lp-view-title">{title}</h1>
+    <p class="lp-view-subtitle" id={subtitleId}>{subtitle}</p>
+  </div>
+  <slot name="actions" />
+</header>

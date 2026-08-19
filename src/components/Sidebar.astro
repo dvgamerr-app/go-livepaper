@@ -1,5 +1,15 @@
 ---
-import { Monitor, Compass, Briefcase, Image, Folder, Database, Settings, LogOut, ChevronUp } from '@lucide/astro'
+import {
+  Monitor,
+  Compass,
+  Briefcase,
+  Image,
+  Folder,
+  Database,
+  Settings,
+  LogOut,
+  ChevronUp,
+} from '@lucide/astro'
 ---
 
 <aside
@@ -15,61 +25,31 @@ import { Monitor, Compass, Briefcase, Image, Folder, Database, Settings, LogOut,
   </div>
 
   <nav class="wails-no-drag flex flex-col gap-0.5 px-2">
-    <button
-      class="nav-item active flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
-      data-view="displays"
-    >
-      <span class="nav-icon">
-        <Monitor size={14} strokeWidth={2} aria-hidden="true" />
-      </span>
+    <button class="nav-item active" data-view="displays">
+      <Monitor class="nav-icon" size={14} stroke-width={2} aria-hidden="true" />
       Displays
-      <span class="nav-dot"></span>
     </button>
 
-    <button
-      class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
-      data-view="discover"
-    >
-      <span class="nav-icon">
-        <Compass size={14} strokeWidth={2} aria-hidden="true" />
-      </span>
+    <button class="nav-item" data-view="discover">
+      <Compass class="nav-icon" size={14} stroke-width={2} aria-hidden="true" />
       Discover
-      <span class="nav-dot"></span>
     </button>
 
-    <button
-      class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
-      tabindex="-1"
-      title="Coming soon"
-      aria-disabled="true"
-    >
-      <span class="text-lp-muted flex shrink-0 items-center">
-        <Briefcase size={14} strokeWidth={2} aria-hidden="true" />
-      </span>
+    <button class="nav-item-disabled" tabindex="-1" title="Coming soon" aria-disabled="true">
+      <Briefcase class="nav-icon" size={14} stroke-width={2} aria-hidden="true" />
       Playlists
-      <span class="text-lp-muted ml-auto shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[10px]">—</span>
+      <span class="text-lp-muted ml-auto shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[10px]"
+        >—</span
+      >
     </button>
 
-    <button
-      class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
-      data-view="library"
-    >
-      <span class="nav-icon">
-        <Image size={14} strokeWidth={2} aria-hidden="true" />
-      </span>
+    <button class="nav-item" data-view="library">
+      <Image class="nav-icon" size={14} stroke-width={2} aria-hidden="true" />
       Library
-      <span class="nav-dot"></span>
     </button>
 
-    <button
-      class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]"
-      tabindex="-1"
-      title="Coming soon"
-      aria-disabled="true"
-    >
-      <span class="text-lp-muted flex shrink-0 items-center">
-        <Folder size={14} strokeWidth={2} aria-hidden="true" />
-      </span>
+    <button class="nav-item-disabled" tabindex="-1" title="Coming soon" aria-disabled="true">
+      <Folder class="nav-icon" size={14} stroke-width={2} aria-hidden="true" />
       Local Folders
     </button>
   </nav>
@@ -77,37 +57,33 @@ import { Monitor, Compass, Briefcase, Image, Folder, Database, Settings, LogOut,
   <!-- Admin section — shown only when user has admin role -->
   <div
     id="admin-sidebar-section"
-    class="text-lp-muted wails-drag px-[18px] pt-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase hidden"
+    class="text-lp-muted wails-drag hidden px-[18px] pt-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase"
   >
     Admin
   </div>
   <div id="admin-nav-items" class="wails-no-drag hidden flex-col gap-0.5 px-2">
-    <button
-      class="nav-item flex h-8 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap transition-colors duration-[120ms]"
-      data-view="storage"
-    >
-      <span class="nav-icon">
-        <Database size={14} strokeWidth={2} aria-hidden="true" />
-      </span>
+    <button class="nav-item" data-view="storage">
+      <Database class="nav-icon" size={14} stroke-width={2} aria-hidden="true" />
       Storage
-      <span class="nav-dot"></span>
     </button>
   </div>
 
-  <div class="text-lp-muted wails-drag px-[18px] pt-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase">
+  <div
+    class="text-lp-muted wails-drag px-[18px] pt-4 pb-1 text-[10px] font-semibold tracking-[0.12em] uppercase"
+  >
     Collections
   </div>
   <div class="wails-no-drag flex flex-col gap-0.5 px-2">
-    <button class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]" tabindex="-1" title="Coming soon" aria-disabled="true">
+    <button class="nav-item-disabled" tabindex="-1" title="Coming soon" aria-disabled="true">
       <span class="swatch-atmospheric h-2 w-2 shrink-0 rounded-full"></span>Atmospheric
     </button>
-    <button class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]" tabindex="-1" title="Coming soon" aria-disabled="true">
+    <button class="nav-item-disabled" tabindex="-1" title="Coming soon" aria-disabled="true">
       <span class="swatch-cyberpunk h-2 w-2 shrink-0 rounded-full"></span>Cyberpunk
     </button>
-    <button class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]" tabindex="-1" title="Coming soon" aria-disabled="true">
+    <button class="nav-item-disabled" tabindex="-1" title="Coming soon" aria-disabled="true">
       <span class="swatch-anime h-2 w-2 shrink-0 rounded-full"></span>Anime
     </button>
-    <button class="text-lp-muted flex h-8 w-full cursor-default items-center gap-2 overflow-hidden rounded-md border-0 bg-transparent px-2.5 text-left text-[12px] font-medium whitespace-nowrap opacity-[0.38]" tabindex="-1" title="Coming soon" aria-disabled="true">
+    <button class="nav-item-disabled" tabindex="-1" title="Coming soon" aria-disabled="true">
       <span class="swatch-nature h-2 w-2 shrink-0 rounded-full"></span>Nature
     </button>
   </div>
@@ -124,7 +100,7 @@ import { Monitor, Compass, Briefcase, Image, Folder, Database, Settings, LogOut,
         id="dd-settings"
         class="flex w-full cursor-pointer items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left text-[12px] text-white/70 transition-colors duration-[120ms] hover:bg-white/[0.06] hover:text-white/90"
       >
-        <Settings size={13} strokeWidth={2} aria-hidden="true" />
+        <Settings size={13} stroke-width={2} aria-hidden="true" />
         Settings
       </button>
       <div class="mx-3 h-px bg-white/[0.06]"></div>
@@ -132,7 +108,7 @@ import { Monitor, Compass, Briefcase, Image, Folder, Database, Settings, LogOut,
         id="dd-signout"
         class="flex w-full cursor-pointer items-center gap-2.5 border-0 bg-transparent px-3 py-2.5 text-left text-[12px] text-white/70 transition-colors duration-[120ms] hover:bg-red-500/[0.08] hover:text-red-400"
       >
-        <LogOut size={13} strokeWidth={2} aria-hidden="true" />
+        <LogOut size={13} stroke-width={2} aria-hidden="true" />
         Sign out
       </button>
     </div>
@@ -164,7 +140,7 @@ import { Monitor, Compass, Briefcase, Image, Folder, Database, Settings, LogOut,
         class="hidden shrink-0 cursor-pointer text-white/30 transition-colors duration-[120ms] hover:text-white/60"
         aria-label="Account options"
       >
-        <ChevronUp size={12} strokeWidth={2} aria-hidden="true" />
+        <ChevronUp size={12} stroke-width={2} aria-hidden="true" />
       </span>
     </div>
   </div>

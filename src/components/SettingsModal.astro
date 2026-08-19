@@ -22,7 +22,7 @@ import { X, Trash2, RotateCcw } from '@lucide/astro'
         id="modal-close"
         aria-label="Close settings"
       >
-        <X size={14} strokeWidth={2} aria-hidden="true" />
+        <X size={14} stroke-width={2} aria-hidden="true" />
       </button>
     </div>
 
@@ -40,10 +40,7 @@ import { X, Trash2, RotateCcw } from '@lucide/astro'
         <div class="flex min-w-0 flex-col gap-0.5">
           <div class="text-lp-text text-[13px] font-medium">Temp folder</div>
           <div class="text-lp-muted text-[11px] leading-tight">
-            Encoded video files are cached in <code
-              class="code-inline"
-              >%TEMP%\livepaper\</code
-            >
+            Encoded video files are cached in <code class="code-inline">%TEMP%\livepaper\</code>
           </div>
         </div>
       </div>
@@ -61,7 +58,7 @@ import { X, Trash2, RotateCcw } from '@lucide/astro'
           class="text-lp-muted enabled:hover:text-lp-text inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-transparent px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 enabled:hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-[0.35]"
           id="clean-btn"
         >
-          <Trash2 size={13} strokeWidth={2} aria-hidden="true" />
+          <Trash2 size={13} stroke-width={2} aria-hidden="true" />
           Clean Cache
         </button>
       </div>
@@ -78,7 +75,7 @@ import { X, Trash2, RotateCcw } from '@lucide/astro'
           id="reset-btn"
           disabled
         >
-          <RotateCcw size={13} strokeWidth={2} aria-hidden="true" />
+          <RotateCcw size={13} stroke-width={2} aria-hidden="true" />
           Reset
         </button>
       </div>

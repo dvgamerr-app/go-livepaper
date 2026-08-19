@@ -1,7 +1,7 @@
 // Settings: bindings, lp-select, pause button, tabs, hotkey capture, reapply video.
 
 import { lp, call } from '/scripts/store.js'
-import { status, debounce, track, openSettingsTab } from '/scripts/ui.js'
+import { status, debounce, track } from '/scripts/ui.js'
 
 // ── Window theme ───────────────────────────────────────────────────────────────
 
@@ -24,9 +24,9 @@ const saveSettingsDebounced = debounce(() => {
 
 export function renderSettings() {
   if (!lp.appSettings) return
-  document.querySelectorAll('.lp-toggle[data-setting]').forEach((b) =>
-    setToggle(b, lp.appSettings[b.dataset.setting])
-  )
+  document
+    .querySelectorAll('.lp-toggle[data-setting]')
+    .forEach((b) => setToggle(b, lp.appSettings[b.dataset.setting]))
   document.querySelectorAll('.lp-select[data-setting]').forEach((sel) => {
     const val = lp.appSettings[sel.dataset.setting]
     if (val != null) setLpSelectValue(sel, String(val))
@@ -37,9 +37,9 @@ export function renderSettings() {
     const lbl = document.getElementById('vram-cap-label')
     if (lbl) lbl.textContent = `${lp.appSettings.vramCapMB} MB`
   }
-  document.querySelectorAll('[data-setting="windowTheme"][data-value]').forEach((s) =>
-    s.classList.toggle('active', s.dataset.value === lp.appSettings.windowTheme)
-  )
+  document
+    .querySelectorAll('[data-setting="windowTheme"][data-value]')
+    .forEach((s) => s.classList.toggle('active', s.dataset.value === lp.appSettings.windowTheme))
   document.querySelectorAll('.lp-kbd[data-hotkey]').forEach((b) => {
     b.textContent = (lp.appSettings.hotkeys && lp.appSettings.hotkeys[b.dataset.hotkey]) || '—'
   })
@@ -76,9 +76,11 @@ export function bindSettingsControls() {
   document.querySelectorAll('[data-setting="windowTheme"][data-value]').forEach((seg) => {
     seg.addEventListener('click', () => {
       lp.appSettings.windowTheme = seg.dataset.value
-      document.querySelectorAll('[data-setting="windowTheme"][data-value]').forEach((s) =>
-        s.classList.toggle('active', s.dataset.value === lp.appSettings.windowTheme)
-      )
+      document
+        .querySelectorAll('[data-setting="windowTheme"][data-value]')
+        .forEach((s) =>
+          s.classList.toggle('active', s.dataset.value === lp.appSettings.windowTheme)
+        )
       applyWindowThemeCss(lp.appSettings.windowTheme)
       saveSettingsDebounced()
     })
@@ -223,32 +225,36 @@ function displayKey(e) {
   return k
 }
 
-window.addEventListener('keydown', (e) => {
-  if (!lp.capturing) return
-  e.preventDefault()
-  e.stopPropagation()
-  if (e.key === 'Escape') {
+window.addEventListener(
+  'keydown',
+  (e) => {
+    if (!lp.capturing) return
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.key === 'Escape') {
+      lp.capturing.btn.classList.remove('capturing')
+      lp.capturing = null
+      renderSettings()
+      return
+    }
+    const k = displayKey(e)
+    if (!k) return
+    const parts = []
+    if (e.ctrlKey) parts.push('Ctrl')
+    if (e.shiftKey) parts.push('Shift')
+    if (e.altKey) parts.push('Alt')
+    if (e.metaKey) parts.push('Win')
+    parts.push(k)
+    const combo = parts.join(' + ')
+    if (!lp.appSettings.hotkeys) lp.appSettings.hotkeys = {}
+    lp.appSettings.hotkeys[lp.capturing.action] = combo
+    lp.capturing.btn.textContent = combo
     lp.capturing.btn.classList.remove('capturing')
     lp.capturing = null
-    renderSettings()
-    return
-  }
-  const k = displayKey(e)
-  if (!k) return
-  const parts = []
-  if (e.ctrlKey) parts.push('Ctrl')
-  if (e.shiftKey) parts.push('Shift')
-  if (e.altKey) parts.push('Alt')
-  if (e.metaKey) parts.push('Win')
-  parts.push(k)
-  const combo = parts.join(' + ')
-  if (!lp.appSettings.hotkeys) lp.appSettings.hotkeys = {}
-  lp.appSettings.hotkeys[lp.capturing.action] = combo
-  lp.capturing.btn.textContent = combo
-  lp.capturing.btn.classList.remove('capturing')
-  lp.capturing = null
-  call('SaveSettings', lp.appSettings).catch(() => {})
-}, true)
+    call('SaveSettings', lp.appSettings).catch(() => {})
+  },
+  true
+)
 
 // ── Reapply video wallpapers ───────────────────────────────────────────────────
 
@@ -257,11 +263,17 @@ export async function reapplyVideoWallpapers() {
     .filter(([, s]) => s.filePath && s.ready)
     .map(([idx, s]) => ({ monitorIndex: parseInt(idx, 10), filePath: s.cachedPath || s.filePath }))
   if (!list.length) return
-  try { await call('SaveSettings', lp.appSettings) } catch (_) {}
+  try {
+    await call('SaveSettings', lp.appSettings)
+  } catch (_) {}
   status('Reapplying…')
   try {
     await call('ApplyWallpapers', list)
-    status(lp.appSettings.gpuAcceleration ? 'GPU acceleration on' : 'GPU acceleration off', 'success', 2500)
+    status(
+      lp.appSettings.gpuAcceleration ? 'GPU acceleration on' : 'GPU acceleration off',
+      'success',
+      2500
+    )
   } catch (e) {
     status(`Failed: ${e}`, 'error')
   }
@@ -270,8 +282,14 @@ export async function reapplyVideoWallpapers() {
 // ── Init settings ──────────────────────────────────────────────────────────────
 
 export async function initSettings() {
-  try { lp.appVersion = await call('GetVersion') } catch (_) {}
-  try { lp.appSettings = await call('GetSettings') } catch (_) { lp.appSettings = null }
+  try {
+    lp.appVersion = await call('GetVersion')
+  } catch (_) {}
+  try {
+    lp.appSettings = await call('GetSettings')
+  } catch (_) {
+    lp.appSettings = null
+  }
   if (!lp.appSettings) return
   applyWindowThemeCss(lp.appSettings.windowTheme)
   try {
@@ -292,7 +310,8 @@ export async function initSettings() {
         }
       }
       initLpSelect(selWrap)
-      if (lp.appSettings.gpuAdapter != null) setLpSelectValue(selWrap, String(lp.appSettings.gpuAdapter))
+      if (lp.appSettings.gpuAdapter != null)
+        setLpSelectValue(selWrap, String(lp.appSettings.gpuAdapter))
     }
   } catch (_) {}
   renderSettings()
