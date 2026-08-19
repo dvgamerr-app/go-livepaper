@@ -25,98 +25,94 @@ func getOrientation(file *os.File) int {
 }
 
 func applyOrientation(img image.Image, orientation int) image.Image {
-	bounds := img.Bounds()
-	width := bounds.Dx()
-	height := bounds.Dy()
-
 	switch orientation {
 	case 1:
 		return img
 	case 2:
-		return mirrorHorizontal(img, width, height)
+		return mirrorHorizontal(img)
 	case 3:
-		return rotate180(img, width, height)
+		return rotate180(img)
 	case 4:
-		return mirrorVertical(img, width, height)
+		return mirrorVertical(img)
 	case 5:
-		return transformOrientation5(img, width, height)
+		return transformOrientation5(img)
 	case 6:
-		return transformOrientation6(img, width, height)
+		return transformOrientation6(img)
 	case 7:
-		return transformOrientation7(img, width, height)
+		return transformOrientation7(img)
 	case 8:
-		return transformOrientation8(img, width, height)
+		return transformOrientation8(img)
 	default:
 		return img
 	}
 }
 
-func mirrorHorizontal(img image.Image, width, height int) image.Image {
-	dst := image.NewRGBA(img.Bounds())
+type pixelMapper func(x, y, width, height int) (dstX, dstY int)
+
+// transformPixels applies an orientation mapping using coordinates local to
+// each image's bounds. Decoded images usually start at (0,0), but sub-images do
+// not, so source and destination offsets must be handled explicitly.
+func transformPixels(img image.Image, dstBounds image.Rectangle, mapper pixelMapper) image.Image {
+	srcBounds := img.Bounds()
+	width, height := srcBounds.Dx(), srcBounds.Dy()
+	dst := image.NewRGBA(dstBounds)
+
 	for y := range height {
 		for x := range width {
-			dst.Set(width-x-1, y, img.At(x, y))
+			dstX, dstY := mapper(x, y, width, height)
+			dst.Set(
+				dstBounds.Min.X+dstX,
+				dstBounds.Min.Y+dstY,
+				img.At(srcBounds.Min.X+x, srcBounds.Min.Y+y),
+			)
 		}
 	}
 	return dst
 }
 
-func mirrorVertical(img image.Image, width, height int) image.Image {
-	dst := image.NewRGBA(img.Bounds())
-	for y := range height {
-		for x := range width {
-			dst.Set(x, height-y-1, img.At(x, y))
-		}
-	}
-	return dst
+func mirrorHorizontal(img image.Image) image.Image {
+	return transformPixels(img, img.Bounds(), func(x, y, width, _ int) (int, int) {
+		return width - x - 1, y
+	})
 }
 
-func rotate180(img image.Image, width, height int) image.Image {
-	dst := image.NewRGBA(img.Bounds())
-	for y := range height {
-		for x := range width {
-			dst.Set(width-x-1, height-y-1, img.At(x, y))
-		}
-	}
-	return dst
+func mirrorVertical(img image.Image) image.Image {
+	return transformPixels(img, img.Bounds(), func(x, y, _, height int) (int, int) {
+		return x, height - y - 1
+	})
 }
 
-func transformOrientation5(img image.Image, width, height int) image.Image {
-	dst := image.NewRGBA(image.Rect(0, 0, height, width))
-	for y := range height {
-		for x := range width {
-			dst.Set(y, width-x-1, img.At(x, y))
-		}
-	}
-	return dst
+func rotate180(img image.Image) image.Image {
+	return transformPixels(img, img.Bounds(), func(x, y, width, height int) (int, int) {
+		return width - x - 1, height - y - 1
+	})
 }
 
-func transformOrientation6(img image.Image, width, height int) image.Image {
-	dst := image.NewRGBA(image.Rect(0, 0, height, width))
-	for y := range height {
-		for x := range width {
-			dst.Set(height-y-1, x, img.At(x, y))
-		}
-	}
-	return dst
+func swappedBounds(img image.Image) image.Rectangle {
+	bounds := img.Bounds()
+	return image.Rect(0, 0, bounds.Dy(), bounds.Dx())
 }
 
-func transformOrientation7(img image.Image, width, height int) image.Image {
-	dst := image.NewRGBA(image.Rect(0, 0, height, width))
-	for y := range height {
-		for x := range width {
-			dst.Set(y, x, img.At(x, y))
-		}
-	}
-	return dst
+func transformOrientation5(img image.Image) image.Image {
+	return transformPixels(img, swappedBounds(img), func(x, y, width, _ int) (int, int) {
+		return y, width - x - 1
+	})
 }
 
-func transformOrientation8(img image.Image, width, height int) image.Image {
-	dst := image.NewRGBA(image.Rect(0, 0, height, width))
-	for y := range height {
-		for x := range width {
-			dst.Set(height-y-1, width-x-1, img.At(x, y))
-		}
-	}
-	return dst
+func transformOrientation6(img image.Image) image.Image {
+	return transformPixels(img, swappedBounds(img), func(x, y, _, height int) (int, int) {
+		return height - y - 1, x
+	})
+}
+
+func transformOrientation7(img image.Image) image.Image {
+	return transformPixels(img, swappedBounds(img), func(x, y, _, _ int) (int, int) {
+		return y, x
+	})
+}
+
+func transformOrientation8(img image.Image) image.Image {
+	return transformPixels(img, swappedBounds(img), func(x, y, width, height int) (int, int) {
+		return height - y - 1, width - x - 1
+	})
 }

@@ -15,16 +15,16 @@ import (
 // rotation / mirror tests can verify pixel positions unambiguously.
 func makeCheckerImage(w, h int) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	img.Set(0, 0, color.RGBA{R: 255, A: 255})              // top-left:     red
-	img.Set(w-1, 0, color.RGBA{G: 255, A: 255})            // top-right:    green
-	img.Set(0, h-1, color.RGBA{B: 255, A: 255})            // bottom-left:  blue
-	img.Set(w-1, h-1, color.RGBA{R: 255, G: 255, A: 255})  // bottom-right: yellow
+	img.Set(0, 0, color.RGBA{R: 255, A: 255})             // top-left:     red
+	img.Set(w-1, 0, color.RGBA{G: 255, A: 255})           // top-right:    green
+	img.Set(0, h-1, color.RGBA{B: 255, A: 255})           // bottom-left:  blue
+	img.Set(w-1, h-1, color.RGBA{R: 255, G: 255, A: 255}) // bottom-right: yellow
 	return img
 }
 
 func TestMirrorHorizontal(t *testing.T) {
 	img := makeCheckerImage(4, 3)
-	r := mirrorHorizontal(img, 4, 3)
+	r := mirrorHorizontal(img)
 
 	// Original red (0,0) moves to (3,0); original green (3,0) moves to (0,0).
 	if r.At(3, 0) != (color.RGBA{R: 255, A: 255}) {
@@ -37,7 +37,7 @@ func TestMirrorHorizontal(t *testing.T) {
 
 func TestMirrorVertical(t *testing.T) {
 	img := makeCheckerImage(4, 3)
-	r := mirrorVertical(img, 4, 3)
+	r := mirrorVertical(img)
 
 	// Original red (0,0) moves to (0,2); original blue (0,2) moves to (0,0).
 	if r.At(0, 2) != (color.RGBA{R: 255, A: 255}) {
@@ -50,7 +50,7 @@ func TestMirrorVertical(t *testing.T) {
 
 func TestRotate180(t *testing.T) {
 	img := makeCheckerImage(4, 3)
-	r := rotate180(img, 4, 3)
+	r := rotate180(img)
 
 	// Original red (0,0) moves to (3,2); original yellow (3,2) moves to (0,0).
 	if r.At(3, 2) != (color.RGBA{R: 255, A: 255}) {
@@ -63,7 +63,7 @@ func TestRotate180(t *testing.T) {
 
 func TestTransformOrientation5(t *testing.T) {
 	img := makeCheckerImage(4, 3)
-	r := transformOrientation5(img, 4, 3)
+	r := transformOrientation5(img)
 
 	if got := r.Bounds(); got != image.Rect(0, 0, 3, 4) {
 		t.Errorf("transformOrientation5 bounds = %v, want (0,0)-(3,4)", got)
@@ -76,7 +76,7 @@ func TestTransformOrientation5(t *testing.T) {
 
 func TestTransformOrientation6(t *testing.T) {
 	img := makeCheckerImage(4, 3)
-	r := transformOrientation6(img, 4, 3)
+	r := transformOrientation6(img)
 
 	if got := r.Bounds(); got != image.Rect(0, 0, 3, 4) {
 		t.Errorf("transformOrientation6 bounds = %v, want (0,0)-(3,4)", got)
@@ -89,7 +89,7 @@ func TestTransformOrientation6(t *testing.T) {
 
 func TestTransformOrientation7(t *testing.T) {
 	img := makeCheckerImage(4, 3)
-	r := transformOrientation7(img, 4, 3)
+	r := transformOrientation7(img)
 
 	if got := r.Bounds(); got != image.Rect(0, 0, 3, 4) {
 		t.Errorf("transformOrientation7 bounds = %v, want (0,0)-(3,4)", got)
@@ -102,7 +102,7 @@ func TestTransformOrientation7(t *testing.T) {
 
 func TestTransformOrientation8(t *testing.T) {
 	img := makeCheckerImage(4, 3)
-	r := transformOrientation8(img, 4, 3)
+	r := transformOrientation8(img)
 
 	if got := r.Bounds(); got != image.Rect(0, 0, 3, 4) {
 		t.Errorf("transformOrientation8 bounds = %v, want (0,0)-(3,4)", got)
@@ -146,6 +146,38 @@ func TestApplyOrientation_AllCases(t *testing.T) {
 				t.Errorf("applyOrientation(%d): expected original image returned", tt.orient)
 			}
 		}
+	}
+}
+
+func TestApplyOrientation_NonZeroSourceBounds(t *testing.T) {
+	img := image.NewRGBA(image.Rect(10, 20, 14, 23))
+	red := color.RGBA{R: 255, A: 255}
+	img.Set(10, 20, red)
+
+	tests := []struct {
+		orientation int
+		wantBounds  image.Rectangle
+		wantPoint   image.Point
+	}{
+		{orientation: 2, wantBounds: image.Rect(10, 20, 14, 23), wantPoint: image.Pt(13, 20)},
+		{orientation: 3, wantBounds: image.Rect(10, 20, 14, 23), wantPoint: image.Pt(13, 22)},
+		{orientation: 4, wantBounds: image.Rect(10, 20, 14, 23), wantPoint: image.Pt(10, 22)},
+		{orientation: 5, wantBounds: image.Rect(0, 0, 3, 4), wantPoint: image.Pt(0, 3)},
+		{orientation: 6, wantBounds: image.Rect(0, 0, 3, 4), wantPoint: image.Pt(2, 0)},
+		{orientation: 7, wantBounds: image.Rect(0, 0, 3, 4), wantPoint: image.Pt(0, 0)},
+		{orientation: 8, wantBounds: image.Rect(0, 0, 3, 4), wantPoint: image.Pt(2, 3)},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(rune('0'+tt.orientation)), func(t *testing.T) {
+			got := applyOrientation(img, tt.orientation)
+			if got.Bounds() != tt.wantBounds {
+				t.Fatalf("bounds = %v, want %v", got.Bounds(), tt.wantBounds)
+			}
+			if got.At(tt.wantPoint.X, tt.wantPoint.Y) != red {
+				t.Errorf("red source pixel not mapped to %v", tt.wantPoint)
+			}
+		})
 	}
 }
 
