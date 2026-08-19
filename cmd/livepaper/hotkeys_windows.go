@@ -138,10 +138,11 @@ func parseCombo(combo string) (mods uintptr, vk uint32, ok bool) {
 	if combo == "" {
 		return 0, 0, false
 	}
+	keyFound := false
 	for _, raw := range strings.Split(combo, "+") {
 		tok := strings.TrimSpace(raw)
 		if tok == "" {
-			continue
+			return 0, 0, false
 		}
 		switch strings.ToLower(tok) {
 		case "ctrl", "control":
@@ -153,12 +154,18 @@ func parseCombo(combo string) (mods uintptr, vk uint32, ok bool) {
 		case "win", "cmd", "meta", "⊞", "super":
 			mods |= modWin
 		default:
-			if v, found := keyToVK(tok); found {
-				vk = v
+			v, found := keyToVK(tok)
+			if !found || keyFound {
+				return 0, 0, false
 			}
+			vk = v
+			keyFound = true
 		}
 	}
-	return mods, vk, vk != 0
+	if !keyFound {
+		return 0, 0, false
+	}
+	return mods, vk, true
 }
 
 // keyToVK maps a single key token to its virtual-key code.
