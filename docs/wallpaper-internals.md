@@ -204,6 +204,8 @@ rawY = normalizedY + vdMinY
 - อย่าวาง `if (...) { ... } else { ... }` เป็น element ตรง ๆ ภายใน PowerShell array expression `@(...)`; PowerShell จะพยายามเรียก `if` เป็นคำสั่ง ให้ใช้ subexpression `$(if (...) { ... } else { ... })` หรือแยก statement ออกมาก่อน
 - เมื่อ parser ใช้ named return แล้วสะสมค่าไประหว่างทาง อย่าคืนค่าที่สะสมพร้อม `ok=false`; กรณี `parseCombo` ที่มีแต่ modifier เคยคืน modifier flags ทั้งที่ parse ไม่สำเร็จ ให้ invalid path คืน `(0, 0, false)` เสมอ
 - อย่าใช้ PowerShell here-string pipe เข้า `git apply --cached` เพื่อ stage เฉพาะบรรทัด Unicode ในไฟล์ที่ worktree มี diff อื่นค้างอยู่โดยคาดว่า context จะตรงเสมอ; ครั้งนี้ patch ใช้กับ index ไม่สำเร็จ ให้สร้าง blob จาก `HEAD` แล้วอัปเดต index แบบเจาะจงแทน
+- ตอนลบ conflict markers ด้วย `apply_patch` อย่าอาศัย hunk ที่เริ่มกลาง conflict เพราะอาจลบ `=======`/`>>>>>>>` แต่เหลือ `<<<<<<<`; หลังทุกชุดต้องสแกนทั้ง repo ด้วย `rg '^(<<<<<<<|=======|>>>>>>>)'` ก่อน stage
+- หลังเลือก conflict stages ด้วย `git checkout --ours/--theirs` อย่าคาดว่าไฟล์ที่ได้จะยังตรงกับ formatter ของ dependency version ใหม่; รอบนี้ `bun run format` พบ 17 ไฟล์ ให้รัน `bun run format:fix` หลัง resolve แล้วตรวจซ้ำ
 
 ## Manual Verification
 

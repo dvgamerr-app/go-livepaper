@@ -1,6 +1,6 @@
 module github.com/dvgamerr/go-livepaper
 
-go 1.26.3
+go 1.26.6
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
@@ -8,8 +8,8 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
-	github.com/wailsapp/wails/v3 v3.0.0-alpha2.119
-	golang.org/x/image v0.44.0
+	github.com/wailsapp/wails/v3 v3.0.0-beta.9
+	golang.org/x/image v0.45.0
 	golang.org/x/sys v0.47.0
 )
 

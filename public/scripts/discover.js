@@ -2,7 +2,7 @@
 
 import { lp, call, API_BASE, WALLPAPER_LIMIT } from '/scripts/store.js'
 import { status, escapeHtml, track, openSettingsTab } from '/scripts/ui.js'
-import { isDownloaded, setDownloadedItem, getDownloadedItem } from '/scripts/db.js'
+import { isDownloaded, setDownloadedItem, getDownloadedItem, upsertRecent } from '/scripts/db.js'
 
 const DC_SVG_LOCK = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
 const DC_SVG_DL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`
@@ -452,6 +452,15 @@ export async function onDiscoverDownload(it, btn) {
   const isVideo = await call('IsVideoFile', path)
   const thumbnail = await call('GetThumbnail', path)
   setDownloadedItem(it.id, { path, thumbnail, title: it.title, isVideo, tags: it.tags || [] })
+  await upsertRecent({
+    fileKey: `discover:${it.id}`,
+    filePath: path,
+    cachedPath: path,
+    isVideo,
+    thumbnail,
+    width: 0,
+    height: 0,
+  }).catch(() => {})
   lp.fn.pruneAndRefresh?.()
   status('Downloaded!', 'success', 2500)
   track('discover_download', { id: it.id })
