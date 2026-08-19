@@ -66,8 +66,24 @@ func defaultSettings() Settings {
 	}
 }
 
+// cloneSettings prevents callers from sharing the mutable Hotkeys map stored
+// in the process-wide settings snapshot.
+func cloneSettings(s Settings) Settings {
+	if s.Hotkeys == nil {
+		return s
+	}
+
+	hotkeys := make(map[string]string, len(s.Hotkeys))
+	for action, combo := range s.Hotkeys {
+		hotkeys[action] = combo
+	}
+	s.Hotkeys = hotkeys
+	return s
+}
+
 var (
 	settingsMu      sync.RWMutex
+	settingsSaveMu  sync.Mutex
 	currentSettings = defaultSettings()
 )
 
@@ -90,7 +106,7 @@ func loadSettings() Settings {
 	}
 	s.normalize()
 	settingsMu.Lock()
-	currentSettings = s
+	currentSettings = cloneSettings(s)
 	settingsMu.Unlock()
 	return s
 }
@@ -126,7 +142,7 @@ func (s *Settings) normalize() {
 func getSettings() Settings {
 	settingsMu.RLock()
 	defer settingsMu.RUnlock()
-	return currentSettings
+	return cloneSettings(currentSettings)
 }
 
 func saveSettingsToDisk(s Settings) error {
@@ -138,7 +154,37 @@ func saveSettingsToDisk(s Settings) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+
+	temp, err := os.CreateTemp(filepath.Dir(path), ".settings-*.tmp")
+	if err != nil {
+		return err
+	}
+	tempPath := temp.Name()
+	committed := false
+	defer func() {
+		_ = temp.Close()
+		if !committed {
+			_ = os.Remove(tempPath)
+		}
+	}()
+
+	if err := temp.Chmod(0644); err != nil {
+		return err
+	}
+	if _, err := temp.Write(data); err != nil {
+		return err
+	}
+	if err := temp.Sync(); err != nil {
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tempPath, path); err != nil {
+		return err
+	}
+	committed = true
+	return nil
 }
 
 // ── Service methods exposed to the frontend ─────────────────────────────────
@@ -152,15 +198,20 @@ func (s *AppService) GetSettings() Settings {
 // effects (launch-at-login, window backdrop, global hotkeys).
 func (s *AppService) SaveSettings(next Settings) error {
 	next.normalize()
+	next = cloneSettings(next)
 
-	settingsMu.Lock()
-	prev := currentSettings
-	currentSettings = next
-	settingsMu.Unlock()
+	// Serialize the disk write, in-memory swap, and side effects so concurrent
+	// saves cannot leave disk and process state representing different requests.
+	settingsSaveMu.Lock()
+	defer settingsSaveMu.Unlock()
 
+	prev := getSettings()
 	if err := saveSettingsToDisk(next); err != nil {
 		return err
 	}
+	settingsMu.Lock()
+	currentSettings = next
+	settingsMu.Unlock()
 
 	// Launch at login — only touch the registry when it actually changed.
 	if next.LaunchAtLogin != prev.LaunchAtLogin {

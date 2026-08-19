@@ -204,6 +204,16 @@ func TestSaveAndLoadSettings(t *testing.T) {
 	if got.WindowTheme != want.WindowTheme {
 		t.Errorf("WindowTheme = %q, want %q", got.WindowTheme, want.WindowTheme)
 	}
+
+	// Replacing an existing settings file must remain supported by the atomic
+	// write path.
+	want.Language = "de-DE"
+	if err := saveSettingsToDisk(want); err != nil {
+		t.Fatalf("saveSettingsToDisk() replacing file error = %v", err)
+	}
+	if got := loadSettings(); got.Language != "de-DE" {
+		t.Errorf("Language after replacing file = %q, want %q", got.Language, "de-DE")
+	}
 }
 
 func TestLoadSettings_MissingFile(t *testing.T) {
@@ -276,6 +286,55 @@ func TestGetSettings(t *testing.T) {
 	got := getSettings()
 	if got.Language != "de-DE" {
 		t.Errorf("getSettings().Language = %q, want \"de-DE\"", got.Language)
+	}
+}
+
+func TestGetSettings_ReturnsIndependentHotkeys(t *testing.T) {
+	resetSettings(t)
+	settingsMu.Lock()
+	currentSettings = defaultSettings()
+	settingsMu.Unlock()
+
+	got := getSettings()
+	got.Hotkeys[HotkeyNext] = "Alt + N"
+
+	if current := getSettings().Hotkeys[HotkeyNext]; current != "Ctrl + Shift + >" {
+		t.Errorf("mutating returned hotkeys changed current settings to %q", current)
+	}
+}
+
+func TestSaveSettings_FailedWritePreservesCurrentSettings(t *testing.T) {
+	resetSettings(t)
+	blockedRoot := filepath.Join(t.TempDir(), "not-a-directory")
+	if err := os.WriteFile(blockedRoot, []byte("block directory creation"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("APPDATA", blockedRoot)
+
+	next := defaultSettings()
+	next.Language = "th-TH"
+	if err := (&AppService{}).SaveSettings(next); err == nil {
+		t.Fatal("SaveSettings() error = nil, want persistence error")
+	}
+
+	if got := getSettings().Language; got != "en-US" {
+		t.Errorf("current Language after failed save = %q, want %q", got, "en-US")
+	}
+}
+
+func TestSaveSettings_ClonesInputHotkeys(t *testing.T) {
+	resetSettings(t)
+	t.Setenv("APPDATA", t.TempDir())
+
+	next := defaultSettings()
+	next.Language = "th-TH"
+	if err := (&AppService{}).SaveSettings(next); err != nil {
+		t.Fatalf("SaveSettings() error = %v", err)
+	}
+
+	next.Hotkeys[HotkeyNext] = "Alt + N"
+	if got := getSettings().Hotkeys[HotkeyNext]; got != "Ctrl + Shift + >" {
+		t.Errorf("mutating input hotkeys changed current settings to %q", got)
 	}
 }
 
