@@ -121,7 +121,7 @@ rawY = normalizedY + vdMinY
 1. Wails app เริ่มจาก `cmd/livepaper/tray.go`
 2. frontend เรียก `AppService` methods ผ่าน runtime bridge
 3. `BrowseFile` เปิด native file picker
-4. `GetThumbnail` คืน preview ให้ UI
+4. `GetThumbnail` คืน preview ให้ UI และ cache JPEG/GIF ไว้ที่ `<exe-dir>\\data\\thumbnail`
 5. `PreprocessVideo` emit progress event `video:progress`
 6. `ApplyWallpapers` compose ภาพ, apply wallpaper, แล้วค่อย start video goroutine
 7. frontend เก็บ state ไว้ใน `localStorage` เพื่อ restore session
@@ -188,6 +188,19 @@ rawY = normalizedY + vdMinY
 - `bun run` บน Windows ที่ใช้ `cmd /c scripts/build-test.bat` จะโดน `cmd` มอง `/` เป็น option ของ path; ถ้าจะเรียก `.bat` ผ่าน `cmd /c` ให้ส่ง path แบบ quoted command
 - อัดคำสั่ง `nu -c "^git diff ..."` ที่ quote ซ้อนหนัก ๆ เข้า `multi_tool_use.parallel` อาจล้มตั้งแต่ launcher setup; รันคำสั่ง inspection แบบเดี่ยวแทน
 - `rtk go build -o livepaper-test.exe ./cmd/livepaper` ใน session นี้ compile ผ่านแต่ไม่ควรสมมติว่า artifact จะอยู่ที่ `livepaper-test.exe`; อย่าใช้ path นี้เป็นขั้นล้างไฟล์ต่อ
+- อย่าอ้าง `scripts/build-test-installer.bat` จาก `package.json` โดยสมมติว่าไฟล์ยังอยู่; working tree ปัจจุบันไม่มีไฟล์นี้ ให้ตรวจด้วย `rg --files scripts` ก่อนอ่านหรือเรียกใช้งาน
+- ดาวน์โหลด `https://downloads.sourceforge.net/project/nsis/.../nsis-3.12.zip` ด้วย `Invoke-WebRequest` ตรง ๆ ใน environment นี้ได้หน้า HTML แทน ZIP ทำให้ `Expand-Archive` ล้มเหลว; อย่าใช้ URL รูปแบบนี้ซ้ำโดยไม่มีการ resolve redirect และตรวจชนิดไฟล์
+- อย่า patch `SettingsView.astro` โดยเดาชื่อ `data-setting` จาก aria-label; working tree ใช้ `gpuAcceleration`, `reduceMotionOnFocus`, และ `restoreLastPlaylist` ซึ่งไม่ตรงกับชื่อย่อที่คาดไว้ ให้ inspect บรรทัดจริงก่อนแก้ toggle markup
+- `bunx` ไม่อยู่ใน PATH ของ PowerShell session นี้; เรียก local frontend tools ด้วย `bun x <tool>` ตามข้อกำหนด Bun-only ของ repo
+- อย่าใช้ `bun --check public/scripts/ui.js` เป็น standalone syntax check; browser-root import เช่น `/scripts/store.js` จะถูก Bun resolve เป็น filesystem path และล้มเหลว ให้ใช้ Astro production build เพื่อตรวจ integration ของ public scripts แทน
+- บน PowerShell/Windows อย่าส่ง wildcard path เช่น `src/components/*.astro` ให้ `rg` โดยตรง เพราะ wildcard ไม่ถูก expand; ใช้ `rg -g '*.astro' <pattern> src/components` แทน
+- บน PowerShell/Windows อย่าส่ง wildcard path เช่น `cmd/livepaper/*_test.go` หรือ `cmd/livepaper/*.go` ให้ `rg` โดยตรง เพราะ wildcard ไม่ถูก expand; ระบุ directory แล้วใช้ `-g '*_test.go'` / `-g '*.go'` แทน
+- ตอนย้าย thumbnail cache อย่าตรวจเฉพาะ `GetThumbnail` และ animated hover preview; `makeUploadGIF` ก็เขียน `*_upload_thumb.gif` ลง cache เช่นกัน ต้องค้นทุกจุดที่ประกอบ filename ของ thumbnail ก่อนสรุป
+- อย่าใส่ `*** Update File` ต่อท้าย hunk ของ `apply_patch` หลัง marker `@@` ที่ไม่มีเนื้อหา เพราะ parser จะมองว่าเป็นบรรทัดใน hunk และ reject ทั้ง patch; ปิด hunk ด้วย context จริงก่อนเริ่มไฟล์ถัดไป
+- ตอนแทรก test ด้วย `apply_patch` อย่าใช้ fragment ของ comment เป็น anchor ถ้ามีหลายบรรทัดหรือ whitespace ที่อาจไม่ตรง; ใช้ชื่อฟังก์ชันถัดไปเป็น context ที่แน่นอนกว่า
+- อย่ารวม production build-check กับ `Remove-Item` artifact ไว้ใน PowerShell command เดียวใน environment นี้ แม้ validate path แล้วก็อาจถูก policy ปฏิเสธทั้งคำสั่ง; แยก build verification ออกจาก cleanup
+- แม้แยกคำสั่งแล้ว policy ของ environment นี้ยังปฏิเสธ `Remove-Item` สำหรับ temp build artifact ที่ระบุ path ชัดเจน; เมื่อ build-check สำเร็จให้รายงาน path และอย่าลองลบซ้ำด้วย shell อื่น
+- เมื่อเช็กว่า Astro dev server ถูกปิดแล้วด้วย `Get-NetTCPConnection`, กรณีไม่มี listener อาจคืน exit code 1 และทำให้ parallel check ทั้งชุดดูเหมือน fail; จัดการกรณีว่างให้ exit 0 หรือรันแยก
 - อย่าวาง `if (...) { ... } else { ... }` เป็น element ตรง ๆ ภายใน PowerShell array expression `@(...)`; PowerShell จะพยายามเรียก `if` เป็นคำสั่ง ให้ใช้ subexpression `$(if (...) { ... } else { ... })` หรือแยก statement ออกมาก่อน
 - เมื่อ parser ใช้ named return แล้วสะสมค่าไประหว่างทาง อย่าคืนค่าที่สะสมพร้อม `ok=false`; กรณี `parseCombo` ที่มีแต่ modifier เคยคืน modifier flags ทั้งที่ parse ไม่สำเร็จ ให้ invalid path คืน `(0, 0, false)` เสมอ
 - อย่าใช้ PowerShell here-string pipe เข้า `git apply --cached` เพื่อ stage เฉพาะบรรทัด Unicode ในไฟล์ที่ worktree มี diff อื่นค้างอยู่โดยคาดว่า context จะตรงเสมอ; ครั้งนี้ patch ใช้กับ index ไม่สำเร็จ ให้สร้าง blob จาก `HEAD` แล้วอัปเดต index แบบเจาะจงแทน

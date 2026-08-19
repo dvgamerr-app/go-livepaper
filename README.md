@@ -1,6 +1,6 @@
 # livepaper
 
-**Set per-monitor wallpapers — including live video — from the command line on Windows.**
+**Set per-monitor wallpapers — including live video — from the Windows tray app or command line.**
 
 `livepaper` detects every monitor's real position and resolution, composites your images into a single span wallpaper, and applies it instantly. Drop in a video file instead and it loops as a live wallpaper behind your desktop icons.
 
@@ -15,7 +15,8 @@ go install github.com/dvgamerr/go-livepaper/cmd/livepaper@latest
 > **Requirements**
 >
 > - Windows 10 / 11
-> - Go 1.21+
+> - Go 1.26.3+ for source builds
+> - Bun 1.3.14+ for frontend development
 > - [ffmpeg](https://ffmpeg.org/download.html) in `PATH` — only needed for video wallpapers (default renderer)
 > - [mpv](https://mpv.io/installation/) in `PATH` — optional alternative video renderer (smoother playback, hardware decode)
 
@@ -58,7 +59,9 @@ livepaper --clean
 | Live video         | Loops any video file as a live wallpaper via ffmpeg or mpv                           |
 | Mixed mode         | Static images and video on different monitors simultaneously                         |
 | Formats            | Images: `jpg` `jpeg` `png` · Video: `mp4` `mkv` `avi` `mov` `webm` `m4v` `flv` `gif` |
-| Zero config        | No settings file — everything via CLI flags                                          |
+| Tray workspace     | Assign, preview, pause, and restore wallpapers from the Wails desktop UI             |
+| Library & Discover | Browse local downloads and community wallpapers from the desktop UI                  |
+| CLI automation     | Apply wallpapers directly from scripts without opening the tray workspace            |
 
 ---
 
@@ -100,9 +103,14 @@ livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 ```sh
 git clone https://github.com/dvgamerr/go-livepaper.git
 cd go-livepaper
+bun install
+bun run build
 mkdir bin
 go build -o bin/livepaper.exe ./cmd/livepaper
 ```
+
+The production Go binary embeds `cmd/livepaper/dist`, so rebuild the Astro frontend before a
+production binary whenever frontend assets change.
 
 With version embedded:
 
@@ -110,6 +118,34 @@ With version embedded:
 mkdir bin
 go build -ldflags "-X main.VERSION=$(cat VERSION)" -o bin/livepaper.exe ./cmd/livepaper
 ```
+
+### Development and validation
+
+Development uses two terminals. Do not run the production frontend build before `wails3 dev`;
+the development build proxies Astro directly.
+
+```sh
+# Terminal 1
+bun run dev
+
+# Terminal 2
+wails3 dev
+```
+
+Run the automated checks before shipping:
+
+```sh
+bun run check
+bun run format
+bun run build
+go test ./...
+go vet ./...
+go build -o "$TEMP/livepaper-check.exe" ./cmd/livepaper
+git diff --check
+```
+
+See [`AGENTS.md`](AGENTS.md) for build constraints and
+[`docs/project-structure.md`](docs/project-structure.md) for the frontend/backend runtime flow.
 
 ---
 
