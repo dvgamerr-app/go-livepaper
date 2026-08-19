@@ -10,7 +10,8 @@
 
 param(
     [string]$InstallDir = "$env:LOCALAPPDATA\Programs\livepaper\bin",
-    [switch]$Force
+    [switch]$Force,
+    [switch]$Portable
 )
 
 $ErrorActionPreference = 'Stop'
@@ -83,7 +84,7 @@ function Install-FFmpeg {
     Write-Host "`n[ffmpeg]" -ForegroundColor White
 
     # Try winget
-    if (Test-CommandExists 'winget') {
+    if (!$Portable -and (Test-CommandExists 'winget')) {
         Write-Step "Installing via winget (Gyan.FFmpeg)..."
         $result = winget install --id Gyan.FFmpeg --silent --scope user `
             --accept-package-agreements --accept-source-agreements 2>&1
@@ -133,7 +134,7 @@ function Install-Mpv {
     Write-Host "`n[mpv]" -ForegroundColor White
 
     # Try winget
-    if (Test-CommandExists 'winget') {
+    if (!$Portable -and (Test-CommandExists 'winget')) {
         Write-Step "Installing via winget (mpv.mpv)..."
         $result = winget install --id mpv.mpv --silent --scope user `
             --accept-package-agreements --accept-source-agreements 2>&1

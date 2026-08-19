@@ -7,6 +7,13 @@ import { TriangleAlert } from '@lucide/astro'
   id="dep-warn"
   role="alert"
 >
-  <TriangleAlert size={14} strokeWidth={2} class="shrink-0" aria-hidden="true" />
-  <span id="dep-warn-msg"></span>
+  <TriangleAlert size={14} stroke-width={2} class="shrink-0" aria-hidden="true" />
+  <span class="min-w-0" id="dep-warn-msg" aria-live="polite"></span>
+  <button
+    class="text-lp-warn ml-auto shrink-0 rounded border border-[rgba(245,158,11,0.45)] bg-[rgba(245,158,11,0.12)] px-2 py-0.5 font-semibold transition hover:bg-[rgba(245,158,11,0.22)] disabled:cursor-wait disabled:opacity-60"
+    id="dep-install-btn"
+    type="button"
+  >
+    Install
+  </button>
 </div>

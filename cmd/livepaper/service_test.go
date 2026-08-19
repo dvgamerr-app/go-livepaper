@@ -5,6 +5,7 @@ package main
 import (
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -52,7 +53,7 @@ func TestSanitizeName(t *testing.T) {
 		{"", "wallpaper"},        // empty → fallback
 		{"   ", "___"},           // spaces
 		{"ABC123-_", "ABC123-_"}, // already clean
-		{"ภาษาไทย", "_______"}, // 7 non-ASCII runes → 7 underscores
+		{"ภาษาไทย", "_______"},   // 7 non-ASCII runes → 7 underscores
 	}
 	for _, tt := range tests {
 		if got := sanitizeName(tt.input); got != tt.want {
@@ -407,6 +408,28 @@ func TestMpvArgsFromSettings_NoAdapter(t *testing.T) {
 		if strings.HasPrefix(a, "--d3d11-adapter=") {
 			t.Errorf("mpvArgsFromSettings (no adapter): unexpected %q flag", a)
 		}
+	}
+}
+
+// ---------- thumbnail cache ----------
+
+func TestThumbnailCacheDirIsBesideExecutable(t *testing.T) {
+	dir, err := thumbnailCacheDir()
+	if err != nil {
+		t.Fatalf("thumbnailCacheDir() error = %v", err)
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatalf("os.Executable() error = %v", err)
+	}
+	want := filepath.Join(filepath.Dir(exe), "data", "thumbnail")
+	if dir != want {
+		t.Errorf("thumbnailCacheDir() = %q, want %q", dir, want)
+	}
+	if info, err := os.Stat(dir); err != nil {
+		t.Errorf("thumbnail cache directory was not created: %v", err)
+	} else if !info.IsDir() {
+		t.Errorf("thumbnail cache path is not a directory: %q", dir)
 	}
 }
 

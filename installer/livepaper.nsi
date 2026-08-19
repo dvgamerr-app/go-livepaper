@@ -74,7 +74,7 @@ Section "Install" SEC_MAIN
   DetailPrint "Installing ffmpeg and mpv..."
   nsExec::ExecToLog 'powershell.exe -NonInteractive -ExecutionPolicy Bypass \
     -File "${APP_BIN_DIR}\scripts\install-deps.ps1" \
-    -InstallDir "${APP_BIN_DIR}"'
+    -InstallDir "${APP_BIN_DIR}" -Portable'
 
   ; Register auto-start on login
   WriteRegStr HKCU "${RUN_KEY}" "livepaper" '"${APP_EXE_PATH}"'

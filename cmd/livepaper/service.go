@@ -501,12 +501,28 @@ func cacheKey(parts ...string) string {
 	return wp.CacheKey(parts...)
 }
 
+// thumbnailCacheDir returns the persistent thumbnail cache beside the running
+// executable: <exe-dir>/data/thumbnail.
+func thumbnailCacheDir() (string, error) {
+	exe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(filepath.Dir(exe), "data", "thumbnail")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	return dir, nil
+}
+
 // thumbCachePath derives the on-disk cache location for a thumbnail. The key
 // folds in the source path and bounding box; mtime is validated on read so a
 // re-encoded source invalidates the cache.
 func thumbCachePath(filePath string, boxW, boxH int) string {
-	dir := filepath.Join(os.TempDir(), "livepaper", "thumbs")
-	_ = os.MkdirAll(dir, 0755)
+	dir, err := thumbnailCacheDir()
+	if err != nil {
+		return ""
+	}
 	return filepath.Join(dir, cacheKey(filePath, fmt.Sprintf("%dx%d", boxW, boxH))+".jpg")
 }
 
@@ -608,11 +624,11 @@ func buildAnimatedThumbnail(filePath string) []byte {
 		return nil
 	}
 
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+	thumbDir, err := thumbnailCacheDir()
+	if err != nil {
 		return nil
 	}
-	outGif := filepath.Join(tmpDir, cacheKey(filePath)+"_preview.gif")
+	outGif := filepath.Join(thumbDir, cacheKey(filePath)+"_preview.gif")
 
 	lock := gifLock(outGif)
 	lock.Lock()
@@ -826,7 +842,44 @@ func getVideoDurationUs(filePath string) int64 {
 	return int64(f * 1e6)
 }
 
+var dependencyInstallMu sync.Mutex
+
+func addDependencySearchPath(dir string) {
+	if dir == "" {
+		return
+	}
+	dir = filepath.Clean(dir)
+	current := os.Getenv("PATH")
+	for _, entry := range filepath.SplitList(current) {
+		if strings.EqualFold(filepath.Clean(entry), dir) {
+			return
+		}
+	}
+	if current == "" {
+		_ = os.Setenv("PATH", dir)
+		return
+	}
+	_ = os.Setenv("PATH", dir+string(os.PathListSeparator)+current)
+}
+
+func dependencyInstallerPath(exeDir, workDir string) (string, error) {
+	candidates := []string{
+		filepath.Join(exeDir, "scripts", "install-deps.ps1"),
+		filepath.Join(workDir, "scripts", "install-deps.ps1"),
+	}
+	for _, candidate := range candidates {
+		info, err := os.Stat(candidate)
+		if err == nil && !info.IsDir() {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("dependency installer not found at scripts\\install-deps.ps1")
+}
+
 func (s *AppService) CheckDependencies() map[string]bool {
+	if exe, err := os.Executable(); err == nil {
+		addDependencySearchPath(filepath.Dir(exe))
+	}
 	check := func(cmd string) bool {
 		_, err := exec.LookPath(cmd)
 		return err == nil
@@ -836,6 +889,64 @@ func (s *AppService) CheckDependencies() map[string]bool {
 		"ffprobe": check("ffprobe"),
 		"mpv":     check("mpv"),
 	}
+}
+
+func (s *AppService) InstallDependencies() error {
+	dependencyInstallMu.Lock()
+	defer dependencyInstallMu.Unlock()
+
+	exe, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	exeDir := filepath.Dir(exe)
+	workDir, _ := os.Getwd()
+	var scriptPath string
+	if isDev() {
+		// During development, prefer the workspace script so a stale copy under
+		// bin/scripts cannot shadow the source currently being tested.
+		scriptPath, err = dependencyInstallerPath(workDir, exeDir)
+	} else {
+		// Production only trusts the installer shipped beside the executable.
+		scriptPath, err = dependencyInstallerPath(exeDir, "")
+	}
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("powershell.exe",
+		"-NoProfile",
+		"-NonInteractive",
+		"-ExecutionPolicy", "Bypass",
+		"-File", scriptPath,
+		"-InstallDir", exeDir,
+		"-Portable",
+	)
+	wp.ConfigureBackgroundCommand(cmd)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		detail := strings.TrimSpace(string(output))
+		if len(detail) > 3000 {
+			detail = detail[len(detail)-3000:]
+		}
+		if detail == "" {
+			return fmt.Errorf("dependency installer failed: %w", err)
+		}
+		return fmt.Errorf("dependency installer failed: %w: %s", err, detail)
+	}
+
+	addDependencySearchPath(exeDir)
+	deps := s.CheckDependencies()
+	var missing []string
+	for _, name := range []string{"ffmpeg", "ffprobe", "mpv"} {
+		if !deps[name] {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("installation completed but dependencies are still missing: %s", strings.Join(missing, ", "))
+	}
+	return nil
 }
 
 func (s *AppService) CleanTempFiles() error {
@@ -1006,9 +1117,11 @@ func generateUploadThumbnailBytes(filePath string) ([]byte, string, error) {
 }
 
 func makeUploadGIF(filePath string) ([]byte, error) {
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
-	os.MkdirAll(tmpDir, 0755)
-	out := filepath.Join(tmpDir, cacheKey(filePath)+"_upload_thumb.gif")
+	thumbDir, err := thumbnailCacheDir()
+	if err != nil {
+		return nil, err
+	}
+	out := filepath.Join(thumbDir, cacheKey(filePath)+"_upload_thumb.gif")
 	if data, err := os.ReadFile(out); err == nil && len(data) > 0 {
 		return data, nil
 	}
