@@ -1,4 +1,4 @@
-node_modules
-dist
-cmd/livepaper/dist
-*.min.*
+.astro/
+.claude/
+cmd/livepaper/dist/
+node_modules/

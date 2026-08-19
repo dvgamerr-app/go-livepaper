@@ -32,5 +32,5 @@ dev_mode:
       type: blocking
     - cmd: go build -tags livepaper_dev -o bin/livepaper.exe ./cmd/livepaper/
       type: blocking
-    - cmd: ./bin/livepaper.exe
+    - cmd: .\bin\livepaper.exe
       type: primary

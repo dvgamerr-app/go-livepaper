@@ -79,7 +79,7 @@ output/*
 
 # Frontend (Astro)
 node_modules/
-.astro/``
+.astro/
 dist/
 # Keep the Go embed placeholder but ignore Astro build output in dist
 cmd/livepaper/dist/*
