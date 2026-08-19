@@ -206,6 +206,12 @@ rawY = normalizedY + vdMinY
 - อย่าใช้ PowerShell here-string pipe เข้า `git apply --cached` เพื่อ stage เฉพาะบรรทัด Unicode ในไฟล์ที่ worktree มี diff อื่นค้างอยู่โดยคาดว่า context จะตรงเสมอ; ครั้งนี้ patch ใช้กับ index ไม่สำเร็จ ให้สร้าง blob จาก `HEAD` แล้วอัปเดต index แบบเจาะจงแทน
 - ตอนลบ conflict markers ด้วย `apply_patch` อย่าอาศัย hunk ที่เริ่มกลาง conflict เพราะอาจลบ `=======`/`>>>>>>>` แต่เหลือ `<<<<<<<`; หลังทุกชุดต้องสแกนทั้ง repo ด้วย `rg '^(<<<<<<<|=======|>>>>>>>)'` ก่อน stage
 - หลังเลือก conflict stages ด้วย `git checkout --ours/--theirs` อย่าคาดว่าไฟล์ที่ได้จะยังตรงกับ formatter ของ dependency version ใหม่; รอบนี้ `bun run format` พบ 17 ไฟล์ ให้รัน `bun run format:fix` หลัง resolve แล้วตรวจซ้ำ
+- การวินิจฉัยว่า `%ProgramFiles(x86)%` ทำให้ batch แตกเป็น `'ist'` เป็นสมมติฐานผิด; การย้ายค่าไป delayed expansion จึงไม่แก้อาการ และอย่าแก้ parser จากข้อความ error โดยยังไม่มี command trace
+- การย้าย NSIS download block ไป subroutine ช่วยลด nested parsing แต่ไม่ได้แก้ `'ist'` เพราะ failure เกิดก่อนถึง NSIS; ต้อง trace ลำดับคำสั่งจริงก่อน refactor control flow
+- การตัด fallback `ProgramFiles(x86)` ออกเป็นอีกการแก้ที่ไม่ตรงสาเหตุ เพราะ error ยังเกิดเหมือนเดิม; path นี้ไม่ใช่ root cause
+- การตัด fallback `ProgramFiles(x86)` ออกแล้วยังพบ `'ist'` เหมือนเดิม แปลว่า path นี้ไม่ใช่ root cause; อย่าแก้ batch parser จากการคาดเดาข้อความ error อย่างเดียว ให้เปิด command trace เพื่อดูบรรทัดที่ execute จริงก่อนเปลี่ยนโครงสร้างเพิ่ม
+- `apply_patch` บน `scripts/installer.bat` ที่เดิมเป็น CRLF ทำให้ช่วงที่แก้กลายเป็น LF-only และไฟล์มี mixed line endings; `cmd.exe` กลืนบรรทัด `go build` ต่อกับต้น `if not exist` จนเหลือคำสั่ง `ist`. หลัง patch ไฟล์ `.bat` ต้อง normalize ทั้งไฟล์กลับเป็น CRLF ก่อนรัน
+- อย่าเริ่ม `*** Update File` ถัดไปหลัง `@@` ว่างใน `apply_patch`; รอบนี้เผลอทำซ้ำข้อผิดพลาดเดิมจน patch หลายไฟล์ถูก reject ทั้งก้อน ให้ปิดไฟล์แรกด้วย hunk ที่มี context จริงหรือแยก patch
 
 ## Manual Verification
 
