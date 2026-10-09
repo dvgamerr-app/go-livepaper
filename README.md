@@ -90,7 +90,7 @@ livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 | -------------- | -------- | ------------------------------------------------------------ |
 | `--monitor N`  | `-m N`   | Target monitor by number (1-based). Repeat for each monitor. |
 | `--player mpv` | `-p mpv` | Video renderer: `ffmpeg` (default) or `mpv`                  |
-| `--clean`      | `-c`     | Delete all temp wallpaper files from `%TEMP%\livepaper`      |
+| `--clean`      | `-c`     | Delete all temp wallpaper files from `<install dir>\data`      |
 | `--version`    |          | Print version                                                |
 | `--help`       | `-h`     | Print help                                                   |
 
@@ -107,7 +107,7 @@ livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 1. Queries `EnumDisplayMonitors` to get every monitor's position and resolution.
 2. Creates a black canvas sized to the full virtual desktop.
 3. For each image: loads it, applies EXIF rotation, fill-crops it to the monitor size, and draws it onto the canvas at the correct position.
-4. Saves the canvas as a temporary JPEG in `%TEMP%\livepaper`.
+4. Saves the canvas as a temporary JPEG in `<install dir>\data`.
 5. Writes `WallpaperStyle=22` (Span) to the registry and calls `SystemParametersInfoW` to apply it.
 6. For each video: embeds an ffmpeg-backed GDI window behind the desktop icon layer and loops it at 30 fps.
 

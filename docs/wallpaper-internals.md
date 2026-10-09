@@ -19,7 +19,7 @@
 ### `internal/wallpaper/image.go`
 
 - `LoadAndResizeImage` decode ภาพ, อ่าน EXIF orientation, แล้ว resize/crop
-- `SaveImageAs` เขียน JPEG ลง `%TEMP%\\livepaper\\`
+- `SaveImageAs` เขียน JPEG ลง `<install dir>\\data\\`
 - monitor ที่ไม่ได้ถูก assign ภาพจะยังคงเป็นพื้นดำจาก canvas หลัก
 
 ### `internal/wallpaper/orientation.go`
@@ -161,7 +161,7 @@ rawY = normalizedY + vdMinY
 
 ### Video / ffmpeg / mpv
 
-- cache-hit check ของ `PreprocessVideo`/`preprocessGIF` ที่เช็คแค่ `os.Stat(out)` (ว่ามีไฟล์) ไม่พอ: encode ที่ถูก kill/crash จะทิ้งไฟล์ `.mp4` ที่ truncated (ไม่มี moov atom) หรือ 0 byte ไว้ใน `%TEMP%\livepaper` แล้วถูก reuse → ffmpeg frame extract ออก `exit status 0xfffffffe` และ mpv ออก `exit status 2` บนไฟล์เดียวกัน วิธีแก้: validate ด้วย `IsPlayableVideo()` (ffprobe duration > 0 + size > 0) ก่อน reuse, ถ้าไม่ผ่านให้ลบแล้ว re-encode
+- cache-hit check ของ `PreprocessVideo`/`preprocessGIF` ที่เช็คแค่ `os.Stat(out)` (ว่ามีไฟล์) ไม่พอ: encode ที่ถูก kill/crash จะทิ้งไฟล์ `.mp4` ที่ truncated (ไม่มี moov atom) หรือ 0 byte ไว้ใน `<install dir>\data` แล้วถูก reuse → ffmpeg frame extract ออก `exit status 0xfffffffe` และ mpv ออก `exit status 2` บนไฟล์เดียวกัน วิธีแก้: validate ด้วย `IsPlayableVideo()` (ffprobe duration > 0 + size > 0) ก่อน reuse, ถ้าไม่ผ่านให้ลบแล้ว re-encode
 - mpv exit codes: `1` = init ล้มเหลว/option ผิด, `2` = เล่นไฟล์ไม่ได้ (corrupt/unsupported/missing) — **ไม่ใช่** "bad arguments" ตามที่ comment เก่าเขียนไว้ ทั้งสองโค้ดเป็น permanent สำหรับ file+args เดิม จึงไม่ควร retry (จะ spin)
 - `--no-terminal` ทำให้ mpv ไม่พ่นอะไรลง stderr เลย ดังนั้นถ้า mpv loop ออก exit 2 จะไม่เห็นเหตุผล — ต้อง validate ไฟล์ด้วย ffprobe ก่อน spawn แทนที่จะหวังพึ่ง stderr
 - `cmd.Stderr = io.Discard` ใน `ExtractVideoFrame` ทำให้ error เหลือแค่ exit status เปล่า ๆ; capture stderr แล้วแนบบรรทัดสุดท้ายของ ffmpeg (เช่น "moov atom not found") เข้า error

@@ -87,7 +87,7 @@ Automated checks are listed under Validation in `CLAUDE.md` (`go test ./...`, `b
 ### Startup
 
 1. `main.go` parse args และเลือก mode
-2. ถ้า `--clean` ให้ลบ `%TEMP%\livepaper`
+2. ถ้า `--clean` ให้ลบ `<install dir>\data`
 3. ถ้าไม่มี wallpaper args ให้เข้า tray mode
 4. ถ้ามี args ให้เข้า CLI apply flow
 

@@ -125,7 +125,7 @@ func StopVideoWallpapers() {
 // PreprocessVideo transcodes src to a resolution-matched mp4 in the livepaper
 // temp dir. Returns the cached output path (skips ffmpeg if already exists).
 func PreprocessVideo(src string, w, h int) (string, error) {
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	tmpDir := CacheDir()
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return "", err
 	}

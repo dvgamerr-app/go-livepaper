@@ -574,7 +574,7 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 		return s.preprocessGIF(filePath)
 	}
 
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	tmpDir := wp.CacheDir()
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return "", err
 	}
@@ -641,7 +641,7 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 }
 
 func (s *AppService) preprocessGIF(filePath string) (string, error) {
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	tmpDir := wp.CacheDir()
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return "", err
 	}
