@@ -56,7 +56,8 @@ const gpuEl = document.getElementById('gpu-stats')
 const gpuSep = document.getElementById('gpu-sep')
 
 async function updateGPUStats() {
-  if (!gpuEl) return
+  // Skip while the window is hidden in the tray; nobody can see the readout.
+  if (!gpuEl || document.hidden) return
   try {
     const s = await call('GetGPUStats')
     if (!s) return
@@ -74,4 +75,7 @@ async function updateGPUStats() {
 setTimeout(() => {
   updateGPUStats()
   setInterval(updateGPUStats, 2000)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) updateGPUStats()
+  })
 }, 1500)
