@@ -412,11 +412,7 @@ document.getElementById('clean-btn')?.addEventListener('click', async () => {
   btn.disabled = true
   status('Cleaning cache…')
   try {
-    // Keep the encoded videos that are still assigned so they restore on launch.
-    const inUse = [...Object.values(lp.state), ...Object.values(lp.lastAppliedState || {})]
-      .map((s) => s.cachedPath)
-      .filter(Boolean)
-    await call('CleanTempFiles', inUse)
+    await call('CleanTempFiles')
     await lp.fn.clearRecentHistory?.()
     await refreshGallery()
     status('Cache cleaned', 'success', 3000)
@@ -574,7 +570,7 @@ export async function init() {
   const hasRestored = restoreEnabled ? await restoreState() : false
   if (hasRestored) {
     autoApply()
-  } else if (!lp.appSettings?.startMinimized) {
+  } else {
     call('WindowShow').catch(() => {})
   }
 

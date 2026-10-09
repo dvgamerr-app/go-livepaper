@@ -100,9 +100,7 @@ func GetTempDir() (string, error) {
 	return tempDir, nil
 }
 
-// CleanTempDir empties the data directory. Files named in keep (full paths or
-// base names) are preserved, e.g. encoded videos still assigned to a monitor.
-func CleanTempDir(keep ...string) error {
+func CleanTempDir() error {
 	tempDir, err := GetTempDir()
 	if err != nil {
 		return err
@@ -117,16 +115,7 @@ func CleanTempDir(keep ...string) error {
 		return fmt.Errorf("failed to read temp directory: %w", err)
 	}
 
-	keepSet := map[string]bool{"background.jpg": true, "thumbnail": true}
-	for _, k := range keep {
-		keepSet[filepath.Base(k)] = true
-	}
 	for _, entry := range dirEntries {
-		// background.jpg is the applied wallpaper, thumbnail is the persistent
-		// preview cache, and keep holds files still in use; none are disposable.
-		if keepSet[entry.Name()] {
-			continue
-		}
 		if err := os.RemoveAll(filepath.Join(tempDir, entry.Name())); err != nil {
 			// On Windows a file held open by the browser or mpv cannot be
 			// removed until the handle is released. Skip and continue so the
