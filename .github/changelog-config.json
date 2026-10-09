@@ -1,4 +1,5 @@
 {
+  "mode": "COMMIT",
   "categories": [
     { "title": "### Features", "labels": ["feat"] },
     { "title": "### Bug Fixes", "labels": ["fix"] },
@@ -15,6 +16,6 @@
     { "pattern": "^build(\\(.+\\))?[!:]", "target": "build" },
     { "pattern": "^ci(\\(.+\\))?[!:]", "target": "ci" }
   ],
-  "pr_template": "- ${{TITLE}} (${{MERGE_SHA}})",
+  "commit_template":"- ${{TITLE}} (${{MERGE_SHA}})",
   "template": "${{CHANGELOG}}\n\n**Full Changelog**: ${{RELEASE_DIFF}}"
 }

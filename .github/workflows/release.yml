@@ -83,6 +83,18 @@ jobs:
         # -tags production compiles out Wails' dev-server HTTP probe and WebView2 devtools.
         run: go build -tags production -ldflags "-X main.VERSION=${{ steps.version.outputs.display }} -H windowsgui" -o bin/livepaper.exe ./cmd/livepaper/
 
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+            choco install nsis --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw "choco install nsis failed" }
+          }
+          $nsis = @("${env:ProgramFiles(x86)}\NSIS", "$env:ProgramFiles\NSIS") |
+            Where-Object { Test-Path "$_\makensis.exe" } | Select-Object -First 1
+          if ($nsis) { $nsis >> $env:GITHUB_PATH }
+          elseif (-not (Get-Command makensis -ErrorAction SilentlyContinue)) { throw "makensis not found" }
+
       - name: Build installer
         run: makensis /DAPP_VERSION=${{ steps.version.outputs.display }} /DAPP_FILE_VERSION=${{ steps.version.outputs.file }} installer\livepaper.nsi
 

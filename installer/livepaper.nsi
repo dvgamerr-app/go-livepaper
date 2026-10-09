@@ -47,7 +47,7 @@ OutFile "bin\livepaper-setup-${APP_VERSION}.exe"
 InstallDir "$LOCALAPPDATA\Programs\livepaper"
 RequestExecutionLevel user
 
-VIProductVersion "${APP_FILE_VERSION}.0.0"
+VIProductVersion "${APP_FILE_VERSION}"
 VIAddVersionKey "ProductName"    "${APP_NAME}"
 VIAddVersionKey "FileVersion"    "${APP_FILE_VERSION}"
 VIAddVersionKey "ProductVersion" "${APP_VERSION}"

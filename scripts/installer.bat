@@ -9,7 +9,7 @@ for /f "tokens=*" %%v in ('git describe --tags --abbrev^=0 2^>nul') do set "GIT_
 if not defined GIT_TAG set "GIT_TAG=v0.0.0"
 
 set "APP_VERSION=%GIT_TAG:v=%"
-set "APP_FILE_VERSION=%APP_VERSION%"
+for /f "tokens=1-4 delims=." %%a in ("%APP_VERSION%.0.0.0.0") do set "APP_FILE_VERSION=%%a.%%b.%%c.%%d"
 
 echo.
 echo [livepaper installer] v%APP_VERSION%
