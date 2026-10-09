@@ -769,7 +769,18 @@ func addBundledToolsSearchPath() {
 // CheckDependencies reports whether the media tools are available, looking
 // beside the executable first (main prepends it to PATH) and then on PATH.
 func (s *AppService) CheckDependencies() map[string]bool {
+	var exeDir string
+	if exe, err := os.Executable(); err == nil {
+		exeDir = filepath.Dir(exe)
+	}
 	check := func(cmd string) bool {
+		// The app directory is authoritative: the installer puts the tools
+		// beside livepaper.exe, so look there before consulting PATH.
+		if exeDir != "" {
+			if fi, err := os.Stat(filepath.Join(exeDir, cmd+".exe")); err == nil && !fi.IsDir() {
+				return true
+			}
+		}
 		_, err := exec.LookPath(cmd)
 		return err == nil
 	}
