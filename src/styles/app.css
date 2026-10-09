@@ -1158,27 +1158,6 @@ html[data-window-theme='solid'] body {
   opacity: 1;
 }
 
-.lib-card-apply {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 5px;
-  border: 0;
-  background: var(--lp-accent);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  --wails-draggable: no-drag;
-}
-
-.lib-card-apply:hover {
-  background: #4a9fff;
-}
-
 .lib-card-type {
   position: absolute;
   top: 5px;
@@ -1317,7 +1296,7 @@ html[data-window-theme='solid'] body {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   pointer-events: none;
   user-select: none;
 }

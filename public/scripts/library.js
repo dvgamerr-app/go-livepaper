@@ -1,4 +1,4 @@
-// Library: local wallpaper grid, apply-to-monitor, monitor picker.
+// Library: local wallpaper grid (view only), monitor picker.
 
 import { lp, call } from '/scripts/store.js'
 import { status, escapeHtml, extOf, showView } from '/scripts/ui.js'
@@ -18,7 +18,7 @@ export async function renderLibrary() {
     return
   }
   grid.innerHTML = ''
-  items.forEach((entry) => {
+  items.forEach((entry, index) => {
     const card = document.createElement('div')
     card.className = 'lib-card'
     const ext = entry.isVideo ? (extOf(entry.filePath || '') === 'gif' ? 'gif' : 'video') : 'image'
@@ -32,25 +32,9 @@ export async function renderLibrary() {
       <img src="${entry.thumbnail || ''}" alt="${escapeHtml(name)}" loading="lazy" draggable="false">
       <span class="lib-card-type ${ext}">${ext.toUpperCase()}</span>
       <div class="lib-card-overlay">
-        <button class="lib-card-apply" type="button">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Apply
-        </button>
         <span class="lib-card-name">${escapeHtml(name)}</span>
       </div>`
-    card.querySelector('.lib-card-apply').addEventListener('click', async (e) => {
-      e.stopPropagation()
-      if (lp.monitors.length <= 1) {
-        const target = lp.monitors[0]
-        if (!target) {
-          status('No display detected', 'error')
-          return
-        }
-        await applyLocalEntryToMonitor(target, entry)
-      } else {
-        showLibraryMonitorPicker(entry)
-      }
-    })
+    card.addEventListener('click', () => lp.fn.openGalleryPreview?.(items, index))
     grid.appendChild(card)
   })
   const n = items.length

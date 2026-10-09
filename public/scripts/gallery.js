@@ -196,10 +196,6 @@ function _renderGalleryPreview() {
       <div class="dc-preview-title">${escapeHtml(name)}</div>
       ${entry.width && entry.height ? `<div class="dc-preview-meta">${ext.toUpperCase()} · ${entry.width}×${entry.height}</div>` : ''}
       <div class="dc-preview-actions">
-        <button id="gp-apply" class="dc-preview-btn primary">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Apply Wallpaper
-        </button>
         <button id="gp-back" class="dc-preview-btn secondary">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
           Back
@@ -223,16 +219,6 @@ function _renderGalleryPreview() {
   }
 
   ov.querySelector('.dc-preview-close').addEventListener('click', closeGP)
-
-  ov.querySelector('#gp-apply').addEventListener('click', async () => {
-    closeGP()
-    if (lp.monitors.length <= 1) {
-      const target = lp.monitors[0]
-      if (target) await lp.fn.applyLocalEntryToMonitor?.(target, entry)
-    } else {
-      lp.fn.showLibraryMonitorPicker?.(entry)
-    }
-  })
 
   ov.querySelector('#gp-back').addEventListener('click', () => {
     lp._gpIndex = (lp._gpIndex - 1 + items.length) % items.length
