@@ -2,17 +2,11 @@
 import Layout from '../layouts/Layout.astro'
 import Titlebar from '../components/Titlebar.astro'
 import DepWarn from '../components/DepWarn.astro'
-import LoginModal from '../components/LoginModal.astro'
 import Sidebar from '../components/Sidebar.astro'
 import DisplaysView from '../components/DisplaysView.astro'
 import SettingsView from '../components/SettingsView.astro'
-import DiscoverView from '../components/DiscoverView.astro'
-import StorageView from '../components/StorageView.astro'
 import LibraryView from '../components/LibraryView.astro'
-import StorageUploadModal from '../components/StorageUploadModal.astro'
-import StorageDeleteModal from '../components/StorageDeleteModal.astro'
 import MonitorPickerModal from '../components/MonitorPickerModal.astro'
-import SignOutModal from '../components/SignOutModal.astro'
 ---
 
 <Layout title="Live Paper">
@@ -26,17 +20,11 @@ import SignOutModal from '../components/SignOutModal.astro'
     <section class="flex min-w-0 flex-1 flex-col overflow-hidden">
       <DisplaysView />
       <SettingsView />
-      <DiscoverView />
-      <StorageView />
       <LibraryView />
     </section>
   </div>
 
-  <StorageUploadModal />
-  <StorageDeleteModal />
   <MonitorPickerModal />
-  <SignOutModal />
-  <LoginModal />
 </Layout>
 
 <script type="module" is:inline>
@@ -46,17 +34,11 @@ import SignOutModal from '../components/SignOutModal.astro'
   import '/scripts/ui.js'
   import '/scripts/gallery.js'
   import '/scripts/monitor.js'
-  import '/scripts/auth.js'
   import '/scripts/settings.js'
-  import '/scripts/discover.js'
   import '/scripts/library.js'
-  import '/scripts/billing.js'
-  import '/scripts/connections.js'
-  import '/scripts/storage.js'
   import '/scripts/hotkeys.js'
 
   initWails(Call, Events)
   lp.fn.init?.()
   lp.fn.initSettings?.()
-  lp.fn.checkSession?.()
 </script>

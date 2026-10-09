@@ -24,6 +24,8 @@ dev_mode:
       - '*.go'
     git_ignore: true
   executes:
+    - cmd: bun x --bun astro dev
+      type: background
     - cmd: powershell -Command "New-Item -ItemType Directory -Force -Path bin | Out-Null"
       type: blocking
     - cmd: bun scripts/generate-icons.js

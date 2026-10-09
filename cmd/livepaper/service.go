@@ -15,18 +15,15 @@ import (
 	"io"
 	"log"
 	"math"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
 	"github.com/nfnt/resize"
-	"github.com/pkg/browser"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
@@ -212,104 +209,9 @@ func (s *AppService) WindowToggleMaximise() {
 	}
 }
 
-func (s *AppService) OpenExternal(url string) error {
-	return browser.OpenURL(url)
-}
-
 func (s *AppService) FileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
-}
-
-func extFromContentType(ct string) string {
-	switch {
-	case strings.Contains(ct, "png"):
-		return ".png"
-	case strings.Contains(ct, "webp"):
-		return ".webp"
-	case strings.Contains(ct, "gif"):
-		return ".gif"
-	case strings.Contains(ct, "mp4"), strings.Contains(ct, "video/mp4"):
-		return ".mp4"
-	case strings.Contains(ct, "webm"):
-		return ".webm"
-	case strings.Contains(ct, "x-matroska"), strings.Contains(ct, "mkv"):
-		return ".mkv"
-	case strings.Contains(ct, "quicktime"):
-		return ".mov"
-	default:
-		return ".jpg"
-	}
-}
-
-func sanitizeName(s string) string {
-	var b strings.Builder
-	for _, r := range s {
-		switch {
-		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
-			b.WriteRune(r)
-		default:
-			b.WriteRune('_')
-		}
-	}
-	if b.Len() == 0 {
-		return "wallpaper"
-	}
-	return b.String()
-}
-
-// DownloadToTemp fetches a community wallpaper (premium-gated) into the app's
-// install directory under a "data" sub-folder. The file is saved without
-// an extension to discourage direct use outside the app.
-// Returns "premium_required" when the server rejects with 402.
-func (s *AppService) DownloadToTemp(url, token, id string) (string, error) {
-	exe, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-	dir := filepath.Join(filepath.Dir(exe), "data")
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return "", err
-	}
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return "", err
-	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	client := &http.Client{Timeout: 120 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-	case http.StatusPaymentRequired:
-		return "", fmt.Errorf("premium_required")
-	case http.StatusUnauthorized:
-		return "", fmt.Errorf("unauthorized")
-	default:
-		return "", fmt.Errorf("download failed: %d", resp.StatusCode)
-	}
-
-	// No extension — hide file type from the filesystem
-	out := filepath.Join(dir, sanitizeName(id))
-	f, err := os.Create(out)
-	if err != nil {
-		return "", err
-	}
-	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
-		os.Remove(out)
-		return "", err
-	}
-	f.Close()
-	return out, nil
 }
 
 func (s *AppService) GetVersion() string {
@@ -440,12 +342,6 @@ func (s *AppService) IsVideoFile(filePath string) bool {
 // small, so this keeps the encoded data URL light and — combined with the disk
 // cache below — lets restore/re-render skip decoding the full-resolution source.
 const thumbMaxDim = 512
-
-// GetThumbnail returns a generic preview thumbnail (16:9 bound) for a file.
-// Used by gallery/discover cards where no specific monitor is targeted.
-func (s *AppService) GetThumbnail(filePath string) string {
-	return generateThumbnail(filePath, thumbMaxDim, thumbMaxDim*9/16)
-}
 
 // GetMonitorThumbnail returns a preview thumbnail bounded to the target
 // monitor's aspect ratio, capped at thumbMaxDim on the longest side. Smaller
@@ -678,7 +574,7 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 		return s.preprocessGIF(filePath)
 	}
 
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	tmpDir := wp.CacheDir()
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return "", err
 	}
@@ -745,7 +641,7 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 }
 
 func (s *AppService) preprocessGIF(filePath string) (string, error) {
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	tmpDir := wp.CacheDir()
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		return "", err
 	}
@@ -842,8 +738,8 @@ func getVideoDurationUs(filePath string) int64 {
 	return int64(f * 1e6)
 }
 
-var dependencyInstallMu sync.Mutex
-
+// addDependencySearchPath prepends dir to PATH once so exec.LookPath finds the
+// ffmpeg/ffprobe/mpv binaries bundled beside livepaper.exe.
 func addDependencySearchPath(dir string) {
 	if dir == "" {
 		return
@@ -862,24 +758,17 @@ func addDependencySearchPath(dir string) {
 	_ = os.Setenv("PATH", dir+string(os.PathListSeparator)+current)
 }
 
-func dependencyInstallerPath(exeDir, workDir string) (string, error) {
-	candidates := []string{
-		filepath.Join(exeDir, "scripts", "install-deps.ps1"),
-		filepath.Join(workDir, "scripts", "install-deps.ps1"),
-	}
-	for _, candidate := range candidates {
-		info, err := os.Stat(candidate)
-		if err == nil && !info.IsDir() {
-			return candidate, nil
-		}
-	}
-	return "", fmt.Errorf("dependency installer not found at scripts\\install-deps.ps1")
-}
-
-func (s *AppService) CheckDependencies() map[string]bool {
+// addBundledToolsSearchPath makes the tools bundled beside livepaper.exe win
+// over any copies on the user's PATH for every later exec.Command.
+func addBundledToolsSearchPath() {
 	if exe, err := os.Executable(); err == nil {
 		addDependencySearchPath(filepath.Dir(exe))
 	}
+}
+
+// CheckDependencies reports whether the media tools are available, looking
+// beside the executable first (main prepends it to PATH) and then on PATH.
+func (s *AppService) CheckDependencies() map[string]bool {
 	check := func(cmd string) bool {
 		_, err := exec.LookPath(cmd)
 		return err == nil
@@ -889,64 +778,6 @@ func (s *AppService) CheckDependencies() map[string]bool {
 		"ffprobe": check("ffprobe"),
 		"mpv":     check("mpv"),
 	}
-}
-
-func (s *AppService) InstallDependencies() error {
-	dependencyInstallMu.Lock()
-	defer dependencyInstallMu.Unlock()
-
-	exe, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	exeDir := filepath.Dir(exe)
-	workDir, _ := os.Getwd()
-	var scriptPath string
-	if isDev() {
-		// During development, prefer the workspace script so a stale copy under
-		// bin/scripts cannot shadow the source currently being tested.
-		scriptPath, err = dependencyInstallerPath(workDir, exeDir)
-	} else {
-		// Production only trusts the installer shipped beside the executable.
-		scriptPath, err = dependencyInstallerPath(exeDir, "")
-	}
-	if err != nil {
-		return err
-	}
-
-	cmd := exec.Command("powershell.exe",
-		"-NoProfile",
-		"-NonInteractive",
-		"-ExecutionPolicy", "Bypass",
-		"-File", scriptPath,
-		"-InstallDir", exeDir,
-		"-Portable",
-	)
-	wp.ConfigureBackgroundCommand(cmd)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		detail := strings.TrimSpace(string(output))
-		if len(detail) > 3000 {
-			detail = detail[len(detail)-3000:]
-		}
-		if detail == "" {
-			return fmt.Errorf("dependency installer failed: %w", err)
-		}
-		return fmt.Errorf("dependency installer failed: %w: %s", err, detail)
-	}
-
-	addDependencySearchPath(exeDir)
-	deps := s.CheckDependencies()
-	var missing []string
-	for _, name := range []string{"ffmpeg", "ffprobe", "mpv"} {
-		if !deps[name] {
-			missing = append(missing, name)
-		}
-	}
-	if len(missing) > 0 {
-		return fmt.Errorf("installation completed but dependencies are still missing: %s", strings.Join(missing, ", "))
-	}
-	return nil
 }
 
 func (s *AppService) CleanTempFiles() error {
@@ -1037,205 +868,4 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 		}()
 	}
 	return nil
-}
-
-// ── Admin API helpers ────────────────────────────────────────────────────────
-
-const adminAPIBase = "https://sso.dvgamerr.app"
-
-var adminTransport = &http.Transport{
-	DisableKeepAlives: true,
-}
-
-func adminDo(method, url, token, contentType string, body io.Reader, contentLength int64, timeout ...time.Duration) ([]byte, error) {
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
-	}
-	if contentLength >= 0 {
-		req.ContentLength = contentLength
-	}
-	t := 30 * time.Second
-	if len(timeout) > 0 {
-		t = timeout[0]
-	}
-	client := &http.Client{Timeout: t, Transport: adminTransport}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	data, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(data))
-	}
-	return data, nil
-}
-
-// AdminListWallpapers returns JSON array of all wallpapers from admin API.
-func (s *AppService) AdminListWallpapers(token string) string {
-	data, err := adminDo("GET", adminAPIBase+"/api/admin/wallpapers", token, "", nil, -1)
-	if err != nil {
-		b, _ := json.Marshal(map[string]string{"error": err.Error()})
-		return string(b)
-	}
-	return string(data)
-}
-
-// generateUploadThumbnailBytes creates a thumbnail for upload:
-// - JPEG (max 1920×1080) for images
-// - animated GIF (480px wide, 3s) for videos
-func generateUploadThumbnailBytes(filePath string) ([]byte, string, error) {
-	ext := strings.ToLower(filepath.Ext(filePath))
-	if wp.IsVideoFile(filePath) && ext != ".gif" {
-		data, err := makeUploadGIF(filePath)
-		return data, "image/gif", err
-	}
-	if ext == ".gif" {
-		data, err := os.ReadFile(filePath)
-		return data, "image/gif", err
-	}
-	f, err := os.Open(filePath)
-	if err != nil {
-		return nil, "", err
-	}
-	defer f.Close()
-	img, _, err := image.Decode(f)
-	if err != nil {
-		return nil, "", err
-	}
-	thumb := resize.Thumbnail(1920, 1080, img, resize.Lanczos3)
-	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, thumb, &jpeg.Options{Quality: 88}); err != nil {
-		return nil, "", err
-	}
-	return buf.Bytes(), "image/jpeg", nil
-}
-
-func makeUploadGIF(filePath string) ([]byte, error) {
-	thumbDir, err := thumbnailCacheDir()
-	if err != nil {
-		return nil, err
-	}
-	out := filepath.Join(thumbDir, cacheKey(filePath)+"_upload_thumb.gif")
-	if data, err := os.ReadFile(out); err == nil && len(data) > 0 {
-		return data, nil
-	}
-	seekSec := wp.VideoMidSec(filePath)
-	filter := "fps=10,scale=480:-2:force_original_aspect_ratio=decrease,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse"
-	cmd := exec.Command("ffmpeg",
-		"-ss", fmt.Sprintf("%.3f", seekSec),
-		"-i", filePath,
-		"-t", "3",
-		"-vf", filter,
-		"-loop", "0",
-		"-y", out,
-	)
-	wp.ConfigureBackgroundCommand(cmd)
-	cmd.Stderr = io.Discard
-	if err := cmd.Run(); err != nil {
-		return nil, err
-	}
-	return os.ReadFile(out)
-}
-
-// AdminUploadWallpaper runs the full 3-step upload: POST metadata → PUT thumbnail → PUT original.
-func (s *AppService) AdminUploadWallpaper(token, filePath, title, tier string) (string, error) {
-	ext := strings.ToLower(filepath.Ext(filePath))
-	isVid := wp.IsVideoFile(filePath) && ext != ".gif"
-
-	contentTypeMap := map[string]string{
-		".mp4": "video/mp4", ".webm": "video/webm", ".mov": "video/quicktime",
-		".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-		".webp": "image/webp", ".gif": "image/gif",
-	}
-	origCT, ok := contentTypeMap[ext]
-	if !ok {
-		origCT = "application/octet-stream"
-	}
-
-	thumbBytes, thumbCT, err := generateUploadThumbnailBytes(filePath)
-	if err != nil {
-		return "", fmt.Errorf("thumbnail: %w", err)
-	}
-
-	// Step 1: create metadata row
-	createPayload, _ := json.Marshal(map[string]interface{}{
-		"title": title, "tier": tier,
-		"contentType": origCT, "thumbnailContentType": thumbCT,
-		"isVideo": isVid,
-	})
-	resp, err := adminDo("POST", adminAPIBase+"/api/admin/wallpapers", token, "application/json", bytes.NewReader(createPayload), int64(len(createPayload)))
-	if err != nil {
-		return "", fmt.Errorf("create: %w", err)
-	}
-	var meta struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(resp, &meta); err != nil || meta.ID == "" {
-		return "", fmt.Errorf("create response: %s", string(resp))
-	}
-	id := meta.ID
-
-	// Step 2: upload thumbnail
-	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=thumbnail", adminAPIBase, id), token, thumbCT, bytes.NewReader(thumbBytes), int64(len(thumbBytes)), 600*time.Second); err != nil {
-		return id, fmt.Errorf("thumbnail upload: %w", err)
-	}
-
-	// Step 3: upload original (streamed)
-	f, err := os.Open(filePath)
-	if err != nil {
-		return id, fmt.Errorf("open original: %w", err)
-	}
-	defer f.Close()
-	fi, _ := f.Stat()
-	if _, err := adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=original", adminAPIBase, id), token, origCT, f, fi.Size(), 600*time.Second); err != nil {
-		return id, fmt.Errorf("original upload: %w", err)
-	}
-
-	return id, nil
-}
-
-// AdminReplaceFile re-uploads either thumbnail or original for an existing wallpaper.
-func (s *AppService) AdminReplaceFile(token, id, uploadType, filePath string) error {
-	ext := strings.ToLower(filepath.Ext(filePath))
-	var data []byte
-	var ct string
-	var err error
-
-	if uploadType == "thumbnail" {
-		data, ct, err = generateUploadThumbnailBytes(filePath)
-	} else {
-		data, err = os.ReadFile(filePath)
-		ctMap := map[string]string{
-			".mp4": "video/mp4", ".webm": "video/webm",
-			".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-			".webp": "image/webp", ".gif": "image/gif",
-		}
-		ct = ctMap[ext]
-		if ct == "" {
-			ct = "application/octet-stream"
-		}
-	}
-	if err != nil {
-		return err
-	}
-	_, err = adminDo("PUT", fmt.Sprintf("%s/api/admin/wallpapers/%s/upload?type=%s", adminAPIBase, id, uploadType), token, ct, bytes.NewReader(data), int64(len(data)), 600*time.Second)
-	return err
-}
-
-// AdminPatchWallpaper sends a PATCH request with arbitrary JSON body.
-func (s *AppService) AdminPatchWallpaper(token, id, body string) error {
-	_, err := adminDo("PATCH", fmt.Sprintf("%s/api/admin/wallpapers/%s", adminAPIBase, id), token, "application/json", strings.NewReader(body), int64(len(body)))
-	return err
-}
-
-// AdminDeleteWallpaper deletes a wallpaper and purges R2 assets.
-func (s *AppService) AdminDeleteWallpaper(token, id string) error {
-	_, err := adminDo("DELETE", fmt.Sprintf("%s/api/admin/wallpapers/%s?purge=true", adminAPIBase, id), token, "", nil, -1)
-	return err
 }

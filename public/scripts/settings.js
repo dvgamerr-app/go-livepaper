@@ -1,7 +1,7 @@
 // Settings: bindings, lp-select, pause button, tabs, hotkey capture, reapply video.
 
 import { lp, call } from '/scripts/store.js'
-import { status, debounce, track } from '/scripts/ui.js'
+import { status, debounce } from '/scripts/ui.js'
 
 // ── Window theme ───────────────────────────────────────────────────────────────
 
@@ -53,7 +53,6 @@ export function bindSettingsControls() {
       const key = btn.dataset.setting
       lp.appSettings[key] = !lp.appSettings[key]
       setToggle(btn, lp.appSettings[key])
-      if (key === 'telemetry' && lp.appSettings.telemetry) track('telemetry_enabled')
       saveSettingsDebounced()
       if (key === 'gpuAcceleration') reapplyVideoWallpapers()
     })
@@ -196,8 +195,6 @@ document.querySelectorAll('.settings-tab[data-stab]').forEach((tab) => {
     document.querySelectorAll('[data-spanel]').forEach((p) => {
       p.hidden = p.dataset.spanel !== id
     })
-    if (id === 'billing') lp.fn.onShowBilling?.()
-    if (id === 'connections') lp.fn.onShowConnections?.()
   })
 })
 
@@ -283,9 +280,6 @@ export async function reapplyVideoWallpapers() {
 
 export async function initSettings() {
   try {
-    lp.appVersion = await call('GetVersion')
-  } catch (_) {}
-  try {
     lp.appSettings = await call('GetSettings')
   } catch (_) {
     lp.appSettings = null
@@ -317,8 +311,6 @@ export async function initSettings() {
   renderSettings()
   bindSettingsControls()
   initCustomSelects()
-  lp.fn.refreshAuthDependentUI?.()
-  track('app_open')
 }
 
 // Register in cross-module registry

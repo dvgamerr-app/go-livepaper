@@ -12,56 +12,6 @@ import (
 	wp "github.com/dvgamerr/go-livepaper/internal/wallpaper"
 )
 
-// ---------- extFromContentType ----------
-
-func TestExtFromContentType(t *testing.T) {
-	tests := []struct {
-		ct   string
-		want string
-	}{
-		{"image/png", ".png"},
-		{"image/webp", ".webp"},
-		{"image/gif", ".gif"},
-		{"video/mp4", ".mp4"},
-		{"video/webm", ".webm"},
-		{"video/x-matroska", ".mkv"},
-		{"video/quicktime", ".mov"},
-		{"image/jpeg", ".jpg"},
-		{"application/octet-stream", ".jpg"}, // default
-		{"", ".jpg"},                         // empty → default
-		{"video/mp4; charset=utf-8", ".mp4"}, // with params
-		{"video/mkv", ".mkv"},
-	}
-	for _, tt := range tests {
-		if got := extFromContentType(tt.ct); got != tt.want {
-			t.Errorf("extFromContentType(%q) = %q, want %q", tt.ct, got, tt.want)
-		}
-	}
-}
-
-// ---------- sanitizeName ----------
-
-func TestSanitizeName(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"hello", "hello"},
-		{"hello world", "hello_world"},
-		{"file-name_123", "file-name_123"},
-		{"abc/def", "abc_def"},
-		{"", "wallpaper"},        // empty → fallback
-		{"   ", "___"},           // spaces
-		{"ABC123-_", "ABC123-_"}, // already clean
-		{"ภาษาไทย", "_______"},   // 7 non-ASCII runes → 7 underscores
-	}
-	for _, tt := range tests {
-		if got := sanitizeName(tt.input); got != tt.want {
-			t.Errorf("sanitizeName(%q) = %q, want %q", tt.input, got, tt.want)
-		}
-	}
-}
-
 // ---------- maxInt ----------
 
 func TestMaxInt(t *testing.T) {

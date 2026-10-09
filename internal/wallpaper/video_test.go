@@ -323,7 +323,7 @@ func TestPreprocessVideo_ValidCacheHit(t *testing.T) {
 	if !hasTool("ffmpeg") || !hasTool("ffprobe") {
 		t.Skip("ffmpeg/ffprobe not available")
 	}
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	tmpDir := CacheDir()
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +349,7 @@ func TestPreprocessVideo_StaleCacheRejected(t *testing.T) {
 	if !hasTool("ffprobe") {
 		t.Skip("ffprobe not available (cannot validate cache)")
 	}
-	tmpDir := filepath.Join(os.TempDir(), "livepaper")
+	tmpDir := CacheDir()
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		t.Fatal(err)
 	}

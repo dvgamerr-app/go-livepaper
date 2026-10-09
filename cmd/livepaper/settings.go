@@ -14,7 +14,6 @@ type Settings struct {
 	// General
 	Language          string `json:"language"`
 	ShowNotifications bool   `json:"showNotifications"`
-	Telemetry         bool   `json:"telemetry"`
 
 	// Performance
 	GPUAcceleration     bool   `json:"gpuAcceleration"`
@@ -46,7 +45,6 @@ func defaultSettings() Settings {
 	return Settings{
 		Language:            "en-US",
 		ShowNotifications:   true,
-		Telemetry:           false,
 		GPUAcceleration:     true,
 		VRAMCapMB:           256,
 		GPUAdapter:          "",
@@ -102,6 +100,7 @@ func loadSettings() Settings {
 	data, err := os.ReadFile(settingsPath())
 	if err == nil {
 		// Unmarshal over the defaults so new fields keep their default value.
+		// Unknown keys from older versions (e.g. "telemetry") are ignored.
 		_ = json.Unmarshal(data, &s)
 	}
 	s.normalize()

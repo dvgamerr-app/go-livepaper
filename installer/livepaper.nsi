@@ -67,14 +67,21 @@ Section "Install" SEC_MAIN
   nsExec::ExecToLog 'taskkill /IM ${APP_EXE} /F'
   Sleep 1000
 
-  SetOutPath "${APP_BIN_DIR}"
-  File /r /x "livepaper-setup-*.exe" "bin\*"
+  ; Older releases shipped an online dependency installer here; drop it on upgrade.
+  RMDir /r "${APP_BIN_DIR}\scripts"
+  ; Legacy wallpapers downloaded by older online builds sit as extensionless
+  ; files directly in data\; keep the data\thumbnail cache sub-folder.
+  Delete "${APP_BIN_DIR}\data\*.*"
 
-  ; Install ffmpeg + mpv from the internet (non-fatal)
-  DetailPrint "Installing ffmpeg and mpv..."
-  nsExec::ExecToLog 'powershell.exe -NonInteractive -ExecutionPolicy Bypass \
-    -File "${APP_BIN_DIR}\scripts\install-deps.ps1" \
-    -InstallDir "${APP_BIN_DIR}" -Portable'
+  ; Explicit offline payload: the app plus the media tools bundled at build time
+  ; by scripts\bundle-media-tools.ps1. makensis fails if any of them is missing,
+  ; and stale build output in bin\ (scripts, data cache, setup exe) is never packaged.
+  SetOutPath "${APP_BIN_DIR}"
+  File "bin\${APP_EXE}"
+  File "bin\ffmpeg.exe"
+  File "bin\ffprobe.exe"
+  File "bin\mpv.exe"
+  File /r "bin\licenses"
 
   ; Register auto-start on login
   WriteRegStr HKCU "${RUN_KEY}" "livepaper" '"${APP_EXE_PATH}"'

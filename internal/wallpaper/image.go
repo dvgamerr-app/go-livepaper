@@ -81,10 +81,21 @@ func SaveImageAs(img image.Image, quality int) (string, error) {
 	return filename, nil
 }
 
+// CacheDir returns the directory for generated files (background.jpg, encoded
+// videos). It lives beside the executable so everything stays inside the
+// install directory instead of %TEMP%, where it can be cleaned out from under
+// the running wallpaper. Falls back to %TEMP% if the executable path is unknown.
+func CacheDir() string {
+	if exe, err := os.Executable(); err == nil {
+		return filepath.Join(filepath.Dir(exe), "data")
+	}
+	return filepath.Join(os.TempDir(), "livepaper")
+}
+
 func GetTempDir() (string, error) {
-	tempDir := filepath.Join(os.TempDir(), "livepaper")
+	tempDir := CacheDir()
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		return "", fmt.Errorf("failed to create temp directory: %w", err)
+		return "", fmt.Errorf("failed to create data directory: %w", err)
 	}
 	return tempDir, nil
 }

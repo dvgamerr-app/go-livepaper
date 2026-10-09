@@ -6,13 +6,13 @@ import { status } from '/scripts/ui.js'
 // ── Cycle gallery wallpapers ───────────────────────────────────────────────────
 
 async function cycleGallery(dir) {
-  const localItems = lp.galleryItems.filter((it) => !it.remote)
-  if (!localItems.length) {
-    status('No local wallpapers to cycle', 'error')
+  const items = lp.galleryItems
+  if (!items.length) {
+    status('No recent wallpapers to cycle', 'error')
     return
   }
-  lp.galleryCursor = (lp.galleryCursor + dir + localItems.length) % localItems.length
-  const entry = localItems[lp.galleryCursor]
+  lp.galleryCursor = (lp.galleryCursor + dir + items.length) % items.length
+  const entry = items[lp.galleryCursor]
   const target = lp.monitors.find((m) => m.primary) || lp.monitors[0]
   if (!target || !entry) return
   status('Applying…')
@@ -75,9 +75,3 @@ setTimeout(() => {
   updateGPUStats()
   setInterval(updateGPUStats, 2000)
 }, 1500)
-
-// ── Telemetry on apply ─────────────────────────────────────────────────────────
-
-document
-  .getElementById('apply-btn')
-  ?.addEventListener('click', () => lp.fn.track?.('wallpaper_applied'))
