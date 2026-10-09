@@ -61,9 +61,10 @@ type ProgressEvent struct {
 }
 
 type AppService struct {
-	app      *application.App
-	window   *application.WebviewWindow
-	encoding sync.Map // key: filePath → *exec.Cmd
+	app       *application.App
+	window    *application.WebviewWindow
+	encoding  sync.Map // key: filePath → *exec.Cmd
+	cancelled sync.Map // key: filePath, set by CancelEncoding so a kill is not retried
 }
 
 // ── Video encoder selection ─────────────────────────────────────────────────
@@ -178,6 +179,7 @@ func (s *AppService) ToggleVideoPause() bool {
 
 func (s *AppService) CancelEncoding(filePath string) {
 	if v, ok := s.encoding.Load(filePath); ok {
+		s.cancelled.Store(filePath, struct{}{})
 		if cmd := v.(*exec.Cmd); cmd.Process != nil {
 			cmd.Process.Kill()
 		}
@@ -569,6 +571,68 @@ func (s *AppService) GetAnimatedThumbnail(filePath string) string {
 	return "data:image/gif;base64," + base64.StdEncoding.EncodeToString(data)
 }
 
+// runEncode transcodes filePath to out with the configured encoder, reporting
+// progress events. A hardware encoder that ffmpeg lists but this machine cannot
+// use (no matching GPU/driver) fails at runtime, so retry once on the CPU.
+func (s *AppService) runEncode(filePath, out string, durationUs int64, vf string, tail []string) error {
+	cpu := []string{"-c:v", "libx264", "-crf", "23", "-preset", "fast"}
+	attempts := [][]string{encoderArgs()}
+	if strings.Join(attempts[0], " ") != strings.Join(cpu, " ") {
+		attempts = append(attempts, cpu)
+	}
+	var err error
+	for _, enc := range attempts {
+		ffArgs := append([]string{"-i", filePath, "-vf", vf}, enc...)
+		ffArgs = append(ffArgs, tail...)
+		ffArgs = append(ffArgs, "-progress", "pipe:1", "-nostats", "-y", out)
+		if err = s.encodeOnce(filePath, ffArgs, durationUs); err == nil {
+			return nil
+		}
+		os.Remove(out)
+		if _, cancelled := s.cancelled.LoadAndDelete(filePath); cancelled {
+			return err
+		}
+		log.Printf("encode with %s failed: %v", enc[1], err)
+	}
+	return err
+}
+
+func (s *AppService) encodeOnce(filePath string, ffArgs []string, durationUs int64) error {
+	cmd := exec.Command("ffmpeg", ffArgs...)
+	wp.ConfigureBackgroundCommand(cmd)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	s.encoding.Store(filePath, cmd)
+	defer s.encoding.Delete(filePath)
+
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "out_time_us=") {
+			us, _ := strconv.ParseInt(strings.TrimPrefix(line, "out_time_us="), 10, 64)
+			if durationUs > 0 && us > 0 {
+				pct := int(float64(us) / float64(durationUs) * 100)
+				if pct > 99 {
+					pct = 99
+				}
+				s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: pct})
+			}
+		}
+	}
+	if err := cmd.Wait(); err != nil {
+		lines := strings.Split(strings.TrimSpace(stderr.String()), "\n")
+		return fmt.Errorf("%w: %s", err, strings.TrimSpace(lines[len(lines)-1]))
+	}
+	return nil
+}
+
 func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) {
 	if strings.ToLower(filepath.Ext(filePath)) == ".gif" {
 		return s.preprocessGIF(filePath)
@@ -592,47 +656,8 @@ func (s *AppService) PreprocessVideo(filePath string, w, h int) (string, error) 
 
 	durationUs := getVideoDurationUs(filePath)
 
-	ffArgs := []string{
-		"-i", filePath,
-		"-vf", fmt.Sprintf("scale=%d:%d:force_original_aspect_ratio=increase,crop=%d:%d", w, h, w, h),
-	}
-	ffArgs = append(ffArgs, encoderArgs()...)
-	ffArgs = append(ffArgs,
-		"-movflags", "+faststart", "-r", "30", "-an",
-		"-progress", "pipe:1",
-		"-nostats",
-		"-y", out,
-	)
-	cmd := exec.Command("ffmpeg", ffArgs...)
-	wp.ConfigureBackgroundCommand(cmd)
-	cmd.Stderr = io.Discard
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return "", err
-	}
-	if err := cmd.Start(); err != nil {
-		return "", err
-	}
-	s.encoding.Store(filePath, cmd)
-	defer s.encoding.Delete(filePath)
-
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "out_time_us=") {
-			us, _ := strconv.ParseInt(strings.TrimPrefix(line, "out_time_us="), 10, 64)
-			if durationUs > 0 && us > 0 {
-				pct := int(float64(us) / float64(durationUs) * 100)
-				if pct > 99 {
-					pct = 99
-				}
-				s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: pct})
-			}
-		}
-	}
-
-	if err := cmd.Wait(); err != nil {
-		os.Remove(out)
+	vf := fmt.Sprintf("scale=%d:%d:force_original_aspect_ratio=increase,crop=%d:%d", w, h, w, h)
+	if err := s.runEncode(filePath, out, durationUs, vf, []string{"-movflags", "+faststart", "-r", "30", "-an"}); err != nil {
 		return "", fmt.Errorf("ffmpeg encode: %w", err)
 	}
 
@@ -671,47 +696,8 @@ func (s *AppService) preprocessGIF(filePath string) (string, error) {
 
 	// Preserve original GIF fps and size. H.264 requires even dimensions,
 	// so round each axis down to the nearest even pixel if needed.
-	ffArgs := []string{
-		"-i", filePath,
-		"-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-	}
-	ffArgs = append(ffArgs, encoderArgs()...)
-	ffArgs = append(ffArgs,
-		"-movflags", "+faststart", "-an",
-		"-progress", "pipe:1",
-		"-nostats",
-		"-y", out,
-	)
-	cmd := exec.Command("ffmpeg", ffArgs...)
-	wp.ConfigureBackgroundCommand(cmd)
-	cmd.Stderr = io.Discard
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return "", err
-	}
-	if err := cmd.Start(); err != nil {
-		return "", err
-	}
-	s.encoding.Store(filePath, cmd)
-	defer s.encoding.Delete(filePath)
-
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "out_time_us=") {
-			us, _ := strconv.ParseInt(strings.TrimPrefix(line, "out_time_us="), 10, 64)
-			if durationUs > 0 && us > 0 {
-				pct := int(float64(us) / float64(durationUs) * 100)
-				if pct > 99 {
-					pct = 99
-				}
-				s.app.Event.Emit("video:progress", ProgressEvent{File: filePath, Progress: pct})
-			}
-		}
-	}
-
-	if err := cmd.Wait(); err != nil {
-		os.Remove(out)
+	vf := "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+	if err := s.runEncode(filePath, out, durationUs, vf, []string{"-movflags", "+faststart", "-an"}); err != nil {
 		return "", fmt.Errorf("ffmpeg gif encode: %w", err)
 	}
 

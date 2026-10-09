@@ -88,7 +88,10 @@ function buildStage(layout) {
     const doCancel = (e) => {
       e.stopPropagation()
       const s = lp.state[m.index]
-      if (s?.filePath) call('CancelEncoding', s.filePath)
+      if (s?.filePath) {
+        s.cancelRequested = true
+        call('CancelEncoding', s.filePath)
+      }
     }
     cancelBtn?.addEventListener('click', doCancel)
     cancelBtn?.addEventListener('keydown', (e) => {
@@ -324,8 +327,10 @@ export async function browse(idx, w, h) {
       lp.state[idx].cachedPath = cached
       lp.state[idx].ready = true
     } catch (e) {
+      const userCancelled = lp.state[idx]?.cancelRequested
       cancelEncode(idx)
-      status('Encoding cancelled.', '')
+      if (userCancelled) status('Encoding cancelled.', '')
+      else status(`Encoding failed: ${e?.message || e}`, 'error')
       return
     }
     setEncoding(idx, false, 100)
