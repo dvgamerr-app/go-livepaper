@@ -156,7 +156,7 @@ function Add-FFmpeg {
     # BtbN/FFmpeg-Builds (zip, static GPL build)
     $repo = 'BtbN/FFmpeg-Builds'
     Write-Step "Fetching latest ffmpeg release from $repo..."
-    $asset = Get-GitHubAsset $repo 'ffmpeg-master-latest-win64-gpl\.zip$'
+    $asset = Get-GitHubAsset $repo '^ffmpeg-N-\d+-g[0-9a-f]+-win64-gpl\.zip$'
     $zipPath = Join-Path $WorkDir 'ffmpeg.zip'
     $extractDir = Join-Path $WorkDir 'ffmpeg-extract'
 
