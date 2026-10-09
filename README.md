@@ -90,7 +90,7 @@ livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 | -------------- | -------- | ------------------------------------------------------------ |
 | `--monitor N`  | `-m N`   | Target monitor by number (1-based). Repeat for each monitor. |
 | `--player mpv` | `-p mpv` | Video renderer: `ffmpeg` (default) or `mpv`                  |
-| `--clean`      | `-c`     | Delete all temp wallpaper files from `<install dir>\data`      |
+| `--clean`      | `-c`     | Delete all temp wallpaper files from `<install dir>\data`    |
 | `--version`    |          | Print version                                                |
 | `--help`       | `-h`     | Print help                                                   |
 
