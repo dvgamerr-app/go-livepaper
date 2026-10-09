@@ -25,12 +25,6 @@ func resetSettings(t *testing.T) {
 func TestDefaultSettings(t *testing.T) {
 	s := defaultSettings()
 
-	if s.Language != "en-US" {
-		t.Errorf("Language = %q, want \"en-US\"", s.Language)
-	}
-	if !s.ShowNotifications {
-		t.Error("ShowNotifications should be true")
-	}
 	if !s.GPUAcceleration {
 		t.Error("GPUAcceleration should be true")
 	}
@@ -63,15 +57,6 @@ func TestDefaultSettings(t *testing.T) {
 }
 
 // ---------- normalize ----------
-
-func TestNormalize_EmptyLanguage(t *testing.T) {
-	s := defaultSettings()
-	s.Language = ""
-	s.normalize()
-	if s.Language != "en-US" {
-		t.Errorf("normalize: Language = %q, want \"en-US\"", s.Language)
-	}
-}
 
 func TestNormalize_ValidWindowThemes(t *testing.T) {
 	for _, theme := range []string{"mica", "acrylic", "solid"} {
@@ -183,7 +168,7 @@ func TestSaveAndLoadSettings(t *testing.T) {
 	t.Setenv("APPDATA", dir)
 
 	want := defaultSettings()
-	want.Language = "th-TH"
+	want.GPUAdapter = "adapter-a"
 	want.VRAMCapMB = 512
 	want.WindowTheme = "acrylic"
 
@@ -192,8 +177,8 @@ func TestSaveAndLoadSettings(t *testing.T) {
 	}
 
 	got := loadSettings()
-	if got.Language != want.Language {
-		t.Errorf("Language = %q, want %q", got.Language, want.Language)
+	if got.GPUAdapter != want.GPUAdapter {
+		t.Errorf("GPUAdapter = %q, want %q", got.GPUAdapter, want.GPUAdapter)
 	}
 	if got.VRAMCapMB != want.VRAMCapMB {
 		t.Errorf("VRAMCapMB = %d, want %d", got.VRAMCapMB, want.VRAMCapMB)
@@ -204,12 +189,12 @@ func TestSaveAndLoadSettings(t *testing.T) {
 
 	// Replacing an existing settings file must remain supported by the atomic
 	// write path.
-	want.Language = "de-DE"
+	want.GPUAdapter = "adapter-b"
 	if err := saveSettingsToDisk(want); err != nil {
 		t.Fatalf("saveSettingsToDisk() replacing file error = %v", err)
 	}
-	if got := loadSettings(); got.Language != "de-DE" {
-		t.Errorf("Language after replacing file = %q, want %q", got.Language, "de-DE")
+	if got := loadSettings(); got.GPUAdapter != "adapter-b" {
+		t.Errorf("GPUAdapter after replacing file = %q, want %q", got.GPUAdapter, "adapter-b")
 	}
 }
 
@@ -220,8 +205,8 @@ func TestLoadSettings_MissingFile(t *testing.T) {
 
 	s := loadSettings()
 	// Must return defaults when the file is missing.
-	if s.Language != "en-US" {
-		t.Errorf("loadSettings() missing file: Language = %q, want \"en-US\"", s.Language)
+	if s.GPUAdapter != "" {
+		t.Errorf("loadSettings() missing file: GPUAdapter = %q, want empty", s.GPUAdapter)
 	}
 }
 
@@ -241,8 +226,8 @@ func TestLoadSettings_CorruptFile(t *testing.T) {
 
 	s := loadSettings()
 	// Unmarshal failure → defaults used.
-	if s.Language != "en-US" {
-		t.Errorf("loadSettings() corrupt file: Language = %q, want \"en-US\"", s.Language)
+	if s.GPUAdapter != "" {
+		t.Errorf("loadSettings() corrupt file: GPUAdapter = %q, want empty", s.GPUAdapter)
 	}
 }
 
@@ -256,14 +241,14 @@ func TestLoadSettings_PartialJSON(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
 		t.Fatal(err)
 	}
-	partial, _ := json.Marshal(map[string]any{"language": "ja-JP"})
+	partial, _ := json.Marshal(map[string]any{"gpuAdapter": "adapter-c"})
 	if err := os.WriteFile(p, partial, 0644); err != nil {
 		t.Fatal(err)
 	}
 
 	s := loadSettings()
-	if s.Language != "ja-JP" {
-		t.Errorf("Language = %q, want \"ja-JP\"", s.Language)
+	if s.GPUAdapter != "adapter-c" {
+		t.Errorf("GPUAdapter = %q, want \"ja-JP\"", s.GPUAdapter)
 	}
 	// VRAMCapMB was not set in JSON, should get the default 256.
 	if s.VRAMCapMB != 256 {
@@ -282,14 +267,14 @@ func TestLoadSettings_IgnoresRemovedTelemetryKey(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
 		t.Fatal(err)
 	}
-	legacy, _ := json.Marshal(map[string]any{"language": "th-TH", "telemetry": true, "vramCapMB": 512})
+	legacy, _ := json.Marshal(map[string]any{"gpuAdapter": "adapter-a", "telemetry": true, "vramCapMB": 512})
 	if err := os.WriteFile(p, legacy, 0644); err != nil {
 		t.Fatal(err)
 	}
 
 	s := loadSettings()
-	if s.Language != "th-TH" {
-		t.Errorf("Language = %q, want \"th-TH\"", s.Language)
+	if s.GPUAdapter != "adapter-a" {
+		t.Errorf("GPUAdapter = %q, want \"th-TH\"", s.GPUAdapter)
 	}
 	if s.VRAMCapMB != 512 {
 		t.Errorf("VRAMCapMB = %d, want 512", s.VRAMCapMB)
@@ -317,12 +302,12 @@ func TestGetSettings(t *testing.T) {
 	resetSettings(t)
 	settingsMu.Lock()
 	currentSettings = defaultSettings()
-	currentSettings.Language = "de-DE"
+	currentSettings.GPUAdapter = "adapter-b"
 	settingsMu.Unlock()
 
 	got := getSettings()
-	if got.Language != "de-DE" {
-		t.Errorf("getSettings().Language = %q, want \"de-DE\"", got.Language)
+	if got.GPUAdapter != "adapter-b" {
+		t.Errorf("getSettings().GPUAdapter = %q, want \"de-DE\"", got.GPUAdapter)
 	}
 }
 
@@ -349,13 +334,13 @@ func TestSaveSettings_FailedWritePreservesCurrentSettings(t *testing.T) {
 	t.Setenv("APPDATA", blockedRoot)
 
 	next := defaultSettings()
-	next.Language = "th-TH"
+	next.GPUAdapter = "adapter-a"
 	if err := (&AppService{}).SaveSettings(next); err == nil {
 		t.Fatal("SaveSettings() error = nil, want persistence error")
 	}
 
-	if got := getSettings().Language; got != "en-US" {
-		t.Errorf("current Language after failed save = %q, want %q", got, "en-US")
+	if got := getSettings().GPUAdapter; got != "" {
+		t.Errorf("current GPUAdapter after failed save = %q, want %q", got, "")
 	}
 }
 
@@ -364,7 +349,7 @@ func TestSaveSettings_ClonesInputHotkeys(t *testing.T) {
 	t.Setenv("APPDATA", t.TempDir())
 
 	next := defaultSettings()
-	next.Language = "th-TH"
+	next.GPUAdapter = "adapter-a"
 	if err := (&AppService{}).SaveSettings(next); err != nil {
 		t.Fatalf("SaveSettings() error = %v", err)
 	}
