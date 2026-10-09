@@ -3,9 +3,7 @@
 package main
 
 import (
-	"log"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"unsafe"
@@ -106,9 +104,7 @@ func registerAllHotkeys() {
 		if !ok {
 			continue
 		}
-		if r, _, err := procRegisterHotKey.Call(0, uintptr(id), mods|modNoRepeat, uintptr(vk)); r == 0 {
-			log.Printf("hotkey %s (%s) could not be registered: %v", hotkeyActions[i], combo, err)
-		}
+		procRegisterHotKey.Call(0, uintptr(id), mods|modNoRepeat, uintptr(vk))
 	}
 }
 
@@ -193,11 +189,6 @@ func keyToVK(tok string) (uint32, bool) {
 		return 0x27, true
 	case "enter", "return":
 		return 0x0D, true
-	}
-	if lower := strings.ToLower(tok); len(lower) >= 2 && lower[0] == 'f' {
-		if n, err := strconv.Atoi(lower[1:]); err == nil && n >= 1 && n <= 12 {
-			return uint32(0x70 + n - 1), true // VK_F1..VK_F12
-		}
 	}
 	if len(tok) == 1 {
 		c := tok[0]

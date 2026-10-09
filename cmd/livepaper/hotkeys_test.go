@@ -15,7 +15,6 @@ func TestParseCombo_Valid(t *testing.T) {
 		{name: "windows key", combo: "Win + W", wantMods: modWin, wantVK: 0x57},
 		{name: "aliases", combo: "control + option + comma", wantMods: modControl | modAlt, wantVK: 0xBC},
 		{name: "single key", combo: "7", wantVK: 0x37},
-		{name: "function key", combo: "Ctrl + F1", wantMods: modControl, wantVK: 0x70},
 	}
 
 	for _, tt := range tests {
@@ -37,7 +36,7 @@ func TestParseCombo_Invalid(t *testing.T) {
 		"",
 		"Ctrl + Shift",
 		"Ctrl + A + B",
-		"Ctrl + F13",
+		"Ctrl + F1",
 		"Ctrl ++ A",
 	}
 

@@ -17,11 +17,7 @@ export function setToggle(el, on) {
 }
 
 const saveSettingsDebounced = debounce(() => {
-  if (lp.appSettings) {
-    call('SaveSettings', lp.appSettings).catch((e) =>
-      status(`Could not save settings: ${e}`, 'error')
-    )
-  }
+  if (lp.appSettings) call('SaveSettings', lp.appSettings).catch(() => {})
 }, 250)
 
 // ── Render settings from appSettings ──────────────────────────────────────────
@@ -58,15 +54,13 @@ export function bindSettingsControls() {
       lp.appSettings[key] = !lp.appSettings[key]
       setToggle(btn, lp.appSettings[key])
       saveSettingsDebounced()
-      if (key === 'gpuAcceleration') reapplyVideoWallpapers('gpu')
+      if (key === 'gpuAcceleration') reapplyVideoWallpapers()
     })
   })
   document.querySelectorAll('.lp-select[data-setting]').forEach((sel) => {
     sel.addEventListener('lp:change', (e) => {
       lp.appSettings[sel.dataset.setting] = e.detail.value
       saveSettingsDebounced()
-      // mpv reads the adapter at spawn time, so restart running wallpapers.
-      if (sel.dataset.setting === 'gpuAdapter') reapplyVideoWallpapers()
     })
   })
   const vram = document.querySelector('input[type=range][data-setting="vramCapMB"]')
@@ -77,8 +71,6 @@ export function bindSettingsControls() {
       if (lbl) lbl.textContent = `${lp.appSettings.vramCapMB} MB`
       saveSettingsDebounced()
     })
-    // The read-ahead buffer is passed to mpv when it starts, so apply on release.
-    vram.addEventListener('change', () => reapplyVideoWallpapers())
   }
   document.querySelectorAll('[data-setting="windowTheme"][data-value]').forEach((seg) => {
     seg.addEventListener('click', () => {
@@ -218,9 +210,6 @@ function startHotkeyCapture(btn) {
   btn.textContent = 'Press keys…'
 }
 
-// Keys the Go side can map to a virtual-key code (see keyToVK).
-const HOTKEY_KEY = /^([A-Z0-9<>.,/]|Space|Up|Down|Left|Right|Enter|F([1-9]|1[0-2]))$/
-
 function displayKey(e) {
   const k = e.key
   if (k === 'Control' || k === 'Shift' || k === 'Alt' || k === 'Meta') return null
@@ -247,14 +236,6 @@ window.addEventListener(
     }
     const k = displayKey(e)
     if (!k) return
-    if (!HOTKEY_KEY.test(k)) {
-      status(`Key "${k}" is not supported for hotkeys.`, 'error', 3000)
-      return
-    }
-    if (!e.ctrlKey && !e.altKey && !e.metaKey) {
-      status('Hotkeys need Ctrl, Alt or Win in the combo.', 'error', 3000)
-      return
-    }
     const parts = []
     if (e.ctrlKey) parts.push('Ctrl')
     if (e.shiftKey) parts.push('Shift')
@@ -263,27 +244,18 @@ window.addEventListener(
     parts.push(k)
     const combo = parts.join(' + ')
     if (!lp.appSettings.hotkeys) lp.appSettings.hotkeys = {}
-    const clash = Object.entries(lp.appSettings.hotkeys).find(
-      ([action, c]) => action !== lp.capturing.action && c === combo
-    )
-    if (clash) {
-      status(` is already used by another hotkey.`, 'error', 3000)
-      return
-    }
     lp.appSettings.hotkeys[lp.capturing.action] = combo
     lp.capturing.btn.textContent = combo
     lp.capturing.btn.classList.remove('capturing')
     lp.capturing = null
-    call('SaveSettings', lp.appSettings).catch((err) =>
-      status(`Could not save hotkey: ${err}`, 'error')
-    )
+    call('SaveSettings', lp.appSettings).catch(() => {})
   },
   true
 )
 
 // ── Reapply video wallpapers ───────────────────────────────────────────────────
 
-export async function reapplyVideoWallpapers(reason) {
+export async function reapplyVideoWallpapers() {
   const list = Object.entries(lp.state)
     .filter(([, s]) => s.filePath && s.ready)
     .map(([idx, s]) => ({ monitorIndex: parseInt(idx, 10), filePath: s.cachedPath || s.filePath }))
@@ -294,13 +266,11 @@ export async function reapplyVideoWallpapers(reason) {
   status('Reapplying…')
   try {
     await call('ApplyWallpapers', list)
-    const msg =
-      reason === 'gpu'
-        ? lp.appSettings.gpuAcceleration
-          ? 'Hardware decoding on'
-          : 'Hardware decoding off'
-        : 'Settings applied'
-    status(msg, 'success', 2500)
+    status(
+      lp.appSettings.gpuAcceleration ? 'GPU acceleration on' : 'GPU acceleration off',
+      'success',
+      2500
+    )
   } catch (e) {
     status(`Failed: ${e}`, 'error')
   }
