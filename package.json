@@ -4,8 +4,7 @@
   "version": "0.0.1",
   "packageManager": "bun@1.3.14",
   "scripts": {
-    "ui": "wails3 dev",
-    "dev": "bun x --bun astro dev",
+    "dev": "wails3 dev",
     "build": "bun x --bun astro build",
     "preview": "bun x --bun astro preview",
     "check": "bun x --bun astro check",
