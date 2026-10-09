@@ -121,7 +121,7 @@ rawY = normalizedY + vdMinY
 1. Wails app เริ่มจาก `cmd/livepaper/tray.go`
 2. frontend เรียก `AppService` methods ผ่าน runtime bridge
 3. `BrowseFile` เปิด native file picker
-4. `GetThumbnail` คืน preview ให้ UI และ cache JPEG/GIF ไว้ที่ `<exe-dir>\\data\\thumbnail`
+4. `GetMonitorThumbnail` / `GetAnimatedThumbnail` คืน preview ให้ UI และ cache JPEG/GIF ไว้ที่ `<exe-dir>\\data\\thumbnail`
 5. `PreprocessVideo` emit progress event `video:progress`
 6. `ApplyWallpapers` compose ภาพ, apply wallpaper, แล้วค่อย start video goroutine
 7. frontend เก็บ state ไว้ใน `localStorage` เพื่อ restore session
@@ -212,6 +212,8 @@ rawY = normalizedY + vdMinY
 - การตัด fallback `ProgramFiles(x86)` ออกแล้วยังพบ `'ist'` เหมือนเดิม แปลว่า path นี้ไม่ใช่ root cause; อย่าแก้ batch parser จากการคาดเดาข้อความ error อย่างเดียว ให้เปิด command trace เพื่อดูบรรทัดที่ execute จริงก่อนเปลี่ยนโครงสร้างเพิ่ม
 - `apply_patch` บน `scripts/installer.bat` ที่เดิมเป็น CRLF ทำให้ช่วงที่แก้กลายเป็น LF-only และไฟล์มี mixed line endings; `cmd.exe` กลืนบรรทัด `go build` ต่อกับต้น `if not exist` จนเหลือคำสั่ง `ist`. หลัง patch ไฟล์ `.bat` ต้อง normalize ทั้งไฟล์กลับเป็น CRLF ก่อนรัน
 - อย่าเริ่ม `*** Update File` ถัดไปหลัง `@@` ว่างใน `apply_patch`; รอบนี้เผลอทำซ้ำข้อผิดพลาดเดิมจน patch หลายไฟล์ถูก reject ทั้งก้อน ให้ปิดไฟล์แรกด้วย hunk ที่มี context จริงหรือแยก patch
+- การตั้ง `HTTP_PROXY`/`HTTPS_PROXY` ให้ชี้ไป port ที่ปิดอยู่เพื่อทดสอบ failure path ของ `scripts/bundle-media-tools.ps1` แบบไม่ใช้ network ได้ผลกับ `pwsh` เท่านั้น; Windows PowerShell 5.1 (`powershell.exe`) ไม่อ่าน env proxy เหล่านี้ จึงดาวน์โหลด ffmpeg/mpv จริงลง `bin/`. ถ้าจะทดสอบแบบ offline ให้ใช้ `pwsh` หรือชี้ `-OutputDir` ไปที่ directory ที่มี exe และ source note ครบแล้ว
+- `sed -i` ของ Git Bash บน `scripts/installer.bat` (CRLF) อ่านไฟล์แบบ text mode: pattern ที่ลงท้ายด้วย `\r$` จึงไม่ match และการเขียนกลับทำให้ทั้งไฟล์กลายเป็น LF-only. อย่าแก้ `.bat` ด้วย `sed -i`; ถ้าเผลอใช้ ให้ normalize กลับเป็น CRLF ระดับ byte (เช่น PowerShell `[IO.File]::WriteAllText` แบบ UTF-8 no BOM) แล้วนับ CR/LF ให้เท่ากันก่อนรัน
 
 ## Manual Verification
 

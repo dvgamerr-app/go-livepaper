@@ -5,7 +5,8 @@ Use `AGENTS.md` as the primary repo prompt. Its build constraints and Known Mist
 - Windows-only Go 1.26.3 / Wails v3 application with an Astro frontend built by Bun.
 - Production embeds `cmd/livepaper/dist`; development proxies the Astro server and must not build production assets first.
 - DOM IDs in `src/components` are API contracts consumed by `public/scripts`. Preserve them or update every selector in the same change.
-- Do not call Facebook/community APIs, SSO, billing, or storage services from automated tests.
+- The shipped app and installer are offline-only: no runtime or install-time network calls, accounts, telemetry, online galleries, or external links. Automated tests must not call network services either.
+- `ffmpeg`, `ffprobe`, and `mpv` are bundled into `bin/` at build time by `scripts/bundle-media-tools.ps1` (with licenses under `bin/licenses`) and are found beside `livepaper.exe` or on `PATH` at runtime. Never reintroduce an in-app or installer download step.
 - Read `docs/wallpaper-internals.md#known-mistakes` before changing `desktop.go` or `video.go`. This optimization pass intentionally did not touch those files.
 
 ## Validation
@@ -16,11 +17,12 @@ bun run format
 bun run build
 go test ./...
 go vet ./...
-go build -o "$env:TEMP\go-livepaper-check.exe" ./cmd/livepaper
+go build -tags production -o "$env:TEMP\go-livepaper-check.exe" ./cmd/livepaper
 git diff --check
+pwsh -NoProfile -Command '$e = $null; $null = [System.Management.Automation.Language.Parser]::ParseFile("$PWD\scripts\bundle-media-tools.ps1", [ref]$null, [ref]$e); $e'
 ```
 
-Manual Windows/Wails verification is still required for tray interactions, multi-monitor layout, file dialogs, and live playback.
+Manual Windows/Wails verification is still required for tray interactions, multi-monitor layout, file dialogs, live playback, and the installer payload (bundled tools under `%LOCALAPPDATA%\Programs\livepaper\bin`).
 
 ## Optimization log
 
@@ -37,7 +39,27 @@ This pass started from a heavily dirty working tree (43 tracked paths changed, 2
 - Add explicit button types and dialog labels to shared modal flows to prevent accidental form submission and improve accessible names.
 - Update README requirements, desktop UI capabilities, production asset order, development flow, validation commands, and architecture references.
 
-## Evidence
+### 2026-10-08
+
+Offline conversion: the app is now a plain offline wallpaper setter. Every internet-dependent feature is removed instead of disabled.
+
+- Scope of removal: SSO login/session/sign-out, billing, GitHub connections, Discover/community wallpapers, admin Storage upload/patch/delete, telemetry, `DownloadToTemp`, `OpenExternal` (and `github.com/pkg/browser`), and the in-app dependency installer (`InstallDependencies` and the DepWarn "Install" flow). Displays, Library (local recent history in IndexedDB), Settings General/Performance/Startup/Hotkeys/About, tray, hotkeys, power/focus watchers, `CheckDependencies`, thumbnail cache, and CLI apply mode stay.
+- Replace the install-time `scripts/install-deps.ps1` (winget, user `PATH` edits, GitHub downloads on the user's machine) with the build-time `scripts/bundle-media-tools.ps1`. It downloads `ffmpeg.exe` + `ffprobe.exe` (BtbN/FFmpeg-Builds win64 GPL) and `mpv.exe` (shinchiro/mpv-winbuild-cmake x86_64) into `-OutputDir` (default `bin`), decides "already present" from the output directory only, verifies GitHub-published SHA-256 digests when available, copies upstream license files plus a source note into `bin/licenses`, cleans its temp directory, and exits non-zero when any tool is missing. `-Force` re-downloads.
+- `scripts/installer.bat` and the release workflow run the bundler into `bin` before `makensis`; the workflow passes `GITHUB_TOKEN` for the GitHub API only.
+- `installer/livepaper.nsi` no longer runs PowerShell or downloads anything. It packages an explicit payload (`livepaper.exe`, `ffmpeg.exe`, `ffprobe.exe`, `mpv.exe`, `licenses/`), so makensis fails when a tool is missing and stale `bin/scripts`, `bin/data`, or setup executables are never shipped. Upgrades delete the old `bin\scripts` directory and the legacy `bin\data` wallpaper cache; uninstall still removes the whole `bin` directory.
+- Remove the tracked `bin/scripts/install-deps.ps1` copy and the admin upload guide `docs/upload-wallpaper.html`. Fix `.gitignore` so `/bin/` build output is ignored (the old `./bin` pattern matched nothing).
+- Update README, AGENTS.md, and `docs/project-structure.md` for the offline-only app, bundled media tools, and GPL third-party notices.
+
+#### Evidence (2026-10-08, build tooling)
+
+- PowerShell parser check of `scripts/bundle-media-tools.ps1`: 0 errors in PowerShell 7 and Windows PowerShell 5.1.
+- Bundler run against an output directory that already held the tools and source notes: exit 0 with no network access.
+- `pwsh` bundler runs while `HTTP(S)_PROXY` pointed at a closed local port (default output directory, and an output directory missing only `licenses\mpv-SOURCE.txt`): printed the error, exited 1, and left no `livepaper-bundle-*` temp directory.
+- The same proxy trick does not apply to Windows PowerShell 5.1, so one unintended real download ran into the ignored `bin/` (recorded in Known Mistakes). It exited 0, verified the GitHub SHA-256 digest of the ffmpeg zip, the mpv 7z, and `7zr.exe`, copied `ffmpeg-LICENSE.txt` (GPLv3), and warned that the mpv archive contains no license file. Payload: `ffmpeg.exe` and `ffprobe.exe` at about 169 MB each, and `mpv.exe` at about 121 MB.
+- `scripts/installer.bat` keeps CRLF line endings (89 CRLF, 0 bare LF).
+- A full `makensis` build was not run in this step.
+
+## Evidence (2026-08-02)
 
 Baseline frontend output: 608 elements, 65,282-byte HTML, 65,997-byte CSS, and 6,291-byte `ui.js`.
 
