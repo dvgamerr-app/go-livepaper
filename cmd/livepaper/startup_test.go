@@ -62,49 +62,6 @@ func TestCheckDependencies(t *testing.T) {
 	// the tools installed.
 }
 
-func TestDependencyInstallerPathPrefersExecutableDirectory(t *testing.T) {
-	exeDir := filepath.Join(t.TempDir(), "app")
-	workDir := filepath.Join(t.TempDir(), "workspace")
-	exeScript := filepath.Join(exeDir, "scripts", "install-deps.ps1")
-	workScript := filepath.Join(workDir, "scripts", "install-deps.ps1")
-	for _, script := range []string{exeScript, workScript} {
-		if err := os.MkdirAll(filepath.Dir(script), 0755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(script, []byte("# test"), 0644); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	got, err := dependencyInstallerPath(exeDir, workDir)
-	if err != nil {
-		t.Fatalf("dependencyInstallerPath() error = %v", err)
-	}
-	if got != exeScript {
-		t.Errorf("dependencyInstallerPath() = %q, want %q", got, exeScript)
-	}
-}
-
-func TestDependencyInstallerPathFallsBackToWorkspace(t *testing.T) {
-	exeDir := filepath.Join(t.TempDir(), "app")
-	workDir := filepath.Join(t.TempDir(), "workspace")
-	workScript := filepath.Join(workDir, "scripts", "install-deps.ps1")
-	if err := os.MkdirAll(filepath.Dir(workScript), 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(workScript, []byte("# test"), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	got, err := dependencyInstallerPath(exeDir, workDir)
-	if err != nil {
-		t.Fatalf("dependencyInstallerPath() error = %v", err)
-	}
-	if got != workScript {
-		t.Errorf("dependencyInstallerPath() = %q, want %q", got, workScript)
-	}
-}
-
 func TestAddDependencySearchPathPrependsOnce(t *testing.T) {
 	existing := filepath.Join(t.TempDir(), "existing")
 	dependencyDir := filepath.Join(t.TempDir(), "dependencies")
@@ -118,6 +75,21 @@ func TestAddDependencySearchPathPrependsOnce(t *testing.T) {
 	}
 	if entries[0] != dependencyDir || entries[1] != existing {
 		t.Errorf("PATH entries = %v, want [%q %q]", entries, dependencyDir, existing)
+	}
+}
+
+func TestAddBundledToolsSearchPathPrependsExecutableDirectory(t *testing.T) {
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatalf("os.Executable() error = %v", err)
+	}
+	existing := filepath.Join(t.TempDir(), "existing")
+	t.Setenv("PATH", existing)
+
+	addBundledToolsSearchPath()
+	entries := filepath.SplitList(os.Getenv("PATH"))
+	if len(entries) != 2 || entries[0] != filepath.Dir(exe) || entries[1] != existing {
+		t.Errorf("PATH entries = %v, want [%q %q]", entries, filepath.Dir(exe), existing)
 	}
 }
 

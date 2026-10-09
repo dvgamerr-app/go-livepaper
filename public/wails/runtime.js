@@ -20,16 +20,12 @@ export const Call = {
         return '0.0.0-dev'
       case 'main.AppService.CheckDependencies':
         return { ffmpeg: true, ffprobe: true, mpv: true }
-      case 'main.AppService.InstallDependencies':
-        return null
       case 'main.AppService.FileExists':
-        return false
+        return true
       case 'main.AppService.BrowseFile':
         return ''
       case 'main.AppService.IsVideoFile':
         return false
-      case 'main.AppService.GetThumbnail':
-        return ''
       default:
         return null
     }

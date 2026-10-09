@@ -31,9 +31,6 @@ func TestDefaultSettings(t *testing.T) {
 	if !s.ShowNotifications {
 		t.Error("ShowNotifications should be true")
 	}
-	if s.Telemetry {
-		t.Error("Telemetry should be false")
-	}
 	if !s.GPUAcceleration {
 		t.Error("GPUAcceleration should be true")
 	}
@@ -271,6 +268,46 @@ func TestLoadSettings_PartialJSON(t *testing.T) {
 	// VRAMCapMB was not set in JSON, should get the default 256.
 	if s.VRAMCapMB != 256 {
 		t.Errorf("VRAMCapMB = %d, want default 256", s.VRAMCapMB)
+	}
+}
+
+func TestLoadSettings_IgnoresRemovedTelemetryKey(t *testing.T) {
+	resetSettings(t)
+	dir := t.TempDir()
+	t.Setenv("APPDATA", dir)
+
+	// Settings written by older versions still carry the removed "telemetry"
+	// key; it must be ignored instead of discarding the rest of the file.
+	p := filepath.Join(dir, "livepaper", "settings.json")
+	if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+		t.Fatal(err)
+	}
+	legacy, _ := json.Marshal(map[string]any{"language": "th-TH", "telemetry": true, "vramCapMB": 512})
+	if err := os.WriteFile(p, legacy, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	s := loadSettings()
+	if s.Language != "th-TH" {
+		t.Errorf("Language = %q, want \"th-TH\"", s.Language)
+	}
+	if s.VRAMCapMB != 512 {
+		t.Errorf("VRAMCapMB = %d, want 512", s.VRAMCapMB)
+	}
+
+	if err := saveSettingsToDisk(s); err != nil {
+		t.Fatalf("saveSettingsToDisk() error = %v", err)
+	}
+	data, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var saved map[string]any
+	if err := json.Unmarshal(data, &saved); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := saved["telemetry"]; ok {
+		t.Error("saved settings still contain the removed \"telemetry\" key")
 	}
 }
 

@@ -59,6 +59,10 @@ func selectMonitors(monitors []wp.MonitorInfo, selected []string) ([]wp.MonitorI
 func main() {
 	arg.MustParse(&args)
 
+	// ffmpeg, ffprobe and mpv ship beside livepaper.exe. Resolve them before
+	// the tray restores a video or the CLI preprocesses one.
+	addBundledToolsSearchPath()
+
 	if args.Clean {
 		if err := wp.CleanTempDir(); err != nil {
 			log.Printf("Error cleaning temp directory: %v\n", err)
