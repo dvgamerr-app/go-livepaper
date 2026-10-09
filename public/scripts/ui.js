@@ -1,6 +1,6 @@
-// UI helpers: status bar, view router, text utilities, telemetry.
+// UI helpers: status bar, view router, text utilities.
 
-import { lp, API_BASE } from '/scripts/store.js'
+import { lp } from '/scripts/store.js'
 
 const contentEl = document.getElementById('content')
 const applyBtn = document.getElementById('apply-btn')
@@ -58,9 +58,7 @@ export function refreshApply() {
 const VIEW_PANELS = {
   displays: 'main-content',
   settings: 'settings-panel',
-  discover: 'discover-panel',
   library: 'library-panel',
-  storage: 'storage-panel',
 }
 const viewPanels = Object.entries(VIEW_PANELS).map(([name, id]) => [
   name,
@@ -80,21 +78,11 @@ export function showView(name) {
     b.classList.toggle('active', b.dataset.view === name)
   })
   lp.currentView = name
-  if (name === 'discover') lp.fn.onShowDiscover?.()
   if (name === 'library') lp.fn.renderLibrary?.()
-  if (name === 'storage') lp.fn.loadStorageWallpapers?.()
 }
 
 export function openSettings() {
   showView('settings')
-  lp.fn.prefetchConnections?.()
-}
-
-export function openSettingsTab(tabId) {
-  showView('settings')
-  lp.fn.prefetchConnections?.()
-  const tab = document.querySelector(`.settings-tab[data-stab="${tabId}"]`)
-  if (tab) tab.click()
 }
 
 // ── Text utilities ────────────────────────────────────────────────────────────
@@ -118,37 +106,6 @@ export function extOf(p) {
   return p.replace(/\\/g, '/').split('/').pop().split('.').pop().toLowerCase()
 }
 
-export function resolutionBadgeText(w, h) {
-  if (!w || !h) return ''
-  function gcd(a, b) {
-    return b ? gcd(b, a % b) : a
-  }
-  const g = gcd(w, h)
-  let ratio = `${w / g}:${h / g}`
-  const r = w / h
-  if (Math.abs(r - 16 / 9) < 0.05) ratio = '16:9'
-  else if (Math.abs(r - 21 / 9) < 0.05) ratio = '21:9'
-  else if (Math.abs(r - 4 / 3) < 0.05) ratio = '4:3'
-  const res = w >= 7680 ? '8K' : w >= 3840 ? '4K' : w >= 2560 ? '2K' : `${w}p`
-  return `${res} · ${ratio}`
-}
-
-// ── Telemetry ─────────────────────────────────────────────────────────────────
-
-export async function track(name, props) {
-  if (!lp.appSettings || !lp.appSettings.telemetry) return
-  try {
-    await fetch(`${API_BASE}/api/telemetry`, {
-      method: 'POST',
-      headers: lp.fn.authHeaders?.() || { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        appVersion: lp.appVersion,
-        events: [{ name, props: props || {}, ts: Date.now() }],
-      }),
-    })
-  } catch (_) {}
-}
-
 // ── Event listeners ───────────────────────────────────────────────────────────
 
 document.getElementById('tb-settings')?.addEventListener('click', openSettings)
@@ -162,9 +119,6 @@ lp.fn.status = status
 lp.fn.refreshApply = refreshApply
 lp.fn.showView = showView
 lp.fn.openSettings = openSettings
-lp.fn.openSettingsTab = openSettingsTab
 lp.fn.escapeHtml = escapeHtml
 lp.fn.debounce = debounce
 lp.fn.extOf = extOf
-lp.fn.resolutionBadgeText = resolutionBadgeText
-lp.fn.track = track

@@ -1,13 +1,6 @@
-// IndexedDB (recent wallpaper history) + localStorage (downloaded items) helpers.
+// IndexedDB (recent wallpaper history) helpers.
 
-import {
-  lp,
-  IDB_NAME,
-  IDB_VERSION,
-  STORE_RECENT,
-  RECENT_LIMIT,
-  DOWNLOADED_KEY,
-} from '/scripts/store.js'
+import { lp, call, IDB_NAME, IDB_VERSION, STORE_RECENT, RECENT_LIMIT } from '/scripts/store.js'
 
 // ── IndexedDB ─────────────────────────────────────────────────────────────────
 
@@ -81,7 +74,24 @@ export async function loadGalleryItems() {
       } else resolve(items)
     }
     tx.onerror = () => resolve([])
-  })
+  }).then(dropMissingFiles)
+}
+
+// History rows from older online builds can point at files that no longer
+// exist (removed downloads); drop them from the result and from IndexedDB.
+export async function dropMissingFiles(items) {
+  const exists = await Promise.all(
+    items.map((it) => call('FileExists', it.filePath || '').catch(() => true))
+  )
+  const stale = items.filter((_, i) => !exists[i])
+  if (stale.length === 0) return items
+  openDB()
+    .then((db) => {
+      const store = db.transaction(STORE_RECENT, 'readwrite').objectStore(STORE_RECENT)
+      stale.forEach((it) => store.delete(it.id))
+    })
+    .catch(() => {})
+  return items.filter((_, i) => exists[i])
 }
 
 export async function clearRecentHistory() {
@@ -94,34 +104,8 @@ export async function clearRecentHistory() {
   })
 }
 
-// ── Downloaded wallpapers tracking (localStorage) ─────────────────────────────
-
-export function getDownloadedMap() {
-  try {
-    return JSON.parse(localStorage.getItem(DOWNLOADED_KEY) || '{}')
-  } catch {
-    return {}
-  }
-}
-
-export function setDownloadedItem(id, info) {
-  const m = getDownloadedMap()
-  m[id] = info
-  localStorage.setItem(DOWNLOADED_KEY, JSON.stringify(m))
-}
-
-export function getDownloadedItem(id) {
-  return getDownloadedMap()[id] || null
-}
-export function isDownloaded(id) {
-  return !!getDownloadedItem(id)
-}
-
 // Register in cross-module registry
 lp.fn.upsertRecent = upsertRecent
 lp.fn.pruneRecent = pruneRecent
 lp.fn.loadGalleryItems = loadGalleryItems
 lp.fn.clearRecentHistory = clearRecentHistory
-lp.fn.getDownloadedItem = getDownloadedItem
-lp.fn.setDownloadedItem = setDownloadedItem
-lp.fn.isDownloaded = isDownloaded

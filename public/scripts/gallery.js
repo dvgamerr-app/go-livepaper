@@ -1,8 +1,8 @@
 // Gallery strip: build cards, render strip, preview overlay.
 
-import { lp, call, API_BASE, WALLPAPER_LIMIT } from '/scripts/store.js'
+import { lp, call } from '/scripts/store.js'
 import { loadGalleryItems, pruneRecent } from '/scripts/db.js'
-import { extOf, resolutionBadgeText, escapeHtml } from '/scripts/ui.js'
+import { extOf, escapeHtml } from '/scripts/ui.js'
 
 // ── Gallery strip ─────────────────────────────────────────────────────────────
 
@@ -11,58 +11,32 @@ export function buildGalleryCard(entry, index) {
   card.className = 'gallery-strip-card wails-no-drag'
   card.dataset.index = index
 
-  let name, badgeClass, badgeText, lockHtml
-  if (entry.remote) {
-    card.dataset.remote = '1'
-    name = entry.title || 'Wallpaper'
-    badgeClass = (entry.contentType || '').startsWith('video/') ? 'video' : 'image'
-    badgeText = resolutionBadgeText(entry.width, entry.height) || 'HD'
-    if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
-    lockHtml = `<span class="gc-lock${lp.fn.isPremium?.() ? ' hidden' : ''}" aria-hidden="true">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    </span>`
-  } else {
-    const ext = extOf(entry.filePath)
-    badgeClass = entry.isVideo && ext !== 'gif' ? 'video' : ext === 'gif' ? 'gif' : 'image'
-    badgeText = entry.isVideo && ext !== 'gif' ? 'VIDEO' : ext === 'gif' ? 'GIF' : 'IMG'
-    name = entry.filePath
-      .replace(/\\/g, '/')
-      .split('/')
-      .pop()
-      .replace(/\.[^.]+$/, '')
-    if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
-    lockHtml = ''
-  }
+  const ext = extOf(entry.filePath)
+  const badgeClass = entry.isVideo && ext !== 'gif' ? 'video' : ext === 'gif' ? 'gif' : 'image'
+  const badgeText = entry.isVideo && ext !== 'gif' ? 'VIDEO' : ext === 'gif' ? 'GIF' : 'IMG'
+  const name = entry.filePath
+    .replace(/\\/g, '/')
+    .split('/')
+    .pop()
+    .replace(/\.[^.]+$/, '')
+  if (entry.width && entry.height) card.style.aspectRatio = `${entry.width} / ${entry.height}`
 
-  const isLocalVideo = !entry.remote && entry.isVideo && extOf(entry.filePath || '') !== 'gif'
+  const isNonGifVideo = entry.isVideo && ext !== 'gif'
 
-  let payload
-  if (entry.remote) {
-    payload = JSON.stringify({
-      remote: true,
-      id: entry.id,
-      downloadUrl: entry.downloadUrl,
-      tier: entry.tier,
-      thumbnail: entry.thumbnail,
-      title: entry.title,
-    })
-  } else {
-    payload = JSON.stringify({
-      filePath: entry.filePath,
-      cachedPath: entry.cachedPath,
-      isVideo: entry.isVideo,
-      thumbnail: entry.thumbnail,
-      width: entry.width || 0,
-      height: entry.height || 0,
-    })
-  }
+  const payload = JSON.stringify({
+    filePath: entry.filePath,
+    cachedPath: entry.cachedPath,
+    isVideo: entry.isVideo,
+    thumbnail: entry.thumbnail,
+    width: entry.width || 0,
+    height: entry.height || 0,
+  })
 
   card.draggable = true
   card.innerHTML = `
     <img class="gc-img" src="${entry.thumbnail || ''}" alt="" draggable="false">
     <div class="gc-overlay"></div>
     <span class="gc-badge ${badgeClass}">${badgeText}</span>
-    ${lockHtml || ''}
     <div class="gc-grip" aria-hidden="true">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
@@ -89,7 +63,7 @@ export function buildGalleryCard(entry, index) {
   card.addEventListener('mouseenter', async () => {
     setActiveDot(index)
     _hovering = true
-    if (!isLocalVideo) return
+    if (!isNonGifVideo) return
     if (_gifUrl) {
       imgEl.src = _gifUrl
       return
@@ -109,7 +83,7 @@ export function buildGalleryCard(entry, index) {
 
   card.addEventListener('mouseleave', () => {
     _hovering = false
-    if (isLocalVideo && _gifUrl) imgEl.src = entry.thumbnail || ''
+    if (isNonGifVideo && _gifUrl) imgEl.src = entry.thumbnail || ''
   })
 
   card.addEventListener('click', () => openGalleryPreview(lp.galleryItems, index))
@@ -169,36 +143,9 @@ export function renderGalleryStrip() {
   if (nextBtn) nextBtn.onclick = () => strip.scrollBy({ left: 260, behavior: 'smooth' })
 }
 
-async function loadRemoteGalleryItems() {
-  try {
-    const res = await fetch(`${API_BASE}/api/wallpapers?limit=${WALLPAPER_LIMIT}`)
-    const data = await res.json()
-    return (data?.items || []).map((it) => ({
-      remote: true,
-      id: it.id,
-      title: it.title,
-      tier: it.tier || 'free',
-      contentType: it.contentType || '',
-      downloadUrl: it.downloadUrl,
-      thumbnail: it.thumbnailUrl,
-      width: it.width || 0,
-      height: it.height || 0,
-    }))
-  } catch (_) {
-    return []
-  }
-}
-
 export async function refreshGallery() {
-  const local = await loadGalleryItems()
-  lp.galleryItems = local.length > 0 ? local : await loadRemoteGalleryItems()
+  lp.galleryItems = await loadGalleryItems()
   renderGalleryStrip()
-}
-
-export function refreshGalleryLocks() {
-  document.querySelectorAll('.gallery-strip-card[data-remote="1"] .gc-lock').forEach((el) => {
-    el.classList.toggle('hidden', lp.fn.isPremium?.() ?? false)
-  })
 }
 
 export function pruneAndRefresh() {
@@ -209,15 +156,7 @@ export function pruneAndRefresh() {
 // ── Gallery strip preview overlay ─────────────────────────────────────────────
 
 export function openGalleryPreview(items, index) {
-  const entry = items[index]
-  if (!entry) return
-  if (entry.remote) {
-    const full = lp.discoverItems.find((i) => i.id === entry.id)
-    if (full) {
-      lp.fn.onDiscoverPreview?.(full, lp.discoverItems, lp.discoverItems.indexOf(full))
-      return
-    }
-  }
+  if (!items[index]) return
   lp._gpItems = items
   lp._gpIndex = index
   _renderGalleryPreview()
@@ -234,14 +173,12 @@ function _renderGalleryPreview() {
   const entry = items[lp._gpIndex]
   if (!entry) return
 
-  const isRemote = !!entry.remote
-  const name = isRemote
-    ? entry.title || 'Wallpaper'
-    : (entry.filePath || '')
-        .replace(/\\/g, '/')
-        .split('/')
-        .pop()
-        .replace(/\.[^.]+$/, '') || 'Wallpaper'
+  const name =
+    (entry.filePath || '')
+      .replace(/\\/g, '/')
+      .split('/')
+      .pop()
+      .replace(/\.[^.]+$/, '') || 'Wallpaper'
   const ext = entry.isVideo ? (extOf(entry.filePath || '') === 'gif' ? 'gif' : 'video') : 'image'
 
   const ov = document.createElement('div')
@@ -257,7 +194,7 @@ function _renderGalleryPreview() {
     </div>
     <div class="dc-preview-bottom">
       <div class="dc-preview-title">${escapeHtml(name)}</div>
-      ${!isRemote && entry.width && entry.height ? `<div class="dc-preview-meta">${ext.toUpperCase()} · ${entry.width}×${entry.height}</div>` : ''}
+      ${entry.width && entry.height ? `<div class="dc-preview-meta">${ext.toUpperCase()} · ${entry.width}×${entry.height}</div>` : ''}
       <div class="dc-preview-actions">
         <button id="gp-apply" class="dc-preview-btn primary">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -289,22 +226,11 @@ function _renderGalleryPreview() {
 
   ov.querySelector('#gp-apply').addEventListener('click', async () => {
     closeGP()
-    if (isRemote) {
-      const synthetic = {
-        id: entry.id,
-        downloadUrl: entry.downloadUrl,
-        title: entry.title,
-        tags: [],
-        tier: entry.tier,
-      }
-      await lp.fn.onDiscoverApply?.(synthetic)
+    if (lp.monitors.length <= 1) {
+      const target = lp.monitors[0]
+      if (target) await lp.fn.applyLocalEntryToMonitor?.(target, entry)
     } else {
-      if (lp.monitors.length <= 1) {
-        const target = lp.monitors[0]
-        if (target) await lp.fn.applyLocalEntryToMonitor?.(target, entry)
-      } else {
-        lp.fn.showLibraryMonitorPicker?.(entry)
-      }
+      lp.fn.showLibraryMonitorPicker?.(entry)
     }
   })
 
@@ -348,7 +274,6 @@ document.getElementById('gallery-strip')?.addEventListener(
 
 // Register in cross-module registry
 lp.fn.refreshGallery = refreshGallery
-lp.fn.refreshGalleryLocks = refreshGalleryLocks
 lp.fn.pruneAndRefresh = pruneAndRefresh
 lp.fn.openGalleryPreview = openGalleryPreview
 lp.fn.renderGalleryStrip = renderGalleryStrip

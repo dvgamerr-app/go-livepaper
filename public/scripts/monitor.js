@@ -117,9 +117,8 @@ function buildStage(layout) {
       } catch {
         return
       }
-
-      if (entry.remote) {
-        await lp.fn.applyRemoteEntryToMonitor?.(entry, m)
+      if (!entry?.filePath) {
+        status('That item has no local file to apply.', 'error', 3000)
         return
       }
 
@@ -509,8 +508,8 @@ const ro = new ResizeObserver(() => {
 
 const depWarnEl = document.getElementById('dep-warn')
 const depWarnMsgEl = document.getElementById('dep-warn-msg')
-const depInstallBtn = document.getElementById('dep-install-btn')
 
+// Video tools ship in the installer payload; the app never downloads them.
 async function refreshDependencyWarning() {
   const deps = await call('CheckDependencies')
   const missing = Object.entries(deps)
@@ -519,38 +518,14 @@ async function refreshDependencyWarning() {
   if (missing.length === 0) {
     depWarnEl?.classList.add('hidden')
     if (depWarnEl) depWarnEl.style.display = ''
-    return []
+    return
   }
   if (depWarnMsgEl) {
-    depWarnMsgEl.innerHTML = `Missing: <strong>${missing.map(escapeHtml).join(', ')}</strong> — video wallpapers won't work.`
+    depWarnMsgEl.innerHTML = `Missing: <strong>${missing.map(escapeHtml).join(', ')}</strong> — video wallpapers won't work (images still do). ffmpeg, ffprobe and mpv ship with the Live Paper installer: reinstall Live Paper, or place ffmpeg.exe, ffprobe.exe and mpv.exe next to livepaper.exe.`
   }
   depWarnEl?.classList.remove('hidden')
   if (depWarnEl) depWarnEl.style.display = 'flex'
-  return missing
 }
-
-depInstallBtn?.addEventListener('click', async () => {
-  depInstallBtn.disabled = true
-  depInstallBtn.textContent = 'Installing…'
-  depInstallBtn.setAttribute('aria-busy', 'true')
-  if (depWarnMsgEl) depWarnMsgEl.textContent = 'Downloading and installing ffmpeg and mpv…'
-  status('Installing video dependencies…')
-  try {
-    await call('InstallDependencies')
-    const missing = await refreshDependencyWarning()
-    if (missing.length > 0) throw new Error(`Still missing: ${missing.join(', ')}`)
-    status('Video dependencies installed', 'success', 4000)
-  } catch (error) {
-    if (depWarnMsgEl) depWarnMsgEl.textContent = `Install failed: ${String(error)}`
-    depWarnEl?.classList.remove('hidden')
-    if (depWarnEl) depWarnEl.style.display = 'flex'
-    status('Dependency installation failed', 'error', 5000)
-  } finally {
-    depInstallBtn.disabled = false
-    depInstallBtn.textContent = 'Install'
-    depInstallBtn.removeAttribute('aria-busy')
-  }
-})
 
 document
   .getElementById('tb-min')
