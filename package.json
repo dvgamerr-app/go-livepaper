@@ -9,19 +9,20 @@
     "build": "bun x --bun astro build",
     "preview": "bun x --bun astro preview",
     "check": "bun x --bun astro check",
+    "test": "bun test tests",
     "format": "bun x --bun prettier --check .",
     "format:fix": "bun x --bun prettier --write .",
     "build:test:installer": "cmd /c \".\\scripts\\build-test-installer.bat\""
   },
   "dependencies": {
-    "@lucide/astro": "^1.32.0",
+    "@lucide/astro": "^1.54.0",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "7.2.3",
+    "astro": "^7.3.8",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.9",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "typescript": "^6.0.3"
