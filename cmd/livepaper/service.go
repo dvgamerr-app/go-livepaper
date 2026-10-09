@@ -780,8 +780,10 @@ func (s *AppService) CheckDependencies() map[string]bool {
 	}
 }
 
-func (s *AppService) CleanTempFiles() error {
-	return wp.CleanTempDir()
+// CleanTempFiles clears generated files, keeping the encoded videos in keep so
+// wallpapers that are still assigned continue to restore.
+func (s *AppService) CleanTempFiles(keep []string) error {
+	return wp.CleanTempDir(keep...)
 }
 
 func (s *AppService) ResetWallpapers() {
@@ -861,6 +863,9 @@ func (s *AppService) ApplyWallpapers(assignments []WallpaperAssignment) error {
 
 	if len(vTargets) > 0 {
 		wp.SetExtraMpvArgs(mpvArgsFromSettings())
+		// New mpv processes start unpaused; make the power watcher push the
+		// current pause/speed state to them on its next tick.
+		resetPowerState()
 		go func() {
 			if err := wp.RunVideoWallpapers(vTargets); err != nil {
 				log.Printf("video wallpapers: %v", err)

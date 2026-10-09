@@ -117,6 +117,14 @@ var (
 	stateApplied bool
 )
 
+// resetPowerState forgets the last pushed playback state so the next watcher
+// tick re-sends it, e.g. after new mpv processes were spawned.
+func resetPowerState() {
+	powerMu.Lock()
+	stateApplied = false
+	powerMu.Unlock()
+}
+
 // toggleManualPause flips the manual (hotkey-driven) pause flag and returns the
 // new value.
 func toggleManualPause() bool {
