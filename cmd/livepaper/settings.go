@@ -11,10 +11,6 @@ import (
 // It is persisted as JSON in %APPDATA%\livepaper\settings.json and read back
 // by the Go side (encoder, window theme, hotkeys, power/focus watchers).
 type Settings struct {
-	// General
-	Language          string `json:"language"`
-	ShowNotifications bool   `json:"showNotifications"`
-
 	// Performance
 	GPUAcceleration     bool   `json:"gpuAcceleration"`
 	VRAMCapMB           int    `json:"vramCapMB"`
@@ -43,8 +39,6 @@ const (
 
 func defaultSettings() Settings {
 	return Settings{
-		Language:            "en-US",
-		ShowNotifications:   true,
 		GPUAcceleration:     true,
 		VRAMCapMB:           256,
 		GPUAdapter:          "",
@@ -113,9 +107,6 @@ func loadSettings() Settings {
 // normalize repairs out-of-range or empty values so the rest of the code can
 // trust the settings without re-validating everywhere.
 func (s *Settings) normalize() {
-	if s.Language == "" {
-		s.Language = "en-US"
-	}
 	switch s.WindowTheme {
 	case "mica", "acrylic", "solid":
 	default:

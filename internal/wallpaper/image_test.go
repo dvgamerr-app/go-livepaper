@@ -61,12 +61,30 @@ func TestCleanTempDir(t *testing.T) {
 	testFile := f.Name()
 	f.Close()
 
-	if err := CleanTempDir(); err != nil {
+	inUse := filepath.Join(dir, "inuse_320x240.mp4")
+	if err := os.WriteFile(inUse, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	keepFile := filepath.Join(dir, "background.jpg")
+	keepDir := filepath.Join(dir, "thumbnail")
+	if err := os.WriteFile(keepFile, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(keepDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := CleanTempDir(inUse); err != nil {
 		t.Errorf("CleanTempDir() error = %v", err)
 	}
 
 	if _, err := os.Stat(testFile); !os.IsNotExist(err) {
 		t.Errorf("test file still exists after CleanTempDir: %s", testFile)
+	}
+	for _, keep := range []string{keepFile, keepDir, inUse} {
+		if _, err := os.Stat(keep); err != nil {
+			t.Errorf("CleanTempDir() removed %s: %v", keep, err)
+		}
 	}
 }
 
