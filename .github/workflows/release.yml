@@ -60,18 +60,28 @@ jobs:
           "display=$displayVersion" >> $env:GITHUB_OUTPUT
           "file=$fileVersion" >> $env:GITHUB_OUTPUT
 
+      - name: Parse-check bundler script
+        shell: pwsh
+        run: |
+          $e = $null
+          $null = [System.Management.Automation.Language.Parser]::ParseFile("$PWD\scripts\bundle-media-tools.ps1", [ref]$null, [ref]$e)
+          if ($e.Count -gt 0) { $e | ForEach-Object { Write-Error $_.Message }; exit 1 }
+
       - name: Prepare bin payload
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if (Test-Path bin) {
             Remove-Item -Recurse -Force bin
           }
 
-          New-Item -ItemType Directory -Path bin\scripts | Out-Null
-          Copy-Item scripts\install-deps.ps1 bin\scripts\install-deps.ps1
+          # Bundle ffmpeg, ffprobe, and mpv at build time; the installer ships them offline.
+          ./scripts/bundle-media-tools.ps1 -OutputDir bin -RequireDigest
 
       - name: Build
-        run: go build -ldflags "-X main.VERSION=${{ steps.version.outputs.display }} -H windowsgui" -o bin/livepaper.exe ./cmd/livepaper/
+        # -tags production compiles out Wails' dev-server HTTP probe and WebView2 devtools.
+        run: go build -tags production -ldflags "-X main.VERSION=${{ steps.version.outputs.display }} -H windowsgui" -o bin/livepaper.exe ./cmd/livepaper/
 
       - name: Build installer
         run: makensis /DAPP_VERSION=${{ steps.version.outputs.display }} /DAPP_FILE_VERSION=${{ steps.version.outputs.file }} installer\livepaper.nsi

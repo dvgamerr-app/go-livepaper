@@ -29,11 +29,12 @@ go run github.com/akavel/rsrc@latest -ico public/icon.ico -o cmd/livepaper/rsrc_
 
 :: ── Go binary ──────────────────────────────────────────────────────────────────
 if not exist bin mkdir bin
-echo ^> go build -o bin/livepaper.exe
-go build -ldflags "-H windowsgui -X main.VERSION=%APP_VERSION%" -o bin/livepaper.exe ./cmd/livepaper/ || goto :fail
+echo ^> go build -tags production -o bin/livepaper.exe
+go build -tags production -ldflags "-H windowsgui -X main.VERSION=%APP_VERSION%" -o bin/livepaper.exe ./cmd/livepaper/ || goto :fail
 
-if not exist bin\scripts mkdir bin\scripts || goto :fail
-copy /Y scripts\install-deps.ps1 bin\scripts\install-deps.ps1 >nul || goto :fail
+:: ── Media tools ────────────────────────────────────────────────────────────────
+echo ^> scripts\bundle-media-tools.ps1 -OutputDir bin
+powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts\bundle-media-tools.ps1 -OutputDir bin || goto :fail
 
 :: ── NSIS installer ─────────────────────────────────────────────────────────────
 set "MAKENSIS="
