@@ -8,7 +8,7 @@
 
 Windows tray app + CLI · fully offline · no account · no telemetry
 
-[**Website**](https://dvgamerr-app.github.io/livepaper-app/) ·
+[**Website**](https://dvgamerr.app/livepaper-app/) ·
 [**Download**](https://github.com/dvgamerr-app/livepaper-app/releases/latest) ·
 [Quick start](#quick-start) · [Build from source](#build-from-source)
 

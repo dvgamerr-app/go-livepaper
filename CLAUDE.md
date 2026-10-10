@@ -2,7 +2,7 @@ Use `AGENTS.md` as the primary repo prompt. Its build constraints and Known Mist
 
 ## Project boundaries
 
-- Windows-only Go 1.26.3 / Wails v3 application with an Astro frontend built by Bun.
+- Windows-only Go 1.26.6 / Wails v3 application with an Astro frontend built by Bun.
 - Production embeds `cmd/livepaper/dist`; development proxies the Astro server and must not build production assets first.
 - DOM IDs in `src/components` are API contracts consumed by `public/scripts`. Preserve them or update every selector in the same change.
 - The shipped app and installer are offline-only: no runtime or install-time network calls, accounts, telemetry, online galleries, or external links. Automated tests must not call network services either.
