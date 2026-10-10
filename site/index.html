@@ -493,8 +493,8 @@
             <div class="ico">🎞️</div>
             <h3>Live video wallpapers</h3>
             <p>
-              Loop <code>mp4 mkv avi mov webm m4v flv gif</code> behind your icons via ffmpeg or the
-              hardware-decoding mpv renderer.
+              Loop <code>mp4 mkv avi mov webm m4v flv gif</code> behind your icons, played by
+              hardware-decoding mpv.
             </p>
           </div>
           <div class="card">
@@ -650,57 +650,11 @@
 
 <span class="c"># specific monitors by number</span>
 <span class="k">livepaper</span> -m 2 -m 3 "portrait.jpg" "stats.png"</pre>
-          <pre><span class="c"># live video wallpaper (ffmpeg)</span>
+          <pre><span class="c"># live video wallpaper</span>
 <span class="k">livepaper</span> "C:\Wallpapers\rain.mp4"
-
-<span class="c"># same, rendered with mpv</span>
-<span class="k">livepaper</span> --player mpv "rain.mp4"
 
 <span class="c"># image on 1, video on 2</span>
 <span class="k">livepaper</span> -m 1 -m 2 "left.jpg" "loop.mp4"</pre>
-        </div>
-      </div>
-    </section>
-
-    <section id="renderers">
-      <div class="wrap">
-        <h2>Two video renderers</h2>
-        <p class="sub">
-          Pick the backend with <code>--player</code>. Both ship in the installer — nothing to set
-          up.
-        </p>
-        <div class="tablewrap">
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th>ffmpeg (default)</th>
-                <th>mpv</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Decode</td>
-                <td>Software + <code>hwaccel auto</code></td>
-                <td>Hardware (DXVA2 / D3D11VA)</td>
-              </tr>
-              <tr>
-                <td>Frame delivery</td>
-                <td>Raw BGRA pipe → GDI <code>StretchDIBits</code></td>
-                <td>Native window embed via <code>--wid</code></td>
-              </tr>
-              <tr>
-                <td>CPU usage</td>
-                <td>Higher</td>
-                <td>Lower (GPU compositing)</td>
-              </tr>
-              <tr>
-                <td>Best for</td>
-                <td>Everyday loops</td>
-                <td>4K / high-framerate video</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </section>
@@ -733,8 +687,8 @@
           </li>
           <li>
             <span
-              ><b>Play</b> videos in a window embedded behind the desktop icon layer, looping
-              forever.</span
+              ><b>Play</b> videos: ffmpeg encodes each one to the monitor's exact size once, then
+              mpv loops it in a window embedded behind the desktop icon layer.</span
             >
           </li>
         </ol>
@@ -781,7 +735,7 @@ go build -tags production -o bin/livepaper.exe ./cmd/livepaper</pre>
       <div class="wrap">
         <p>
           <b>Limitations:</b> Windows only. The composed wallpaper is a single Span JPEG (quality
-          90), and each video instance targets one monitor.
+          90). In CLI mode the process keeps running while videos play.
         </p>
         <p>
           MIT licensed. The installer redistributes unmodified GPL builds of
