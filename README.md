@@ -122,12 +122,12 @@ livepaper --clean
 livepaper [--monitor MONITOR] [--clean] [WALLPAPER ...]
 ```
 
-| Flag          | Short  | Description                                                  |
-| ------------- | ------ | ------------------------------------------------------------ |
-| `--monitor N` | `-m N` | Target monitor by number (1-based). Repeat for each monitor. |
+| Flag          | Short  | Description                                                                               |
+| ------------- | ------ | ----------------------------------------------------------------------------------------- |
+| `--monitor N` | `-m N` | Target monitor by number (1-based). Repeat for each monitor.                              |
 | `--clean`     | `-c`   | Delete generated files from `<install dir>\data` (keeps `background.jpg` and `thumbnail`) |
-| `--version`   |        | Print version                                                |
-| `--help`      | `-h`   | Print help                                                   |
+| `--version`   |        | Print version                                                                             |
+| `--help`      | `-h`   | Print help                                                                                |
 
 **Monitor matching rules**
 
