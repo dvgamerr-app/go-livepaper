@@ -59,7 +59,7 @@ Automated checks are listed under Validation in `CLAUDE.md` (`go test ./...`, `b
 
 ## Frameworks And Runtime
 
-- Go `1.26.3`
+- Go `1.26.6`
 - Wails `v3.0.0-beta.9`
 - Astro `7.2.3`
 - Win32 APIs via `golang.org/x/sys` and `syscall`
